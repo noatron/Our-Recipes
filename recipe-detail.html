@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>פרטי מתכון</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .recipe-detail {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .back-button {
+            background: #667eea;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-bottom: 20px;
+        }
+        
+        .back-button:hover {
+            background: #5568d3;
+        }
+        
+        .recipe-detail-image {
+            width: 100%;
+            height: 400px;
+            object-fit: cover;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .recipe-title {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        
+        .recipe-info {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #eee;
+        }
+        
+        .info-item {
+            font-size: 1.1rem;
+            color: #666;
+        }
+        
+        .section-title {
+            font-size: 1.8rem;
+            color: #667eea;
+            margin: 30px 0 15px 0;
+        }
+        
+        .ingredients-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .ingredients-list li {
+            padding: 10px;
+            margin: 5px 0;
+            background: #f5f5f5;
+            border-radius: 10px;
+            font-size: 1.1rem;
+        }
+        
+        .instructions-list {
+            list-style: none;
+            counter-reset: step-counter;
+            padding: 0;
+        }
+        
+        .instructions-list li {
+            counter-increment: step-counter;
+            padding: 15px;
+            margin: 10px 0;
+            background: #f5f5f5;
+            border-radius: 10px;
+            position: relative;
+            padding-right: 50px;
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+        
+        .instructions-list li::before {
+            content: counter(step-counter);
+            position: absolute;
+            right: 15px;
+            top: 15px;
+            background: #667eea;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="recipe-detail">
+            <button class="back-button" onclick="goBack()">← חזור למתכונים</button>
+            
+            <img id="recipeImage" src="" alt="" class="recipe-detail-image">
+            
+            <h1 id="recipeTitle" class="recipe-title"></h1>
+            
+            <div class="recipe-info">
+                <span class="info-item">⏱️ <span id="recipePrepTime"></span></span>
+                <span class="info-item">📊 <span id="recipeDifficulty"></span></span>
+                <span class="info-item">📂 <span id="recipeCategory"></span></span>
+            </div>
+            
+            <h2 class="section-title">📝 מרכיבים</h2>
+            <ul id="ingredientsList" class="ingredients-list">
+                <!-- המרכיבים יופיעו כאן -->
+            </ul>
+            
+            <h2 class="section-title">👩‍🍳 הוראות הכנה</h2>
+            <ol id="instructionsList" class="instructions-list">
+                <!-- ההוראות יופיעו כאן -->
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        function goBack() {
+            window.location.href = 'index.html';
+        }
+        
+        // קריאה של מזהה המתכון מ-localStorage
+        const recipeId = parseInt(localStorage.getItem('selectedRecipeId'));
+
+        // מתכונים - אותם מתכונים מ-app.js
+        const recipes = [
+            {
+                id: 1,
+                name: "שקשוקה",
+                category: "ארוחות בוקר",
+                prepTime: "20 דקות",
+                difficulty: "קל",
+                image: "https://images.unsplash.com/photo-1587217850473-0238d26d4785?w=400&h=300&fit=crop",
+                ingredients: ["6 ביצים", "2 עגבניות", "1 בצל", "2 שיני שום", "פלפל אדום", "כמון", "מלח ופלפל"],
+                instructions: ["חותכים את הבצל והעגבניות לקוביות", "מטגנים את הבצל עד שמזהיב", "מוסיפים את העגבניות והתבלינים", "מבשלים 10 דקות", "עושים גומות ושוברים ביצים", "מכסים ומבשלים עד שהביצים מתקשות"]
+            },
+            {
+                id: 2,
+                name: "פסטה בולונז",
+                category: "עיקריות",
+                prepTime: "45 דקות",
+                difficulty: "בינוני",
+                image: "https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=400&h=300&fit=crop",
+                ingredients: ["500 גרם בשר טחון", "פסטה", "רסק עגבניות", "בצל", "שום", "בזיליקום"],
+                instructions: ["מטגנים בצל ושום", "מוסיפים בשר ומשחימים", "מוסיפים רסק עגבניות", "מבשלים 30 דקות", "מבשלים פסטה", "מערבבים ביחד"]
+            },
+            {
+                id: 3,
+                name: "עוגת שוקולד",
+                category: "קינוחים",
+                prepTime: "60 דקות",
+                difficulty: "קשה",
+                image: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=400&h=300&fit=crop",
+                ingredients: ["200 גרם שוקולד מריר", "4 ביצים", "כוס סוכר", "חצי כוס קמח", "חצי כוס חמאה"],
+                instructions: ["מחממים תנור ל-180 מעלות", "ממיסים שוקולד וחמאה", "מקציפים ביצים וסוכר", "מערבבים הכל", "אופים 35 דקות"]
+            },
+            {
+                id: 4,
+                name: "סלט ירקות",
+                category: "סלטים",
+                prepTime: "10 דקות",
+                difficulty: "קל",
+                image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&h=300&fit=crop",
+                ingredients: ["חסה", "עגבנייה", "מלפפון", "בצל", "לימון", "שמן זית"],
+                instructions: ["חותכים את כל הירקות", "מערבבים בקערה", "מוסיפים לימון ושמן", "מערבבים היטב"]
+            },
+            {
+                id: 5,
+                name: "מרק עוף",
+                category: "מרקים",
+                prepTime: "90 דקות",
+                difficulty: "בינוני",
+                image: "https://images.unsplash.com/photo-1547592166-23ac45744acd?w=400&h=300&fit=crop",
+                ingredients: ["עוף שלם", "גזר", "סלרי", "בצל", "שום", "מלח ופלפל"],
+                instructions: ["שמים עוף בסיר", "מוסיפים ירקות ומים", "מבשלים 60 דקות", "מסננים", "מגישים חם"]
+            },
+            {
+                id: 6,
+                name: "פנקייקים",
+                category: "ארוחות בוקר",
+                prepTime: "15 דקות",
+                difficulty: "קל",
+                image: "https://images.unsplash.com/photo-1506084868230-bb9d95c24759?w=400&h=300&fit=crop",
+                ingredients: ["2 כוסות קמח", "2 ביצים", "כוס חלב", "סוכר", "אבקת אפייה"],
+                instructions: ["מערבבים מרכיבים יבשים", "מוסיפים ביצים וחלב", "מחממים מחבת", "שופכים בצק", "הופכים כשמופיעים בועות"]
+            },
+            {
+                id: 7,
+                name: "חומוס",
+                category: "ממרחים",
+                prepTime: "15 דקות",
+                difficulty: "קל",
+                image: "https://images.unsplash.com/photo-1571368295935-d9551b53f6f3?w=400&h=300&fit=crop",
+                ingredients: ["פחית חומוס מבושל", "טחינה גולמית", "לימון", "שום", "כמון", "מלח"],
+                instructions: ["שמים הכל בבלנדר", "טוחנים עד לקבלת מרקם חלק", "טועמים ומתקנים תיבול", "מעבירים לצלחת", "מוסיפים שמן זית מעל"]
+            }
+        ];
+
+        // מוצאים את המתכון הנבחר
+        const recipe = recipes.find(r => r.id === recipeId);
+
+        if (recipe) {
+            // ממלאים את המידע בעמוד
+            document.getElementById('recipeImage').src = recipe.image;
+            document.getElementById('recipeImage').alt = recipe.name;
+            document.getElementById('recipeTitle').textContent = recipe.name;
+            document.getElementById('recipePrepTime').textContent = recipe.prepTime;
+            document.getElementById('recipeDifficulty').textContent = recipe.difficulty;
+            document.getElementById('recipeCategory').textContent = recipe.category;
+            
+            // ממלאים מרכיבים
+            const ingredientsList = document.getElementById('ingredientsList');
+            recipe.ingredients.forEach(ingredient => {
+                const li = document.createElement('li');
+                li.textContent = ingredient;
+                ingredientsList.appendChild(li);
+            });
+            
+            // ממלאים הוראות
+            const instructionsList = document.getElementById('instructionsList');
+            recipe.instructions.forEach(instruction => {
+                const li = document.createElement('li');
+                li.textContent = instruction;
+                instructionsList.appendChild(li);
+            });
+        }
+    </script>
+</body>
+</html>
