@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>דוגמת פונט - מתכונים שווים</title>
+    
+    <!-- ייבוא הפונט Heebo מ-Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Heebo', sans-serif;
+            background-color: #F8F7FF; /* הצבע הבהיר ביותר */
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        
+        /* כותרת ראשית */
+        .main-title {
+            font-size: 32px;
+            font-weight: 700;
+            color: #407076; /* הצבע הכהה */
+            margin-bottom: 8px;
+        }
+        
+        /* תת-כותרת */
+        .subtitle {
+            font-size: 18px;
+            font-weight: 300;
+            color: #698996; /* הצבע האמצעי */
+            margin-bottom: 30px;
+        }
+        
+        /* כרטיס מתכון */
+        .recipe-card {
+            background-color: #FFEEDD; /* הצבע הקרמי */
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(64, 112, 118, 0.1);
+        }
+        
+        .recipe-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #407076;
+            margin-bottom: 12px;
+        }
+        
+        .recipe-meta {
+            font-size: 14px;
+            font-weight: 400;
+            color: #698996;
+            margin-bottom: 16px;
+        }
+        
+        .recipe-description {
+            font-size: 16px;
+            font-weight: 400;
+            color: #407076;
+            line-height: 1.6;
+            margin-bottom: 16px;
+        }
+        
+        /* תגיות */
+        .tags {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .tag {
+            background-color: #FFD8BE; /* הצבע האפרסק */
+            color: #407076;
+            font-size: 13px;
+            font-weight: 500;
+            padding: 6px 12px;
+            border-radius: 20px;
+        }
+        
+        /* כפתור */
+        .button {
+            background-color: #407076;
+            color: #F8F7FF;
+            font-size: 16px;
+            font-weight: 500;
+            padding: 14px 24px;
+            border: none;
+            border-radius: 8px;
+            width: 100%;
+            margin-top: 20px;
+            cursor: pointer;
+        }
+        
+        /* סעיף רכיבים */
+        .ingredients-section {
+            background-color: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .section-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #407076;
+            margin-bottom: 16px;
+        }
+        
+        .ingredient-item {
+            font-size: 16px;
+            font-weight: 400;
+            color: #407076;
+            padding: 10px 0;
+            border-bottom: 1px solid #F8F7FF;
+        }
+        
+        .ingredient-item:last-child {
+            border-bottom: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- כותרת האפליקציה -->
+        <h1 class="main-title">מתכונים שווים</h1>
+        <p class="subtitle">כל המתכונים האהובים במקום אחד</p>
+        
+        <!-- כרטיס מתכון לדוגמה -->
+        <div class="recipe-card">
+            <h2 class="recipe-title">עוגת שוקולד פאדג'</h2>
+            <p class="recipe-meta">⏱️ 45 דקות | 👥 8 מנות | 🔥 קל</p>
+            <p class="recipe-description">
+                עוגה עשירה ושוקולדית עם מרקם רך ופנימיות נמסות. 
+                מושלמת לאירוח או לפינוק אישי בסוף השבוע.
+            </p>
+            <div class="tags">
+                <span class="tag">עוגות</span>
+                <span class="tag">שוקולד</span>
+                <span class="tag">קינוחים</span>
+            </div>
+        </div>
+        
+        <!-- סעיף רכיבים -->
+        <div class="ingredients-section">
+            <h3 class="section-title">רכיבים</h3>
+            <div class="ingredient-item">2 כוסות קמח</div>
+            <div class="ingredient-item">1 כוס סוכר</div>
+            <div class="ingredient-item">3/4 כוס קקאו</div>
+            <div class="ingredient-item">2 ביצים</div>
+            <div class="ingredient-item">1/2 כוס שמן</div>
+        </div>
+        
+        <!-- כפתור -->
+        <button class="button">צפייה במתכון המלא</button>
+    </div>
+</body>
+</html>
