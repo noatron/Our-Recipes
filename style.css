@@ -153,6 +153,8 @@ header .logo {
     margin-left: 12px;
     object-fit: contain;
     flex-shrink: 0;
+    background: transparent;
+    padding: 5px;
 }
 
 header h1 {
