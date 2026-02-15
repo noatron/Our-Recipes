@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>הוספת מתכון - מתכונים שווים</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app">
+        <header>
+            <a href="index.html" class="back-link">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m9 18 6-6-6-6"/>
+                </svg>
+                חזור
+            </a>
+            <h1>
+                <img src="Logo.svg" alt="" class="logo">
+                הוספת מתכון חדש
+            </h1>
+        </header>
+
+        <main>
+            <div class="add-recipe-form">
+                
+                <!-- Mode Toggle Tabs -->
+                <div class="mode-tabs">
+                    <button type="button" class="tab-btn active" data-mode="import">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                        </svg>
+                        <span>ייבוא מקישור</span>
+                    </button>
+                    <button type="button" class="tab-btn" data-mode="manual">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path>
+                        </svg>
+                        <span>הזנה ידנית</span>
+                    </button>
+                </div>
+        
+                <!-- Import Mode -->
+                <div id="import-mode" class="mode-content active">
+                    <div class="import-section">
+                        <p class="mode-description">הדביקי קישור למתכון מאתר בישול, והמערכת תייבא אוטומטית את כל הפרטים</p>
+                        
+                        <div class="form-group">
+                            <label for="recipeUrl">קישור למתכון</label>
+                            <input type="url" id="recipeUrl" placeholder="https://www.10dakot.co.il/recipe/...">
+                        </div>
+                        
+                        <button type="button" class="btn-primary" id="importBtn">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                            ייבא מתכון
+                        </button>
+                        
+                        <div id="import-status" class="import-status"></div>
+                        
+                        <div class="import-info">
+                            <p><strong>אתרים נתמכים:</strong></p>
+                            <p class="supported-sites">שיפודון, 10 דקות, טעים מאוד, ועוד...</p>
+                            <p class="fallback-note">אם הייבוא לא עובד, תמיד אפשר לעבור להזנה ידנית ↖️</p>
+                        </div>
+                    </div>
+                </div>
+        
+                <!-- Manual Mode -->
+                <div id="manual-mode" class="mode-content">
+                    <form id="recipeForm">
+                        
+                        <p class="mode-description">מלאי את פרטי המתכון באופן ידני</p>
+        
+                        <!-- שם המתכון -->
+                        <div class="form-group">
+                            <label for="recipeName">שם המתכון *</label>
+                            <input type="text" id="recipeName" required placeholder="לדוגמה: עוגת שוקולד של סבתא">
+                        </div>
+        
+                        <!-- קטגוריה -->
+                        <div class="form-group">
+                            <label for="recipeCategory">קטגוריה *</label>
+                            <select id="recipeCategory" required>
+                                <option value="">בחרי קטגוריה...</option>
+                                <option value="מרקים">מרקים</option>
+                                <option value="עיקריות">עיקריות</option>
+                                <option value="קינוחים">קינוחים</option>
+                                <option value="סלטים">סלטים</option>
+                                <option value="ממרחים">ממרחים</option>
+                                <option value="ארוחות בוקר">ארוחות בוקר</option>
+                            </select>
+                        </div>
+        
+                        <!-- מקור -->
+                        <div class="form-group">
+                            <label for="recipeSource">מקור</label>
+                            <input type="text" id="recipeSource" placeholder="לדוגמה: סבתא רחל">
+                        </div>
+        
+                        <!-- URL לתמונה -->
+                        <div class="form-group">
+                            <label for="recipeImage">קישור לתמונה</label>
+                            <input type="url" id="recipeImage" placeholder="https://example.com/image.jpg">
+                        </div>
+        
+                        <!-- מרכיבים -->
+                        <div class="form-group">
+                            <label for="recipeIngredients">מרכיבים * <span class="hint">(כל שורה = מרכיב)</span></label>
+                            <textarea id="recipeIngredients" required rows="6" placeholder="2 כוסות קמח&#10;3 ביצים&#10;כוס סוכר"></textarea>
+                        </div>
+        
+                        <!-- הוראות הכנה -->
+                        <div class="form-group">
+                            <label for="recipeInstructions">הוראות הכנה * <span class="hint">(כל שורה = שלב)</span></label>
+                            <textarea id="recipeInstructions" required rows="8" placeholder="מחממים תנור ל-180 מעלות&#10;מערבבים מרכיבים יבשים"></textarea>
+                        </div>
+        
+                        <!-- כפתורים -->
+                        <div class="form-actions">
+                            <button type="submit" class="btn-primary">שמור מתכון</button>
+                            <button type="button" class="btn-secondary" onclick="window.location.href='index.html'">ביטול</button>
+                        </div>
+        
+                    </form>
+                </div>
+        
+            </div>
+        </main>
+    </div>
+
+    <script src="add-recipe.js"></script>
+</body>
+</html>

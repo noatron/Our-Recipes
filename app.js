@@ -1,4 +1,3 @@
-
 // מתכונים לדוגמה
 const recipes = [
     {
@@ -112,9 +111,31 @@ function setupSearch() {
     });
 }
 
-// אתחול האפליקציה
+// // אתחול האפליקציה
 document.addEventListener('DOMContentLoaded', () => {
-    displayRecipes(recipes);
+    // בדיקה אם יש מתכונים שמורים ב-localStorage
+    const savedRecipes = localStorage.getItem('recipes');
+    
+    if (savedRecipes) {
+        // אם יש - טוען אותם
+        const recipesFromStorage = JSON.parse(savedRecipes);
+        displayRecipes(recipesFromStorage);
+    } else {
+        // אם אין - שומר את המתכונים הדוגמה ומציג אותם
+        localStorage.setItem('recipes', JSON.stringify(recipes));
+        displayRecipes(recipes);
+    }
+    
     setupSearch();
     console.log('🍽️ האפליקציה טעונה בהצלחה!');
+    
+    // Add Recipe Button - Navigate to add recipe page
+    const addBtn = document.getElementById('add-recipe-btn');
+    if (addBtn) {
+        addBtn.addEventListener('click', () => {
+            window.location.href = 'add-recipe.html';
+        });
+    }
 });
+
+
