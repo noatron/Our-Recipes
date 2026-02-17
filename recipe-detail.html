@@ -305,6 +305,73 @@
             opacity: 0.5;
             color: #698996;
         }
+        .edit-input {
+            width: 100%;
+            background: #F8F7FF;
+            border: none;
+            border-radius: 6px;
+            font-family: 'Varela Round', sans-serif;
+            font-size: 1.1rem;
+            color: #407076;
+            padding: 4px 8px;
+            outline: none;
+            direction: rtl;
+        }
+
+        .edit-title-input {
+            width: 100%;
+            background: #F8F7FF;
+            border: none;
+            border-radius: 6px;
+            font-family: 'Varela Round', sans-serif;
+            font-size: 2.5rem;
+            color: #407076;
+            font-weight: 400;
+            outline: none;
+            direction: rtl;
+            padding: 4px 8px;
+        }
+        .save-button {
+            display: none;
+            width: 100%;
+            background: #407076;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 14px;
+            font-family: 'Varela Round', sans-serif;
+            font-size: 1.1rem;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.3s;
+        }
+
+        .save-button:hover {
+            background: #698996;
+        }
+
+        .save-button.visible {
+            display: block;
+        }
+
+        .cancel-button {
+            display: none;
+            width: 100%;
+            background: transparent;
+            color: #698996;
+            border: 2px solid #698996;
+            border-radius: 12px;
+            padding: 12px;
+            font-family: 'Varela Round', sans-serif;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: all 0.3s;
+        }
+
+        .cancel-button.visible {
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -380,6 +447,15 @@
                 הוראות הכנה
             </h2>
             <ul id="instructionsList" class="instructions-list"></ul>
+
+            <button class="save-button" id="saveButton" onclick="saveEdit()">
+                ✓ שמור שינויים
+            </button>
+            <button class="cancel-button" id="cancelButton" onclick="cancelEdit()">
+                ביטול
+            </button>
+        </div>
+    </div>
         </div>
     </div>
 
@@ -469,11 +545,63 @@ const recipes = JSON.parse(localStorage.getItem('recipes') || '[]');
 }
 
 
-        // פונקציה לעריכת מתכון
-        function editRecipe() {
+     // פונקציה לעריכת מתכון
+     function editRecipe() {
             const menu = document.getElementById('dropdownMenu');
             menu.classList.remove('show');
-            alert('עריכת מתכון תבוא בקרוב! ✏️');
+
+            // שם המתכון - הופך לתיבת טקסט
+            const titleEl = document.getElementById('recipeTitle');
+            titleEl.innerHTML = `<input class="edit-title-input" id="editTitle" value="${recipe.name}">`;
+
+            // מרכיבים - כל פריט הופך לתיבת טקסט
+            const ingredientsList = document.getElementById('ingredientsList');
+            ingredientsList.innerHTML = '';
+            recipe.ingredients.forEach((ingredient, index) => {
+                const li = document.createElement('li');
+                li.innerHTML = `<input class="edit-input" data-index="${index}" data-type="ingredient" value="${ingredient}">`;
+                ingredientsList.appendChild(li);
+            });
+
+            // הוראות - כל פריט הופך לתיבת טקסט
+            const instructionsList = document.getElementById('instructionsList');
+            instructionsList.innerHTML = '';
+            recipe.instructions.forEach((instruction, index) => {
+                const li = document.createElement('li');
+                li.innerHTML = `<input class="edit-input" data-index="${index}" data-type="instruction" value="${instruction}">`;
+                instructionsList.appendChild(li);
+            });
+
+            // מראים כפתורי שמירה וביטול
+            document.getElementById('saveButton').classList.add('visible');
+            document.getElementById('cancelButton').classList.add('visible');
+        }
+
+        // שמירת השינויים
+        function saveEdit() {
+            // קוראים את השם החדש
+            recipe.name = document.getElementById('editTitle').value;
+
+            // קוראים את המרכיבים החדשים
+            const ingredientInputs = document.querySelectorAll('[data-type="ingredient"]');
+            recipe.ingredients = Array.from(ingredientInputs).map(input => input.value).filter(v => v.trim() !== '');
+
+            // קוראים את ההוראות החדשות
+            const instructionInputs = document.querySelectorAll('[data-type="instruction"]');
+            recipe.instructions = Array.from(instructionInputs).map(input => input.value).filter(v => v.trim() !== '');
+
+            // שומרים ב-localStorage
+            const recipeIndex = recipes.findIndex(r => r.id === recipeId);
+            recipes[recipeIndex] = recipe;
+            localStorage.setItem('recipes', JSON.stringify(recipes));
+
+            // טוענים מחדש את הדף כדי לראות את השינויים
+            location.reload();
+        }
+
+        // ביטול עריכה
+        function cancelEdit() {
+            location.reload();
         }
     </script>
 </body>
