@@ -452,20 +452,22 @@ const recipes = JSON.parse(localStorage.getItem('recipes') || '[]');
 
         // פונקציה למחיקת מתכון
         function deleteRecipe() {
-            const menu = document.getElementById('dropdownMenu');
-            menu.classList.remove('show');
-            
-            const confirmDelete = confirm('את בטוחה שאת רוצה למחוק את המתכון "' + recipe.name + '"?');
-            
-            if (confirmDelete) {
-                const recipeIndex = recipes.findIndex(r => r.id === recipeId);
-                if (recipeIndex !== -1) {
-                    recipes.splice(recipeIndex, 1);
-                    alert('המתכון נמחק בהצלחה! ✓');
-                    window.location.href = 'index.html';
-                }
-            }
+    const menu = document.getElementById('dropdownMenu');
+    menu.classList.remove('show');
+    
+    const confirmDelete = confirm('את בטוחה שאת רוצה למחוק את המתכון "' + recipe.name + '"?');
+    
+    if (confirmDelete) {
+        const recipeIndex = recipes.findIndex(r => r.id === recipeId);
+        if (recipeIndex !== -1) {
+            recipes.splice(recipeIndex, 1);
+            localStorage.setItem('recipes', JSON.stringify(recipes));
+            alert('המתכון נמחק בהצלחה! ✓');
+            window.location.href = 'index.html';
         }
+    }
+}
+
 
         // פונקציה לעריכת מתכון
         function editRecipe() {
