@@ -1,652 +1,133 @@
+// מתכונים לדוגמה
+const recipes = [
+    {
+        id: 1,
+        name: "שקשוקה",
+        category: "ארוחות בוקר",
+        source: "סבתא רחל",
+        image: "https://images.unsplash.com/photo-1587217850473-0238d26d4785?w=400&h=300&fit=crop",
+        ingredients: ["6 ביצים", "2 עגבניות", "1 בצל", "2 שיני שום", "פלפל אדום", "כמון", "מלח ופלפל"],
+        instructions: ["חותכים את הבצל והעגבניות לקוביות", "מטגנים את הבצל עד שמזהיב", "מוסיפים את העגבניות והתבלינים", "מבשלים 10 דקות", "עושים גומות ושוברים ביצים", "מכסים ומבשלים עד שהביצים מתקשות"]
+    },
+    {
+        id: 2,
+        name: "פסטה בולונז",
+        category: "עיקריות",
+        source: "אתר טעים",
+        image: "https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=400&h=300&fit=crop",
+        ingredients: ["500 גרם בשר טחון", "פסטה", "רסק עגבניות", "בצל", "שום", "בזיליקום"],
+        instructions: ["מטגנים בצל ושום", "מוסיפים בשר ומשחימים", "מוסיפים רסק עגבניות", "מבשלים 30 דקות", "מבשלים פסטה", "מערבבים ביחד"]
+    },
+    {
+        id: 3,
+        name: "עוגת שוקולד",
+        category: "קינוחים",
+        source: "מגזין אוכל",
+        image: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=400&h=300&fit=crop",
+        ingredients: ["200 גרם שוקולד מריר", "4 ביצים", "כוס סוכר", "חצי כוס קמח", "חצי כוס חמאה"],
+        instructions: ["מחממים תנור ל-180 מעלות", "ממיסים שוקולד וחמאה", "מקציפים ביצים וסוכר", "מערבבים הכל", "אופים 35 דקות"]
+    },
+    {
+        id: 4,
+        name: "סלט ירקות",
+        category: "סלטים",
+        source: "ספר בריאות",
+        image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&h=300&fit=crop",
+        ingredients: ["חסה", "עגבנייה", "מלפפון", "בצל", "לימון", "שמן זית"],
+        instructions: ["חותכים את כל הירקות", "מערבבים בקערה", "מוסיפים לימון ושמן", "מערבבים היטב"]
+    },
+    {
+        id: 5,
+        name: "מרק עוף",
+        category: "מרקים",
+        source: "אמא שלי",
+        image: "https://images.unsplash.com/photo-1547592166-23ac45744acd?w=400&h=300&fit=crop",
+        ingredients: ["עוף שלם", "גזר", "סלרי", "בצל", "שום", "מלח ופלפל"],
+        instructions: ["שמים עוף בסיר", "מוסיפים ירקות ומים", "מבשלים 60 דקות", "מסננים", "מגישים חם"]
+    },
+    {
+        id: 6,
+        name: "פנקייקים",
+        category: "ארוחות בוקר",
+        source: "בלוג בישול",
+        image: "https://images.unsplash.com/photo-1506084868230-bb9d95c24759?w=400&h=300&fit=crop",
+        ingredients: ["2 כוסות קמח", "2 ביצים", "כוס חלב", "סוכר", "אבקת אפייה"],
+        instructions: ["מערבבים מרכיבים יבשים", "מוסיפים ביצים וחלב", "מחממים מחבת", "שופכים בצק", "הופכים כשמופיעים בועות"]
+    },
+    {
+        id: 7,
+        name: "חומוס",
+        category: "ממרחים",
+        source: "דודה מזל",
+        image: "https://images.unsplash.com/photo-1571368295935-d9551b53f6f3?w=400&h=300&fit=crop",
+        ingredients: ["פחית חומוס מבושל", "טחינה גולמית", "לימון", "שום", "כמון", "מלח"],
+        instructions: ["שמים הכל בבלנדר", "טוחנים עד לקבלת מרקם חלק", "טועמים ומתקנים תיבול", "מעבירים לצלחת", "מוסיפים שמן זית מעל"]
+    }
+];
 
-
-<!DOCTYPE html>
-<html lang="he" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>פרטי מתכון</title>
-    <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Varela+Round&display=swap" rel="stylesheet">
-    <style>
-        .recipe-detail {
-            max-width: 800px;
-            margin: 0 auto;
-            background: #FFEEDD;
-            border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-        }
-        
-        .back-button {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: transparent;
-            color: #407076;
-            padding: 8px 16px;
-            border: none;
-            cursor: pointer;
-            font-size: 1.2rem;
-            font-weight: 400;
-            z-index: 1000;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            transition: all 0.3s;
-            font-family: 'Varela Round', sans-serif;
-        }
-        
-        .back-button:hover {
-            color: #698996;
-            background: transparent;
-            transform: translateX(3px);
-            box-shadow: none;
-        }
-
-        /* כותרת עם תפריט */
-        .title-section {
-            position: relative;
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            margin-bottom: 10px;
-        }
-
-        .title-section h1 {
-            flex: 1;
-            margin: 0;
-        }
-
-        /* כפתור תפריט (שלוש נקודות) */
-        .menu-button {
-            background: transparent;
-            border: none;
-            color: #407076;
-            cursor: pointer;
-            padding: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s;
-            margin-right: 10px;
-            flex-shrink: 0;
-        }
-
-        .menu-button:hover {
-            color: #698996;
-            transform: scale(1.1);
-        }
-
-        /* תפריט נפתח */
-        .dropdown-menu {
-            display: none;
-            position: absolute;
-            top: 45px;
-            left: 0;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-            z-index: 100;
-            min-width: 180px;
-            overflow: hidden;
-        }
-
-        .dropdown-menu.show {
-            display: block;
-        }
-
-        .dropdown-menu button {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            width: 100%;
-            padding: 14px 18px;
-            border: none;
-            background: white;
-            color: #407076;
-            font-family: 'Varela Round', sans-serif;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: all 0.2s;
-            text-align: right;
-        }
-
-        .dropdown-menu button:hover {
-            background: #f5f5f5;
-        }
-
-        .dropdown-menu button:last-child {
-            color: #d32f2f;
-        }
-
-        .dropdown-menu button:last-child:hover {
-            background: #ffebee;
-        }
-
-        .dropdown-menu button svg {
-            flex-shrink: 0;
-        }
-
-        .recipe-detail h1 {
-            color: #407076;
-            font-weight: 400;
-            font-size: 2.5rem;
-            margin-bottom: 20px;
-            font-family: 'Varela Round', sans-serif;
-        }
-        
-        .recipe-source-meta {
-            color: #698996;
-            font-size: 1rem;
-            margin-top: 8px;
-            margin-bottom: 20px;
-        }
-
-        .recipe-detail h2 {
-            color: #407076;
-            font-weight: 400;
-            font-size: 1.8rem;
-            margin-top: 30px;
-            margin-bottom: 15px;
-            font-family: 'Varela Round', sans-serif;
-        }
-
-        .recipe-detail p,
-        .recipe-detail li {
-            color: #407076;
-            line-height: 1.6;
-        }
-        
-        .recipe-detail-image {
-            width: 100%;
-            height: 400px;
-            object-fit: cover;
-            border-radius: 15px;
-            margin-bottom: 20px;
-        }
-        
-        .recipe-title {
-            font-size: 2.5rem;
-            margin-bottom: 20px;
-            color: #333;
-        }
-
-        .recipe-info {
-            display: flex;
-            gap: 30px;
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            padding-top: 50px;
-            border-top: 2px solid #FFD8BE;
-            box-shadow: 0 -15px 0 1 #FFD8BE;
-            position: relative;
-        }
-
-        .recipe-info::before {
-            content: '';
-            position: absolute;
-            top: 10px;
-            left: 0;
-            right: 0;
-            border-top: 2px solid #FFD8BE;
-        }
-        
-        .info-item {
-            font-size: 1.1rem;
-            color: #698996;
-        }
-        
-        .section-title {
-            font-size: 1.8rem;
-            color: #407076;
-            margin: 30px 0 15px 0;
-        }
-        
-        /* עיצוב מחברת - מרכיבים */
-        .ingredients-list {
-            list-style: none;
-            padding: 30px 20px;
-            margin: 20px 0;
-            background: 
-                linear-gradient(transparent 0, transparent 39px, #407076 39px, #407076 40px),
-                linear-gradient(90deg, #FFD8BE 0, #FFD8BE 2px, transparent 2px);
-            background-size: 100% 40px, 100% 100%;
-            background-position: 0 0, 40px 0;
-            position: relative;
-            border-radius: 10px;
-        }
-
-        .ingredients-list::before {
-            content: '';
-            position: absolute;
-            right: 40px;
-            top: 0;
-            width: 2px;
-            height: 100%;
-            background: #FFD8BE;
-        }
-
-        .ingredients-list li {
-            padding: 15px 60px 0px 20px;
-            margin: 0;
-            font-family: 'Varela Round', sans-serif;
-            font-size: 1.1rem;
-            line-height: 32px;
-            height: 40px;
-        }
-
-        .ingredients-list li:hover {
-            color: #698996;
-            cursor: pointer;
-        }
-
-        .ingredients-list li.checked {
-            text-decoration: line-through;
-            opacity: 0.5;
-            color: #698996;
-        }
-        
-        /* עיצוב מחברת - הוראות */
-        .instructions-list {
-            list-style: none;
-            counter-reset: step-counter;
-            padding: 30px 20px;
-            margin: 20px 0;
-            background: 
-                linear-gradient(transparent 0, transparent 39px, #407076 39px, #407076 40px),
-                linear-gradient(90deg, #FFD8BE 0, #FFD8BE 2px, transparent 2px);
-            background-size: 100% 40px, 100% 100%;
-            background-position: 0 0, 40px 0;
-            position: relative;
-            border-radius: 10px;
-        }
-
-        .instructions-list::before {
-            content: '';
-            position: absolute;
-            right: 40px;
-            top: 0;
-            width: 2px;
-            height: 100%;
-            background: #FFD8BE;
-        }
-
-        .instructions-list li {
-            counter-increment: step-counter;
-            padding: 12px 60px 0px 20px;
-            margin: 0;
-            font-family: 'Varela Round', sans-serif;
-            font-size: 1.1rem;
-            line-height: 30px;
-            min-height: 40px;
-            color: #407076;
-            cursor: pointer;
-            transition: all 0.3s;
-            background: transparent;
-            border: none;
-            position: relative;
-        }
-
-        .instructions-list li::before {
-            content: counter(step-counter) ".";
-            position: absolute;
-            right: 25px;
-            top: 16px;
-            font-family: 'Varela Round', sans-serif;
-            color: #407076;
-            font-size: 1.1rem;
-        }
-
-        .instructions-list li:hover {
-            color: #698996;
-        }
-
-        .instructions-list li.checked {
-            text-decoration: line-through;
-            opacity: 0.5;
-            color: #698996;
-        }
-        .edit-input {
-            width: 100%;
-            background: #F8F7FF;
-            border: none;
-            border-radius: 6px;
-            font-family: 'Varela Round', sans-serif;
-            font-size: 1.1rem;
-            color: #407076;
-            padding: 4px 8px;
-            outline: none;
-            direction: rtl;
-        }
-
-        .edit-title-input {
-            width: 100%;
-            background: #F8F7FF;
-            border: none;
-            border-radius: 6px;
-            font-family: 'Varela Round', sans-serif;
-            font-size: 2.5rem;
-            color: #407076;
-            font-weight: 400;
-            outline: none;
-            direction: rtl;
-            padding: 4px 8px;
-        }
-        .save-button {
-            display: none;
-            width: 100%;
-            background: #407076;
-            color: white;
-            border: none;
-            border-radius: 12px;
-            padding: 14px;
-            font-family: 'Varela Round', sans-serif;
-            font-size: 1.1rem;
-            cursor: pointer;
-            margin-top: 20px;
-            transition: all 0.3s;
-        }
-
-        .save-button:hover {
-            background: #698996;
-        }
-
-        .save-button.visible {
-            display: block;
-        }
-
-        .cancel-button {
-            display: none;
-            width: 100%;
-            background: transparent;
-            color: #698996;
-            border: 2px solid #698996;
-            border-radius: 12px;
-            padding: 12px;
-            font-family: 'Varela Round', sans-serif;
-            font-size: 1rem;
-            cursor: pointer;
-            margin-top: 10px;
-            transition: all 0.3s;
-        }
-
-        .cancel-button.visible {
-            display: block;
-        }
-    </style>
-</head>
-<body>
-    <button class="back-button" onclick="goBack()">
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="m9 18 6-6-6-6"/>
-        </svg>
-        חזור
-    </button>
-
-    <div id="app">
-        <div class="recipe-detail">
-            <img id="recipeImage" src="" alt="" class="recipe-detail-image">
-            
-            <div class="title-section">
-                <h1 id="recipeTitle"></h1>
-                <button class="menu-button" onclick="toggleMenu()">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="1"/>
-                        <circle cx="12" cy="5" r="1"/>
-                        <circle cx="12" cy="19" r="1"/>
-                    </svg>
-                </button>
-                
-                <div class="dropdown-menu" id="dropdownMenu">
-                    <button onclick="editRecipe()">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
-                            <path d="m15 5 4 4"/>
-                        </svg>
-                        ערוך מתכון
-                    </button>
-                    <button onclick="deleteRecipe()">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M3 6h18"/>
-                            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
-                            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
-                            <line x1="10" x2="10" y1="11" y2="17"/>
-                            <line x1="14" x2="14" y1="11" y2="17"/>
-                        </svg>
-                        מחק מתכון
-                    </button>
+// פונקציה להצגת המתכונים
+function displayRecipes(recipesToShow) {
+    const recipesContainer = document.getElementById('recipes');
+    
+    if (recipesToShow.length === 0) {
+        recipesContainer.innerHTML = '<div class="no-recipes">לא נמצאו מתכונים 😔</div>';
+        return;
+    }
+    
+    recipesContainer.innerHTML = recipesToShow.map(recipe => `
+        <div class="recipe-card" onclick="showRecipe(${recipe.id})">
+            <img src="${recipe.image}" alt="" class="recipe-image" onerror="this.style.display='none'">
+            <div class="recipe-content">
+                <h2 class="recipe-name">${recipe.name}</h2>
+                <div class="recipe-meta"></div>
+                <div>
+                    <span class="recipe-category">${recipe.category}</span>
                 </div>
             </div>
-
-            <p class="recipe-source-meta" id="recipeSourceContainer" style="display: none;">
-                <span id="recipeSource"></span>
-            </p>
-            
-            <div class="recipe-info">
-                <span class="info-item"><span id="recipeCategory"></span></span>
-            </div>
-            
-            <h2 class="section-title">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-left: 8px;">
-                    <path d="M3 5h.01"/>
-                    <path d="M3 12h.01"/>
-                    <path d="M3 19h.01"/>
-                    <path d="M8 5h13"/>
-                    <path d="M8 12h13"/>
-                    <path d="M8 19h13"/>
-                </svg> 
-                מרכיבים
-            </h2>
-
-            <ul id="ingredientsList" class="ingredients-list"></ul>
-            
-            <h2 class="section-title">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-left: 8px;">
-                    <path d="M17 21a1 1 0 0 0 1-1v-5.35c0-.457.316-.844.727-1.041a4 4 0 0 0-2.134-7.589 5 5 0 0 0-9.186 0 4 4 0 0 0-2.134 7.588c.411.198.727.585.727 1.041V20a1 1 0 0 0 1 1Z"/>
-                    <path d="M6 17h12"/>
-                </svg> 
-                הוראות הכנה
-            </h2>
-            <ul id="instructionsList" class="instructions-list"></ul>
-
-            <button class="save-button" id="saveButton" onclick="saveEdit()">
-                ✓ שמור שינויים
-            </button>
-            <button class="cancel-button" id="cancelButton" onclick="cancelEdit()">
-                ביטול
-            </button>
         </div>
-    </div>
-        </div>
-    </div>
-
-    <script>
-        function goBack() {
-            window.location.href = 'index.html';
-        }
-
-        // פונקציה לפתיחה/סגירה של התפריט
-        function toggleMenu() {
-            const menu = document.getElementById('dropdownMenu');
-            menu.classList.toggle('show');
-        }
-
-        // סגירת התפריט בלחיצה מחוץ לו
-        window.onclick = function(event) {
-            if (!event.target.matches('.menu-button') && !event.target.closest('.menu-button')) {
-                const menu = document.getElementById('dropdownMenu');
-                if (menu.classList.contains('show')) {
-                    menu.classList.remove('show');
-                }
-            }
-        }
-        
-       
-
-        // קריאה של מזהה המתכון מ-localStorage
-const recipeId = parseInt(localStorage.getItem('selectedRecipeId'));
-
-const recipes = JSON.parse(localStorage.getItem('recipes') || '[]');
-
-        // מוצאים את המתכון הנבחר
-        const recipe = recipes.find(r => r.id === recipeId);
-
-        if (recipe) {
-            // ממלאים את המידע בעמוד
-            document.getElementById('recipeImage').src = recipe.image;
-            document.getElementById('recipeImage').alt = recipe.name;
-            document.getElementById('recipeTitle').textContent = recipe.name;
-            document.getElementById('recipeCategory').textContent = recipe.category;
-            
-            // מציג מקור רק אם קיים
-            if (recipe.source) {
-                try {
-                    document.getElementById('recipeSource').textContent = recipe.url ? new URL(recipe.url).hostname : recipe.source;
-                } catch(e) {
-                    document.getElementById('recipeSource').textContent = recipe.source || '';
-                }
-                document.getElementById('recipeSourceContainer').style.display = 'block';
-            }
-            // אם יש קישור - מציגים iframe במקום מרכיבים והוראות
-if (recipe.url) {
-    document.querySelector('.section-title').style.display = 'none';
-    document.querySelectorAll('.section-title')[1].style.display = 'none';
-    document.getElementById('ingredientsList').style.display = 'none';
-    document.getElementById('instructionsList').style.display = 'none';
-    
-    const iframe = document.createElement('iframe');
-    iframe.src = recipe.url;
-    iframe.style.cssText = 'width:100%; height:80vh; border:none; border-radius:12px; margin-top:20px;';
-    document.querySelector('.recipe-detail').appendChild(iframe);
-} // סוף else
-            
-            // ממלאים מרכיבים
-            const ingredientsList = document.getElementById('ingredientsList');
-            recipe.ingredients.forEach(ingredient => {
-                const li = document.createElement('li');
-                li.textContent = ingredient;
-                li.addEventListener('click', function() {
-                    this.classList.toggle('checked');
-                });
-                ingredientsList.appendChild(li);
-            });
-            
-            // ממלאים הוראות
-            const instructionsList = document.getElementById('instructionsList');
-            recipe.instructions.forEach(instruction => {
-                const li = document.createElement('li');
-                li.textContent = instruction;
-                li.addEventListener('click', function() {
-                    this.classList.toggle('checked');
-                });
-                instructionsList.appendChild(li);
-            });
-        }
-
-        // פונקציה למחיקת מתכון
-        function deleteRecipe() {
-    const menu = document.getElementById('dropdownMenu');
-    menu.classList.remove('show');
-    
-    const confirmDelete = confirm('את בטוחה שאת רוצה למחוק את המתכון "' + recipe.name + '"?');
-    
-    if (confirmDelete) {
-        const recipeIndex = recipes.findIndex(r => r.id === recipeId);
-        if (recipeIndex !== -1) {
-            recipes.splice(recipeIndex, 1);
-            localStorage.setItem('recipes', JSON.stringify(recipes));
-            alert('המתכון נמחק בהצלחה! ✓');
-            window.location.href = 'index.html';
-        }
-    }
+    `).join('');
 }
 
+// פונקציה להצגת מתכון ספציפי
+function showRecipe(id) {
+    localStorage.setItem('selectedRecipeId', id);
+    window.location.href = 'recipe-detail.html';
+}
 
-        // פונקציה לעריכת מתכון - מחליטה איזה סוג עריכה לפתוח
-        function editRecipe() {
-            const menu = document.getElementById('dropdownMenu');
-            menu.classList.remove('show');
+// פונקציה לחיפוש מתכונים
+function setupSearch() {
+    const searchInput = document.getElementById('searchInput');
+    
+    searchInput.addEventListener('input', (e) => {
+        const searchTerm = e.target.value.toLowerCase();
+        const savedRecipes = JSON.parse(localStorage.getItem('recipes') || '[]');
+        const filtered = savedRecipes.filter(recipe =>
+            recipe.name.toLowerCase().includes(searchTerm) ||
+            recipe.category.toLowerCase().includes(searchTerm)
+        );
+        displayRecipes(filtered);
+    });
+}
 
-            if (recipe.url) {
-                editLinkRecipe();
-            } else {
-                editFullRecipe();
-            }
-        }
-
-        // עריכת מתכון מקישור - רק שם, קטגוריה ותמונה
-        function editLinkRecipe() {
-            const titleEl = document.getElementById('recipeTitle');
-            titleEl.innerHTML = `<input class="edit-title-input" id="editTitle" value="${recipe.name}">`;
-
-            const categoryEl = document.getElementById('recipeCategory');
-            categoryEl.innerHTML = `<input class="edit-input" id="editCategory" value="${recipe.category}" placeholder="קטגוריה">`;
-
-            const img = document.getElementById('recipeImage');
-            img.insertAdjacentHTML('afterend', `
-                <input class="edit-input" id="editImage" 
-                       value="${recipe.image || ''}" 
-                       placeholder="קישור לתמונה (URL)"
-                       style="margin-bottom: 15px;">
-            `);
-
-            document.getElementById('saveButton').classList.add('visible');
-            document.getElementById('cancelButton').classList.add('visible');
-        }
-
-        // עריכת מתכון רגיל - שם, מרכיבים והוראות
-        function editFullRecipe() {
-            const titleEl = document.getElementById('recipeTitle');
-            titleEl.innerHTML = `<input class="edit-title-input" id="editTitle" value="${recipe.name}">`;
-
-            const ingredientsList = document.getElementById('ingredientsList');
-            ingredientsList.innerHTML = '';
-            recipe.ingredients.forEach((ingredient, index) => {
-                const li = document.createElement('li');
-                li.innerHTML = `<input class="edit-input" data-index="${index}" data-type="ingredient" value="${ingredient}">`;
-                ingredientsList.appendChild(li);
-            });
-
-            const instructionsList = document.getElementById('instructionsList');
-            instructionsList.innerHTML = '';
-            recipe.instructions.forEach((instruction, index) => {
-                const li = document.createElement('li');
-                li.innerHTML = `<input class="edit-input" data-index="${index}" data-type="instruction" value="${instruction}">`;
-                instructionsList.appendChild(li);
-            });
-
-            document.getElementById('saveButton').classList.add('visible');
-            document.getElementById('cancelButton').classList.add('visible');
-        }
-
-        // שמירת השינויים
-        function saveEdit() {
-            recipe.name = document.getElementById('editTitle').value;
-
-            if (recipe.url) {
-                const categoryInput = document.getElementById('editCategory');
-                const imageInput = document.getElementById('editImage');
-                if (categoryInput) recipe.category = categoryInput.value;
-                if (imageInput) recipe.image = imageInput.value;
-            } else {
-                const ingredientInputs = document.querySelectorAll('[data-type="ingredient"]');
-                recipe.ingredients = Array.from(ingredientInputs).map(input => input.value).filter(v => v.trim() !== '');
-
-                const instructionInputs = document.querySelectorAll('[data-type="instruction"]');
-                recipe.instructions = Array.from(instructionInputs).map(input => input.value).filter(v => v.trim() !== '');
-            }
-
-            const recipeIndex = recipes.findIndex(r => r.id === recipeId);
-            recipes[recipeIndex] = recipe;
-            localStorage.setItem('recipes', JSON.stringify(recipes));
-            location.reload();
-        }
-
-        // ביטול עריכה
-        function cancelEdit() {
-            location.reload();
-        }
-    </script>
-</body>
-</html>
+// אתחול האפליקציה
+document.addEventListener('DOMContentLoaded', () => {
+    const savedRecipes = localStorage.getItem('recipes');
+    
+    if (savedRecipes) {
+        const recipesFromStorage = JSON.parse(savedRecipes);
+        displayRecipes(recipesFromStorage);
+    } else {
+        localStorage.setItem('recipes', JSON.stringify(recipes));
+        displayRecipes(recipes);
+    }
+    
+    setupSearch();
+    console.log('🍽️ האפליקציה טעונה בהצלחה!');
+    
+    const addBtn = document.getElementById('add-recipe-btn');
+    if (addBtn) {
+        addBtn.addEventListener('click', () => {
+            window.location.href = 'add-recipe.html';
+        });
+    }
+});
