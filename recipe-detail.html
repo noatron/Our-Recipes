@@ -499,7 +499,7 @@ const recipes = JSON.parse(localStorage.getItem('recipes') || '[]');
             
             // מציג מקור רק אם קיים
             if (recipe.source) {
-                document.getElementById('recipeSource').textContent = recipe.source;
+                document.getElementById('recipeSource').textContent = recipe.url ? new URL(recipe.url).hostname : recipe.source;
                 document.getElementById('recipeSourceContainer').style.display = 'block';
             }
             // אם יש קישור - מציגים iframe במקום מרכיבים והוראות
