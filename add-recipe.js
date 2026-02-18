@@ -22,11 +22,34 @@ document.addEventListener('DOMContentLoaded', () => {
     const importStatus = document.getElementById('import-status');
 
     importBtn.addEventListener('click', () => {
-        const url = document.getElementById('recipeUrl').value;
+        const url = document.getElementById('recipeUrl').value.trim();
         if (!url) {
             importStatus.className = 'import-status error';
             importStatus.textContent = '⚠️ נא להזין קישור למתכון';
             return;
+        }
+    
+        // שומרים מתכון עם קישור
+        const savedRecipes = JSON.parse(localStorage.getItem('recipes') || '[]');
+        const newId = savedRecipes.length > 0
+            ? Math.max(...savedRecipes.map(r => r.id)) + 1
+            : 1;
+    
+        const newRecipe = {
+            id: newId,
+            name: 'מתכון חדש',
+            category: 'עיקריות',
+            source: url,
+            image: '',
+            url: url,
+            ingredients: [],
+            instructions: []
+        };
+    
+        savedRecipes.push(newRecipe);
+        localStorage.setItem('recipes', JSON.stringify(savedRecipes));
+        window.location.href = 'index.html';
+    });
         }
         importStatus.className = 'import-status loading';
         importStatus.textContent = '⏳ מייבא מתכון...';

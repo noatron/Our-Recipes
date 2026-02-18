@@ -502,6 +502,18 @@ const recipes = JSON.parse(localStorage.getItem('recipes') || '[]');
                 document.getElementById('recipeSource').textContent = recipe.source;
                 document.getElementById('recipeSourceContainer').style.display = 'block';
             }
+            // אם יש קישור - מציגים iframe במקום מרכיבים והוראות
+if (recipe.url) {
+    document.querySelector('.section-title').style.display = 'none';
+    document.querySelectorAll('.section-title')[1].style.display = 'none';
+    document.getElementById('ingredientsList').style.display = 'none';
+    document.getElementById('instructionsList').style.display = 'none';
+    
+    const iframe = document.createElement('iframe');
+    iframe.src = recipe.url;
+    iframe.style.cssText = 'width:100%; height:80vh; border:none; border-radius:12px; margin-top:20px;';
+    document.querySelector('.recipe-detail').appendChild(iframe);
+} // סוף else
             
             // ממלאים מרכיבים
             const ingredientsList = document.getElementById('ingredientsList');
