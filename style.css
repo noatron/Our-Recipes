@@ -511,4 +511,46 @@ header .logo {
 .back-link:hover {
     color: #698996;
     transform: translateX(-3px);  /* שינוי מ-3px ל--3px */
+}@media (max-width: 768px) {
+    /* הקוד הקיים... */
+    
+    /* מוסיפים את זה: */
+    .recipe-card {
+        min-height: 120px;
+    }
+
+    .recipe-content {
+        padding: 15px;
+    }
+
+    .recipe-name {
+        font-size: 1.3rem;
+    }
+
+    .floating-add-btn {
+        bottom: 16px;
+        right: 16px;
+    }
+}
+
+    .recipe-detail h1 {
+        font-size: 1.8rem;
+    }
+
+    .ingredients-list li {
+        height: auto;
+        min-height: 40px;
+        white-space: normal;
+        word-break: break-word;
+    }
+
+    .instructions-list li {
+        white-space: normal;
+        word-break: break-word;
+    }
+
+    .back-button {
+        top: 10px;
+        right: 10px;
+    }
 }
