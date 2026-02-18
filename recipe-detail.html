@@ -566,14 +566,52 @@ if (recipe.url) {
             const titleEl = document.getElementById('recipeTitle');
             titleEl.innerHTML = `<input class="edit-title-input" id="editTitle" value="${recipe.name}">`;
 
-            // מרכיבים - כל פריט הופך לתיבת טקסט
-            const ingredientsList = document.getElementById('ingredientsList');
-            ingredientsList.innerHTML = '';
-            recipe.ingredients.forEach((ingredient, index) => {
-                const li = document.createElement('li');
-                li.innerHTML = `<input class="edit-input" data-index="${index}" data-type="ingredient" value="${ingredient}">`;
-                ingredientsList.appendChild(li);
-            });
+            function editLinkRecipe() {
+    // שם המתכון
+    const titleEl = document.getElementById('recipeTitle');
+    titleEl.innerHTML = `<input class="edit-title-input" id="editTitle" value="${recipe.name}">`;
+
+    // קטגוריה - הופכת לתיבת טקסט
+    const categoryEl = document.getElementById('recipeCategory');
+    categoryEl.innerHTML = `<input class="edit-input" id="editCategory" value="${recipe.category}" placeholder="קטגוריה">`;
+
+    // תמונה - מוסיפים שדה URL מתחת לתמונה הקיימת
+    const img = document.getElementById('recipeImage');
+    img.insertAdjacentHTML('afterend', `
+        <input class="edit-input" id="editImage" 
+               value="${recipe.image || ''}" 
+               placeholder="קישור לתמונה (URL)"
+               style="margin-bottom: 15px;">
+    `);
+
+    document.getElementById('saveButton').classList.add('visible');
+    document.getElementById('cancelButton').classList.add('visible');
+}
+
+function editFullRecipe() {
+    // הקוד הקיים שלך מ-editRecipe
+    const titleEl = document.getElementById('recipeTitle');
+    titleEl.innerHTML = `<input class="edit-title-input" id="editTitle" value="${recipe.name}">`;
+
+    const ingredientsList = document.getElementById('ingredientsList');
+    ingredientsList.innerHTML = '';
+    recipe.ingredients.forEach((ingredient, index) => {
+        const li = document.createElement('li');
+        li.innerHTML = `<input class="edit-input" data-index="${index}" data-type="ingredient" value="${ingredient}">`;
+        ingredientsList.appendChild(li);
+    });
+
+    const instructionsList = document.getElementById('instructionsList');
+    instructionsList.innerHTML = '';
+    recipe.instructions.forEach((instruction, index) => {
+        const li = document.createElement('li');
+        li.innerHTML = `<input class="edit-input" data-index="${index}" data-type="instruction" value="${instruction}">`;
+        instructionsList.appendChild(li);
+    });
+
+    document.getElementById('saveButton').classList.add('visible');
+    document.getElementById('cancelButton').classList.add('visible');
+}
 
             // הוראות - כל פריט הופך לתיבת טקסט
             const instructionsList = document.getElementById('instructionsList');
@@ -591,13 +629,28 @@ if (recipe.url) {
 
         // שמירת השינויים
         function saveEdit() {
-            // קוראים את השם החדש
-            recipe.name = document.getElementById('editTitle').value;
+    recipe.name = document.getElementById('editTitle').value;
 
-            // קוראים את המרכיבים החדשים
-            const ingredientInputs = document.querySelectorAll('[data-type="ingredient"]');
-            recipe.ingredients = Array.from(ingredientInputs).map(input => input.value).filter(v => v.trim() !== '');
+    if (recipe.url) {
+        // שמירת עריכת מתכון מקישור
+        const categoryInput = document.getElementById('editCategory');
+        const imageInput = document.getElementById('editImage');
+        if (categoryInput) recipe.category = categoryInput.value;
+        if (imageInput) recipe.image = imageInput.value;
+    } else {
+        // שמירת עריכת מתכון רגיל
+        const ingredientInputs = document.querySelectorAll('[data-type="ingredient"]');
+        recipe.ingredients = Array.from(ingredientInputs).map(input => input.value).filter(v => v.trim() !== '');
 
+        const instructionInputs = document.querySelectorAll('[data-type="instruction"]');
+        recipe.instructions = Array.from(instructionInputs).map(input => input.value).filter(v => v.trim() !== '');
+    }
+
+    const recipeIndex = recipes.findIndex(r => r.id === recipeId);
+    recipes[recipeIndex] = recipe;
+    localStorage.setItem('recipes', JSON.stringify(recipes));
+    location.reload();
+}
             // קוראים את ההוראות החדשות
             const instructionInputs = document.querySelectorAll('[data-type="instruction"]');
             recipe.instructions = Array.from(instructionInputs).map(input => input.value).filter(v => v.trim() !== '');
