@@ -76,7 +76,7 @@ function displayRecipes(recipesToShow) {
     
     recipesContainer.innerHTML = recipesToShow.map(recipe => `
         <div class="recipe-card" onclick="showRecipe(${recipe.id})">
-            <img src="${recipe.image}" alt="" class="recipe-image" onerror="this.style.display='none'">
+            <img src="${recipe.image || 'https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=400&h=200&fit=crop'}" alt="" class="recipe-image" onerror="this.style.display='none'">
             <div class="recipe-content">
                 <h2 class="recipe-name">${recipe.name}</h2>
                 <div class="recipe-meta"></div>
