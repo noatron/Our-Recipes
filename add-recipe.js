@@ -28,13 +28,12 @@ document.addEventListener('DOMContentLoaded', () => {
             importStatus.textContent = '⚠️ נא להזין קישור למתכון';
             return;
         }
-    
-        // שומרים מתכון עם קישור
+
         const savedRecipes = JSON.parse(localStorage.getItem('recipes') || '[]');
         const newId = savedRecipes.length > 0
             ? Math.max(...savedRecipes.map(r => r.id)) + 1
             : 1;
-    
+
         const newRecipe = {
             id: newId,
             name: 'מתכון חדש',
@@ -45,18 +44,10 @@ document.addEventListener('DOMContentLoaded', () => {
             ingredients: [],
             instructions: []
         };
-    
+
         savedRecipes.push(newRecipe);
         localStorage.setItem('recipes', JSON.stringify(savedRecipes));
         window.location.href = 'index.html';
-    });
-        }
-        importStatus.className = 'import-status loading';
-        importStatus.textContent = '⏳ מייבא מתכון...';
-        setTimeout(() => {
-            importStatus.className = 'import-status error';
-            importStatus.textContent = '⚠️ הייבוא האוטומטי עדיין לא מוכן. בינתיים, אפשר להשתמש בהזנה ידנית ↖️';
-        }, 1500);
     });
 
     const recipeForm = document.getElementById('recipeForm');
@@ -70,31 +61,20 @@ document.addEventListener('DOMContentLoaded', () => {
             const image = document.getElementById('recipeImage').value || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=300&fit=crop';
 
             const ingredientsText = document.getElementById('recipeIngredients').value;
-            const ingredients = ingredientsText.split('\n')
-                .filter(line => line.trim() !== '');
+            const ingredients = ingredientsText.split('\n').filter(line => line.trim() !== '');
 
             const instructionsText = document.getElementById('recipeInstructions').value;
-            const instructions = instructionsText.split('\n')
-                .filter(line => line.trim() !== '');
+            const instructions = instructionsText.split('\n').filter(line => line.trim() !== '');
 
             const savedRecipes = JSON.parse(localStorage.getItem('recipes') || '[]');
             const newId = savedRecipes.length > 0
                 ? Math.max(...savedRecipes.map(r => r.id)) + 1
                 : 1;
 
-            const newRecipe = {
-                id: newId,
-                name,
-                category,
-                source,
-                image,
-                ingredients,
-                instructions
-            };
+            const newRecipe = { id: newId, name, category, source, image, ingredients, instructions };
 
             savedRecipes.push(newRecipe);
             localStorage.setItem('recipes', JSON.stringify(savedRecipes));
-
             window.location.href = 'index.html';
         });
     }
