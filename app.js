@@ -165,7 +165,13 @@ function displayRecipes(recipesToShow) {
                 ${sourceLabel ? `<p class="recipe-source">${escapeHtml(sourceLabel)}</p>` : ''}
                 <div style="display:flex; align-items:center; justify-content:space-between; margin-top: 4px;">
                     <span class="recipe-category">${escapeHtml(recipe.category || '')}</span>
-                    <button onclick="quickEdit('${recipe.id}')" style="background:none; border:none; cursor:pointer; color:#407076; font-size:0.85rem; padding: 4px 8px; border-radius: 8px; font-family: inherit;">✏️ ערוך</button>
+                  <div class="recipe-menu-wrapper">
+    <button class="recipe-menu-btn" onclick="toggleRecipeMenu(event, '${recipe.id}')">⋮</button>
+    <div class="recipe-menu-dropdown" id="menu-${recipe.id}">
+        <button onclick="quickEdit('${recipe.id}')">✏️ ערוך</button>
+        <button onclick="deleteRecipe('${recipe.id}')">🗑️ מחק</button>
+    </div>
+</div>
                 </div>
             </div>
         </div>
@@ -271,7 +277,30 @@ function escapeHtml(str) {
     div.textContent = str;
     return div.innerHTML;
 }
+window.toggleRecipeMenu = function(e, id) {
+    e.stopPropagation();
+    // סגור כל התפריטים הפתוחים
+    document.querySelectorAll('.recipe-menu-dropdown.open').forEach(el => {
+        if (el.id !== `menu-${id}`) el.classList.remove('open');
+    });
+    document.getElementById(`menu-${id}`)?.classList.toggle('open');
+}
 
+window.deleteRecipe = async function(id) {
+    if (!confirm('למחוק את המתכון? לא ניתן לשחזר')) return;
+    try {
+        const { deleteDoc, doc: firestoreDoc } = await import("https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js");
+        await deleteDoc(firestoreDoc(db, 'recipes', id));
+        location.reload();
+    } catch (err) {
+        console.error(err);
+        alert('שגיאה במחיקה, נסי שוב');
+    }
+}
+
+document.addEventListener('click', () => {
+    document.querySelectorAll('.recipe-menu-dropdown.open').forEach(el => el.classList.remove('open'));
+});
 document.addEventListener('DOMContentLoaded', () => {
     initApp().catch(err => {
         console.error('initApp rejected:', err);

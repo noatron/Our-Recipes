@@ -589,3 +589,62 @@ header .logo {
     background: #407076;
     color: white;
 }
+.recipe-menu-wrapper {
+    position: relative;
+}
+
+.recipe-menu-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #407076;
+    font-size: 1.3rem;
+    padding: 2px 8px;
+    border-radius: 8px;
+    line-height: 1;
+    font-family: inherit;
+}
+
+.recipe-menu-btn:hover {
+    background: #e8f0f1;
+}
+
+.recipe-menu-dropdown {
+    display: none;
+    position: absolute;
+    left: 0;
+    top: 100%;
+    background: white;
+    border: 1px solid #c5d9dc;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+    z-index: 100;
+    min-width: 120px;
+    overflow: hidden;
+}
+
+.recipe-menu-dropdown.open {
+    display: block;
+}
+
+.recipe-menu-dropdown button {
+    display: block;
+    width: 100%;
+    padding: 10px 16px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-align: right;
+    font-family: 'Varela Round', sans-serif;
+    font-size: 0.9rem;
+    color: #333;
+}
+
+.recipe-menu-dropdown button:hover {
+    background: #f0f7f8;
+}
+
+.recipe-menu-dropdown button:last-child:hover {
+    background: #fff0f0;
+    color: #c62828;
+}
