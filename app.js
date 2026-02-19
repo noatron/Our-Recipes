@@ -173,6 +173,48 @@ async function initApp() {
         displayRecipes(recipes);
         setupSearch(recipes);
         setupCategoryFilter(recipes);
+        // כפתור רענון זמני
+const refreshAllBtn = document.createElement('button');
+refreshAllBtn.textContent = '🔄 רענן שמות ותמונות';
+refreshAllBtn.style.cssText = 'position:fixed; bottom:90px; right:24px; z-index:1000; background:#d32f2f; color:white; border:none; border-radius:20px; padding:10px 16px; font-family:Varela Round,sans-serif; cursor:pointer;';
+document.body.appendChild(refreshAllBtn);
+
+refreshAllBtn.addEventListener('click', async () => {
+    const toRefresh = recipes.filter(r => r.url && (!r.name || r.name === 'מתכון' || r.name === 'Error response' || r.name === 'מתכון חדש'));
+    if (toRefresh.length === 0) { alert('אין מתכונים לרענון!'); return; }
+    
+    if (!confirm(`נרענן ${toRefresh.length} מתכונים. זה ייקח כמה דקות. להמשיך?`)) return;
+    
+    refreshAllBtn.disabled = true;
+    let done = 0;
+    
+    for (const recipe of toRefresh) {
+        try {
+            const proxyUrl = `/.netlify/functions/fetch-recipe?url=${encodeURIComponent(recipe.url)}`;
+            const response = await fetch(proxyUrl);
+            const html = await response.text();
+            const parser = new DOMParser();
+            const parsed = parser.parseFromString(html, 'text/html');
+            
+            const ogTitle = parsed.querySelector('meta[property="og:title"]');
+            const title = parsed.querySelector('title');
+            const ogImage = parsed.querySelector('meta[property="og:image"]');
+            
+            const name = ogTitle?.content || title?.textContent?.split('|')[0]?.split('-')[0]?.trim() || 'מתכון';
+            const image = ogImage?.content || recipe.image;
+            
+            await setDoc(doc(db, 'recipes', recipe.id), { ...recipe, name, image });
+            done++;
+            refreshAllBtn.textContent = `🔄 ${done}/${toRefresh.length}...`;
+        } catch (e) {
+            console.warn('נכשל:', recipe.url);
+        }
+        await new Promise(r => setTimeout(r, 1000));
+    }
+    
+    alert(`✅ סיום! ${done} מתכונים עודכנו.`);
+    location.reload();
+});
         
     } catch (err) {
         console.error('שגיאה בטעינת מתכונים:', err);
