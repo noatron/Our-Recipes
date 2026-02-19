@@ -45,10 +45,22 @@ export function extractRecipeImage(doc, url) {
 export async function fetchRecipeMeta(url) {
     const proxyUrl = `/.netlify/functions/fetch-recipe?url=${encodeURIComponent(url)}`;
     const response = await fetch(proxyUrl);
+    
+    if (!response.ok) {
+        throw new Error(`שגיאת שרת: ${response.status}`);
+    }
+    
     const html = await response.text();
+    console.log('HTML התקבל, אורך:', html.length);
+    
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, 'text/html');
     const name = extractRecipeName(doc, url) || 'מתכון';
     const image = extractRecipeImage(doc, url);
+    
+    console.log('שם שחולץ:', name);
+    console.log('תמונה שחולצה:', image);
+    
     return { name, image };
+
 }
