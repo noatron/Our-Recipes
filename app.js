@@ -1,8 +1,9 @@
-import { db } from './firebase.js';
-import { collection, getDocs, setDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
-const CATEGORIES = ['הכל', 'כללי', 'מרקים', 'בשרי', 'חלבי', 'פרווה', 'קינוחים', 'לחמים', 'סלטים', 'תוספות'];
-const EDIT_CATEGORIES = ['כללי', 'מרקים', 'בשרי', 'חלבי', 'פרווה', 'קינוחים', 'לחמים', 'סלטים', 'תוספות'];
+import { db } from './firebase.js';
+import { collection, getDocs, setDoc, doc } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+
+const CATEGORIES = ['הכל', 'עיקריות', 'תוספות', 'סלטים', 'מרקים', 'קינוחים', 'עוגות', 'עוגיות', 'מאפים', 'לחמים', 'כללי', 'ממרחים'];
+const EDIT_CATEGORIES = ['עיקריות', 'תוספות', 'סלטים', 'מרקים', 'קינוחים', 'עוגות', 'עוגיות', 'מאפים', 'לחמים', 'כללי', 'ממרחים'];
 
 const defaultRecipes = [
     {
@@ -109,10 +110,7 @@ function openQuickEdit(recipe, e) {
             </select>
             
             <label style="display:block; margin-bottom: 4px; color: #407076; font-size: 0.9rem;">קישור לתמונה</label>
-            <input id="qe-image" value="${escapeHtml(recipe.image || '')}" placeholder="https://..." style="width:100%; padding: 8px 12px; border: 1px solid #c5d9dc; border-radius: 8px; font-family: inherit; font-size: 0.9rem; box-sizing: border-box; margin-bottom: 12px;">
-            
-            <label style="display:block; margin-bottom: 4px; color: #407076; font-size: 0.9rem;">הוסיף/ה</label>
-            <input id="qe-addedby" value="${escapeHtml(recipe.addedBy || '')}" placeholder="שם המוסיף..." style="width:100%; padding: 8px 12px; border: 1px solid #c5d9dc; border-radius: 8px; font-family: inherit; font-size: 0.9rem; box-sizing: border-box; margin-bottom: 20px;">
+            <input id="qe-image" value="${escapeHtml(recipe.image || '')}" placeholder="https://..." style="width:100%; padding: 8px 12px; border: 1px solid #c5d9dc; border-radius: 8px; font-family: inherit; font-size: 0.9rem; box-sizing: border-box; margin-bottom: 20px;">
             
             <div style="display: flex; gap: 8px;">
                 <button id="qe-save" style="flex:1; padding: 10px; background: #407076; color: white; border: none; border-radius: 8px; font-family: inherit; font-size: 1rem; cursor: pointer;">✓ שמור</button>
@@ -130,7 +128,6 @@ function openQuickEdit(recipe, e) {
         const newName = document.getElementById('qe-name').value.trim();
         const newCategory = document.getElementById('qe-category').value;
         const newImage = document.getElementById('qe-image').value.trim();
-        const newAddedBy = document.getElementById('qe-addedby').value.trim();
 
         if (!newName) { alert('שם המתכון לא יכול להיות ריק'); return; }
 
@@ -139,7 +136,7 @@ function openQuickEdit(recipe, e) {
         saveBtn.disabled = true;
 
         try {
-            await setDoc(doc(db, 'recipes', recipe.id), { ...recipe, name: newName, category: newCategory, image: newImage, addedBy: newAddedBy });
+            await setDoc(doc(db, 'recipes', recipe.id), { ...recipe, name: newName, category: newCategory, image: newImage });
             modal.remove();
             location.reload();
         } catch (err) {
@@ -172,8 +169,8 @@ function displayRecipes(recipesToShow) {
                   <div class="recipe-menu-wrapper">
     <button class="recipe-menu-btn" onclick="toggleRecipeMenu(event, '${recipe.id}')">⋮</button>
     <div class="recipe-menu-dropdown" id="menu-${recipe.id}">
-        <button onclick="quickEdit('${recipe.id}', event)">✏️ ערוך</button>
-        <button onclick="deleteRecipeClick('${recipe.id}', event)">🗑️ מחק</button>
+        <button onclick="quickEdit('${recipe.id}')">✏️ ערוך</button>
+        <button onclick="deleteRecipe('${recipe.id}')">🗑️ מחק</button>
     </div>
 </div>
                 </div>
@@ -187,17 +184,9 @@ window.showRecipe = function(id) {
     window.location.href = 'recipe-detail.html';
 }
 
-window.quickEdit = function(id, e) {
-    if (e) e.stopPropagation();
-    // סגור תפריט
-    document.querySelectorAll('.recipe-menu-dropdown.open').forEach(el => el.classList.remove('open'));
+window.quickEdit = function(id) {
     const recipe = window._allRecipes?.find(r => r.id === id);
     if (recipe) openQuickEdit(recipe, { stopPropagation: () => {} });
-}
-
-window.deleteRecipeClick = function(id, e) {
-    if (e) e.stopPropagation();
-    deleteRecipe(id);
 }
 
 function setupSearch(allRecipes) {
@@ -291,45 +280,18 @@ function escapeHtml(str) {
 }
 window.toggleRecipeMenu = function(e, id) {
     e.stopPropagation();
-
-    // סגור תפריט קיים
-    const existing = document.getElementById('floating-recipe-menu');
-    if (existing) {
-        existing.remove();
-        if (existing.dataset.forId === id) return; // toggle סגירה
-    }
-
-    const btn = e.currentTarget;
-    const rect = btn.getBoundingClientRect();
-
-    const menu = document.createElement('div');
-    menu.id = 'floating-recipe-menu';
-    menu.dataset.forId = id;
-    menu.style.cssText = `
-        position: fixed;
-        top: ${rect.bottom + 4}px;
-        left: ${rect.left}px;
-        background: white;
-        border: 1px solid #c5d9dc;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.12);
-        z-index: 9999;
-        min-width: 120px;
-        overflow: hidden;
-        font-family: 'Varela Round', sans-serif;
-        direction: rtl;
-    `;
-    menu.innerHTML = `
-        <button onclick="quickEdit('${id}', event)" style="display:block;width:100%;padding:10px 16px;background:none;border:none;cursor:pointer;text-align:right;font-family:inherit;font-size:0.9rem;color:#333;">✏️ ערוך</button>
-        <button onclick="deleteRecipeClick('${id}', event)" style="display:block;width:100%;padding:10px 16px;background:none;border:none;cursor:pointer;text-align:right;font-family:inherit;font-size:0.9rem;color:#333;">🗑️ מחק</button>
-    `;
-    document.body.appendChild(menu);
+    // סגור כל התפריטים הפתוחים
+    document.querySelectorAll('.recipe-menu-dropdown.open').forEach(el => {
+        if (el.id !== `menu-${id}`) el.classList.remove('open');
+    });
+    document.getElementById(`menu-${id}`)?.classList.toggle('open');
 }
 
 window.deleteRecipe = async function(id) {
     if (!confirm('למחוק את המתכון? לא ניתן לשחזר')) return;
     try {
-        await deleteDoc(doc(db, 'recipes', id));
+        const { deleteDoc, doc: firestoreDoc } = await import("https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js");
+        await deleteDoc(firestoreDoc(db, 'recipes', id));
         location.reload();
     } catch (err) {
         console.error(err);
@@ -338,7 +300,6 @@ window.deleteRecipe = async function(id) {
 }
 
 document.addEventListener('click', () => {
-    document.getElementById('floating-recipe-menu')?.remove();
     document.querySelectorAll('.recipe-menu-dropdown.open').forEach(el => el.classList.remove('open'));
 });
 document.addEventListener('DOMContentLoaded', () => {

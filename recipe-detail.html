@@ -295,10 +295,13 @@
         }
 
         function editLinkRecipe() {
+            const editCategories = ['עיקריות', 'תוספות', 'סלטים', 'מרקים', 'קינוחים', 'עוגות', 'עוגיות', 'מאפים', 'לחמים', 'כללי', 'ממרחים'];
             document.getElementById('recipeTitle').innerHTML =
                 `<input class="edit-title-input" id="editTitle" value="${escapeHtml(recipe.name)}">`;
             document.getElementById('recipeCategory').innerHTML =
-                `<input class="edit-input" id="editCategory" value="${escapeHtml(recipe.category || '')}" placeholder="קטגוריה">`;
+                `<select class="edit-input" id="editCategory" style="cursor:pointer;">
+                    ${editCategories.map(cat => `<option value="${cat}" ${recipe.category === cat ? 'selected' : ''}>${cat}</option>`).join('')}
+                </select>`;
             const img = document.getElementById('recipeImage');
             img.insertAdjacentHTML('afterend',
                 `<input class="edit-input" id="editImage" value="${escapeHtml(recipe.image || '')}" placeholder="קישור לתמונה" style="margin-bottom:15px;">`);
@@ -307,8 +310,13 @@
         }
 
         function editFullRecipe() {
+            const editCategories = ['עיקריות', 'תוספות', 'סלטים', 'מרקים', 'קינוחים', 'עוגות', 'עוגיות', 'מאפים', 'לחמים', 'כללי', 'ממרחים'];
             document.getElementById('recipeTitle').innerHTML =
                 `<input class="edit-title-input" id="editTitle" value="${escapeHtml(recipe.name)}">`;
+            document.getElementById('recipeCategory').innerHTML =
+                `<select class="edit-input" id="editCategory" style="cursor:pointer;">
+                    ${editCategories.map(cat => `<option value="${cat}" ${recipe.category === cat ? 'selected' : ''}>${cat}</option>`).join('')}
+                </select>`;
 
             const ingredientsList = document.getElementById('ingredientsList');
             ingredientsList.innerHTML = '';
@@ -339,6 +347,7 @@
                 recipe.category = document.getElementById('editCategory')?.value || recipe.category;
                 recipe.image = document.getElementById('editImage')?.value || recipe.image;
             } else {
+                recipe.category = document.getElementById('editCategory')?.value || recipe.category;
                 recipe.ingredients = Array.from(document.querySelectorAll('[data-type="ingredient"]'))
                     .map(i => i.value).filter(v => v.trim());
                 recipe.instructions = Array.from(document.querySelectorAll('[data-type="instruction"]'))
