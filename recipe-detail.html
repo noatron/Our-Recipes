@@ -53,6 +53,17 @@
         .refresh-from-link-btn { display: inline-flex; align-items: center; gap: 8px; background: #407076; color: #FFEEDD; border: none; border-radius: 10px; padding: 10px 18px; font-family: 'Varela Round', sans-serif; font-size: 0.95rem; cursor: pointer; transition: all 0.3s; }
         .refresh-from-link-btn:hover:not(:disabled) { background: #698996; }
         .refresh-from-link-btn:disabled { opacity: 0.7; cursor: not-allowed; }
+    @media (max-width: 600px) {
+        body { padding: 12px; }
+        .recipe-detail { padding: 16px; border-radius: 12px; }
+        .recipe-detail h1 { font-size: 1.4rem; margin-bottom: 12px; }
+        .edit-title-input { font-size: 1.4rem; }
+        .recipe-detail h2, .section-title { font-size: 1.2rem; }
+        .recipe-detail-image { height: 220px; }
+        .back-button { font-size: 1rem; top: 12px; right: 12px; }
+        .ingredients-list li, .instructions-list li { font-size: 0.95rem; }
+        .open-recipe-btn { font-size: 0.95rem; padding: 12px; }
+    }
     </style>
 </head>
 <body>

@@ -649,3 +649,53 @@ header .logo {
     background: #fff0f0;
     color: #c62828;
 }
+/* ===== תיקוני רספונסיביות מובייל ===== */
+@media (max-width: 600px) {
+    body {
+        padding: 12px;
+    }
+
+    /* Header - מניעת חפיפה בין חזור לכותרת */
+    header {
+        padding-top: 40px;
+        margin-bottom: 24px;
+    }
+
+    header h1 {
+        font-size: 1.4rem;
+    }
+
+    .back-link {
+        top: 4px;
+        right: 12px;
+        font-size: 0.9rem;
+    }
+
+    /* כרטיסי מתכון */
+    .recipe-name {
+        font-size: 1.1rem;
+    }
+
+    .recipe-image {
+        height: 160px;
+    }
+
+    /* טאבים בהוספת מתכון */
+    .mode-tabs {
+        gap: 4px;
+    }
+
+    .tab-btn span {
+        font-size: 0.8rem;
+    }
+
+    .tab-btn {
+        padding: 10px 8px;
+        gap: 4px;
+    }
+
+    .tab-btn svg {
+        width: 16px;
+        height: 16px;
+    }
+}
