@@ -1,5 +1,5 @@
 import { db } from './firebase.js';
-import { collection, getDocs, setDoc, doc } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+import { collection, getDocs, setDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
 const CATEGORIES = ['הכל', 'כללי', 'מרקים', 'בשרי', 'חלבי', 'פרווה', 'קינוחים', 'לחמים', 'סלטים', 'תוספות'];
 const EDIT_CATEGORIES = ['כללי', 'מרקים', 'בשרי', 'חלבי', 'פרווה', 'קינוחים', 'לחמים', 'סלטים', 'תוספות'];
@@ -109,7 +109,10 @@ function openQuickEdit(recipe, e) {
             </select>
             
             <label style="display:block; margin-bottom: 4px; color: #407076; font-size: 0.9rem;">קישור לתמונה</label>
-            <input id="qe-image" value="${escapeHtml(recipe.image || '')}" placeholder="https://..." style="width:100%; padding: 8px 12px; border: 1px solid #c5d9dc; border-radius: 8px; font-family: inherit; font-size: 0.9rem; box-sizing: border-box; margin-bottom: 20px;">
+            <input id="qe-image" value="${escapeHtml(recipe.image || '')}" placeholder="https://..." style="width:100%; padding: 8px 12px; border: 1px solid #c5d9dc; border-radius: 8px; font-family: inherit; font-size: 0.9rem; box-sizing: border-box; margin-bottom: 12px;">
+            
+            <label style="display:block; margin-bottom: 4px; color: #407076; font-size: 0.9rem;">הוסיף/ה</label>
+            <input id="qe-addedby" value="${escapeHtml(recipe.addedBy || '')}" placeholder="שם המוסיף..." style="width:100%; padding: 8px 12px; border: 1px solid #c5d9dc; border-radius: 8px; font-family: inherit; font-size: 0.9rem; box-sizing: border-box; margin-bottom: 20px;">
             
             <div style="display: flex; gap: 8px;">
                 <button id="qe-save" style="flex:1; padding: 10px; background: #407076; color: white; border: none; border-radius: 8px; font-family: inherit; font-size: 1rem; cursor: pointer;">✓ שמור</button>
@@ -127,6 +130,7 @@ function openQuickEdit(recipe, e) {
         const newName = document.getElementById('qe-name').value.trim();
         const newCategory = document.getElementById('qe-category').value;
         const newImage = document.getElementById('qe-image').value.trim();
+        const newAddedBy = document.getElementById('qe-addedby').value.trim();
 
         if (!newName) { alert('שם המתכון לא יכול להיות ריק'); return; }
 
@@ -135,7 +139,7 @@ function openQuickEdit(recipe, e) {
         saveBtn.disabled = true;
 
         try {
-            await setDoc(doc(db, 'recipes', recipe.id), { ...recipe, name: newName, category: newCategory, image: newImage });
+            await setDoc(doc(db, 'recipes', recipe.id), { ...recipe, name: newName, category: newCategory, image: newImage, addedBy: newAddedBy });
             modal.remove();
             location.reload();
         } catch (err) {
@@ -289,8 +293,7 @@ window.toggleRecipeMenu = function(e, id) {
 window.deleteRecipe = async function(id) {
     if (!confirm('למחוק את המתכון? לא ניתן לשחזר')) return;
     try {
-        const { deleteDoc, doc: firestoreDoc } = await import("https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js");
-        await deleteDoc(firestoreDoc(db, 'recipes', id));
+        await deleteDoc(doc(db, 'recipes', id));
         location.reload();
     } catch (err) {
         console.error(err);

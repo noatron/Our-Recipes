@@ -54,7 +54,8 @@ header h1 {
 .recipe-card {
     background: #FFEEDD;
     border-radius: 12px;
-    overflow: hidden;
+    overflow: visible;
+    position: relative;
     box-shadow: 0 2px 8px rgba(64, 112, 118, 0.1);
     cursor: pointer;
     transition: transform 0.3s, box-shadow 0.3s;
@@ -80,6 +81,7 @@ main {
     width: 100%;
     height: 200px;
     object-fit: cover;
+    border-radius: 12px 12px 0 0;
 }
 
 .recipe-content {
@@ -618,7 +620,7 @@ header .logo {
     border: 1px solid #c5d9dc;
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.12);
-    z-index: 100;
+    z-index: 999;
     min-width: 120px;
     overflow: hidden;
 }
