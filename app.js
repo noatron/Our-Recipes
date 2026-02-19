@@ -1,6 +1,5 @@
-
 import { db } from './firebase.js';
-import { collection, getDocs, setDoc, doc } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+import { collection, getDocs, setDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
 const CATEGORIES = ['הכל', 'עיקריות', 'תוספות', 'סלטים', 'מרקים', 'קינוחים', 'עוגות', 'עוגיות', 'מאפים', 'לחמים', 'כללי', 'ממרחים'];
 const EDIT_CATEGORIES = ['עיקריות', 'תוספות', 'סלטים', 'מרקים', 'קינוחים', 'עוגות', 'עוגיות', 'מאפים', 'לחמים', 'כללי', 'ממרחים'];
@@ -169,8 +168,8 @@ function displayRecipes(recipesToShow) {
                   <div class="recipe-menu-wrapper">
     <button class="recipe-menu-btn" onclick="toggleRecipeMenu(event, '${recipe.id}')">⋮</button>
     <div class="recipe-menu-dropdown" id="menu-${recipe.id}">
-        <button onclick="quickEdit('${recipe.id}')">✏️ ערוך</button>
-        <button onclick="deleteRecipe('${recipe.id}')">🗑️ מחק</button>
+        <button onclick="quickEdit('${recipe.id}', event)">✏️ ערוך</button>
+        <button onclick="deleteRecipeClick('${recipe.id}', event)">🗑️ מחק</button>
     </div>
 </div>
                 </div>
@@ -184,9 +183,16 @@ window.showRecipe = function(id) {
     window.location.href = 'recipe-detail.html';
 }
 
-window.quickEdit = function(id) {
+window.quickEdit = function(id, e) {
+    if (e) e.stopPropagation();
+    document.getElementById('floating-recipe-menu')?.remove();
     const recipe = window._allRecipes?.find(r => r.id === id);
     if (recipe) openQuickEdit(recipe, { stopPropagation: () => {} });
+}
+
+window.deleteRecipeClick = function(id, e) {
+    if (e) e.stopPropagation();
+    deleteRecipe(id);
 }
 
 function setupSearch(allRecipes) {
@@ -280,18 +286,44 @@ function escapeHtml(str) {
 }
 window.toggleRecipeMenu = function(e, id) {
     e.stopPropagation();
-    // סגור כל התפריטים הפתוחים
-    document.querySelectorAll('.recipe-menu-dropdown.open').forEach(el => {
-        if (el.id !== `menu-${id}`) el.classList.remove('open');
-    });
-    document.getElementById(`menu-${id}`)?.classList.toggle('open');
+
+    const existing = document.getElementById('floating-recipe-menu');
+    if (existing) {
+        existing.remove();
+        if (existing.dataset.forId === id) return;
+    }
+
+    const btn = e.currentTarget;
+    const rect = btn.getBoundingClientRect();
+
+    const menu = document.createElement('div');
+    menu.id = 'floating-recipe-menu';
+    menu.dataset.forId = id;
+    menu.style.cssText = `
+        position: fixed;
+        top: ${rect.bottom + 4}px;
+        left: ${rect.left}px;
+        background: white;
+        border: 1px solid #c5d9dc;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+        z-index: 9999;
+        min-width: 120px;
+        overflow: hidden;
+        font-family: 'Varela Round', sans-serif;
+        direction: rtl;
+    `;
+    menu.innerHTML = `
+        <button onclick="quickEdit('${id}', event)" style="display:block;width:100%;padding:10px 16px;background:none;border:none;cursor:pointer;text-align:right;font-family:inherit;font-size:0.9rem;color:#333;">✏️ ערוך</button>
+        <button onclick="deleteRecipeClick('${id}', event)" style="display:block;width:100%;padding:10px 16px;background:none;border:none;cursor:pointer;text-align:right;font-family:inherit;font-size:0.9rem;color:#c62828;">🗑️ מחק</button>
+    `;
+    document.body.appendChild(menu);
 }
 
 window.deleteRecipe = async function(id) {
     if (!confirm('למחוק את המתכון? לא ניתן לשחזר')) return;
     try {
-        const { deleteDoc, doc: firestoreDoc } = await import("https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js");
-        await deleteDoc(firestoreDoc(db, 'recipes', id));
+        await deleteDoc(doc(db, 'recipes', id));
         location.reload();
     } catch (err) {
         console.error(err);
@@ -300,6 +332,7 @@ window.deleteRecipe = async function(id) {
 }
 
 document.addEventListener('click', () => {
+    document.getElementById('floating-recipe-menu')?.remove();
     document.querySelectorAll('.recipe-menu-dropdown.open').forEach(el => el.classList.remove('open'));
 });
 document.addEventListener('DOMContentLoaded', () => {
