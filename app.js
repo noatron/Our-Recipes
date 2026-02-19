@@ -1,9 +1,11 @@
+const CATEGORIES = ['הכל', 'כללי', 'מרקים', 'בשרי', 'חלבי', 'פרווה', 'קינוחים', 'לחמים', 'סלטים', 'תוספות'];
+
 // מתכונים לדוגמה
 const recipes = [
     {
         id: 1,
         name: "שקשוקה",
-        category: "ארוחות בוקר",
+        category: "כללי",
         source: "סבתא רחל",
         image: "https://images.unsplash.com/photo-1587217850473-0238d26d4785?w=400&h=300&fit=crop",
         ingredients: ["6 ביצים", "2 עגבניות", "1 בצל", "2 שיני שום", "פלפל אדום", "כמון", "מלח ופלפל"],
@@ -12,7 +14,7 @@ const recipes = [
     {
         id: 2,
         name: "פסטה בולונז",
-        category: "עיקריות",
+        category: "בשרי",
         source: "אתר טעים",
         image: "https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=400&h=300&fit=crop",
         ingredients: ["500 גרם בשר טחון", "פסטה", "רסק עגבניות", "בצל", "שום", "בזיליקום"],
@@ -48,7 +50,7 @@ const recipes = [
     {
         id: 6,
         name: "פנקייקים",
-        category: "ארוחות בוקר",
+        category: "כללי",
         source: "בלוג בישול",
         image: "https://images.unsplash.com/photo-1506084868230-bb9d95c24759?w=400&h=300&fit=crop",
         ingredients: ["2 כוסות קמח", "2 ביצים", "כוס חלב", "סוכר", "אבקת אפייה"],
@@ -57,7 +59,7 @@ const recipes = [
     {
         id: 7,
         name: "חומוס",
-        category: "ממרחים",
+        category: "כללי",
         source: "דודה מזל",
         image: "https://images.unsplash.com/photo-1571368295935-d9551b53f6f3?w=400&h=300&fit=crop",
         ingredients: ["פחית חומוס מבושל", "טחינה גולמית", "לימון", "שום", "כמון", "מלח"],
@@ -109,6 +111,40 @@ function setupSearch() {
     });
 }
 
+// פונקציה לפילטור לפי קטגוריה
+function setupCategoryFilter() {
+    const container = document.getElementById('category-filters');
+    if (!container) return;
+    
+    let activeCategory = 'הכל';
+    
+    container.innerHTML = CATEGORIES.map(cat => `
+        <button class="category-chip ${cat === 'הכל' ? 'active' : ''}" data-category="${cat}">
+            ${cat}
+        </button>
+    `).join('');
+    
+    container.addEventListener('click', (e) => {
+        if (!e.target.classList.contains('category-chip')) return;
+        
+        activeCategory = e.target.dataset.category;
+        
+        // עדכון ה-chip הפעיל
+        container.querySelectorAll('.category-chip').forEach(btn => btn.classList.remove('active'));
+        e.target.classList.add('active');
+        
+        // ניקוי החיפוש
+        document.getElementById('searchInput').value = '';
+        
+        // פילטור
+        const savedRecipes = JSON.parse(localStorage.getItem('recipes') || '[]');
+        const filtered = activeCategory === 'הכל' 
+            ? savedRecipes 
+            : savedRecipes.filter(r => r.category === activeCategory);
+        displayRecipes(filtered);
+    });
+}
+
 // אתחול האפליקציה
 document.addEventListener('DOMContentLoaded', () => {
     const savedRecipes = localStorage.getItem('recipes');
@@ -122,6 +158,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     setupSearch();
+    setupCategoryFilter();
     console.log('🍽️ האפליקציה טעונה בהצלחה!');
     
     const addBtn = document.getElementById('add-recipe-btn');
