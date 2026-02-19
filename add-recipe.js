@@ -1,8 +1,15 @@
 import { db } from './firebase.js';
-import { collection, addDoc } from 'https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js';
+import { collection, addDoc, getDocs, query, where } from 'https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js';
 import { extractRecipeName, extractRecipeImage } from './recipe-import-utils.js';
 
-/** מפרק CSV או טקסט לשורות ומחלץ URLs (שורה = קישור, או CSV עם עמודה שמכילה קישור) */
+/** בדיקת כפילות לפי URL */
+async function urlAlreadyExists(url) {
+    const q = query(collection(db, 'recipes'), where('url', '==', url));
+    const existing = await getDocs(q);
+    return !existing.empty;
+}
+
+/** מפרק CSV או טקסט לשורות ומחלץ URLs */
 function parseUrlsFromCsv(text) {
     if (!text || !text.trim()) return [];
     const lines = text.trim().split(/\r?\n/).map(l => l.trim()).filter(Boolean);
@@ -23,7 +30,7 @@ function parseUrlsFromCsv(text) {
     return [...new Set(urls)];
 }
 
-/** מייבא מתכון בודד מקישור (אותה לוגיקה כמו כפתור הייבוא) */
+/** מייבא מתכון בודד מקישור */
 async function importOneRecipe(url) {
     const proxyUrl = `/.netlify/functions/fetch-recipe?url=${encodeURIComponent(url)}`;
     const response = await fetch(proxyUrl);
@@ -36,7 +43,7 @@ async function importOneRecipe(url) {
 
     const newRecipe = {
         name,
-        category: 'עיקריות',
+        category: 'כללי',
         source: new URL(url).hostname,
         image,
         url,
@@ -83,9 +90,19 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         importStatus.className = 'import-status loading';
-        importStatus.textContent = '⏳ מייבא מתכון...';
+        importStatus.textContent = '⏳ בודקת כפילות...';
 
         try {
+            // בדיקת כפילות
+            const exists = await urlAlreadyExists(url);
+            if (exists) {
+                importStatus.className = 'import-status error';
+                importStatus.textContent = '⚠️ המתכון הזה כבר קיים באוסף!';
+                return;
+            }
+
+            importStatus.textContent = '⏳ מייבאת מתכון...';
+
             const proxyUrl = `/.netlify/functions/fetch-recipe?url=${encodeURIComponent(url)}`;
             const response = await fetch(proxyUrl);
             const html = await response.text();
@@ -97,18 +114,18 @@ document.addEventListener('DOMContentLoaded', () => {
             const image = extractRecipeImage(doc, url);
 
             const newRecipe = {
-                name: name,
-                category: 'עיקריות',
+                name,
+                category: 'כללי',
                 source: new URL(url).hostname,
-                image: image,
-                url: url,
+                image,
+                url,
                 ingredients: [],
                 instructions: []
             };
 
             await addDoc(collection(db, 'recipes'), newRecipe);
             importStatus.className = 'import-status success';
-            importStatus.textContent = '✅ המתכון נשמר ב-Firebase! מעבירה...';
+            importStatus.textContent = '✅ המתכון נשמר! מעבירה...';
             setTimeout(() => { window.location.href = 'index.html'; }, 800);
 
         } catch (err) {
@@ -177,9 +194,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         csvImportBtn.disabled = true;
         let done = 0;
+        let skipped = 0;
         let failed = 0;
         const total = urls.length;
-        const delayMs = 1200;
 
         const setStatus = (msg, isError = false) => {
             csvStatus.className = 'import-status csv-bulk-status' + (isError ? ' error' : ' loading');
@@ -190,22 +207,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
         for (let i = 0; i < urls.length; i++) {
             try {
-                await importOneRecipe(urls[i]);
-                done++;
-                setStatus(`⏳ מייבא ${done} מתוך ${total}...`);
+                const exists = await urlAlreadyExists(urls[i]);
+                if (exists) {
+                    skipped++;
+                    setStatus(`⏳ מייבא ${done} מתוך ${total} (${skipped} כפולים דולגו)...`);
+                } else {
+                    await importOneRecipe(urls[i]);
+                    done++;
+                    setStatus(`⏳ מייבא ${done} מתוך ${total}...`);
+                }
             } catch (err) {
                 console.warn('ייבוא נכשל:', urls[i], err);
                 failed++;
                 setStatus(`⏳ מייבא ${done} מתוך ${total} (${failed} נכשלו)...`);
             }
-            if (i < urls.length - 1) await new Promise(r => setTimeout(r, delayMs));
+            if (i < urls.length - 1) await new Promise(r => setTimeout(r, 1200));
         }
 
         csvImportBtn.disabled = false;
         csvStatus.className = 'import-status success csv-bulk-status';
-        csvStatus.textContent = `✅ סיום: ${done} מתכונים יובאו ל-Firebase${failed ? `, ${failed} נכשלו.` : '.'}`;
-        csvFile.value = '';
-        csvPaste.value = '';
+        csvStatus.textContent = `✅ סיום: ${done} יובאו, ${skipped} כפולים דולגו${failed ? `, ${failed} נכשלו.` : '.'}`;
+        if (csvFile) csvFile.value = '';
+        if (csvPaste) csvPaste.value = '';
     }
 
     if (csvImportBtn) {
