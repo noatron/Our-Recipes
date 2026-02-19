@@ -209,7 +209,7 @@ refreshAllBtn.addEventListener('click', async () => {
         } catch (e) {
             console.warn('נכשל:', recipe.url);
         }
-        await new Promise(r => setTimeout(r, 1000));
+        await new Promise(r => setTimeout(r, 2000));
     }
     
     alert(`✅ סיום! ${done} מתכונים עודכנו.`);
