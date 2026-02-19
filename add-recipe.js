@@ -54,6 +54,88 @@ async function importOneRecipe(url) {
     return { name, url };
 }
 
+function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str || '';
+    return div.innerHTML;
+}
+
+const EDIT_CATEGORIES = ['עיקריות', 'תוספות', 'סלטים', 'מרקים', 'קינוחים', 'עוגות', 'עוגיות', 'מאפים', 'לחמים', 'כללי', 'ממרחים'];
+
+function showPreviewModal({ name, image, url }) {
+    document.getElementById('recipe-preview-modal')?.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'recipe-preview-modal';
+    modal.style.cssText = `
+        position: fixed; inset: 0; z-index: 2000;
+        background: rgba(0,0,0,0.4);
+        display: flex; align-items: center; justify-content: center;
+        padding: 16px;
+    `;
+    modal.innerHTML = `
+        <div style="background: #F8F7FF; border-radius: 16px; padding: 28px; width: 100%; max-width: 420px; font-family: 'Varela Round', sans-serif; direction: rtl; box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
+            <h3 style="margin: 0 0 20px; color: #407076; text-align: center; font-size: 1.3rem;">בדיקה לפני שמירה</h3>
+
+            <label style="display:block; margin-bottom: 4px; color: #407076; font-size: 0.9rem;">שם המתכון</label>
+            <input id="pm-name" value="${escapeHtml(name)}" style="width:100%; padding: 10px 12px; border: 2px solid #c5d9dc; border-radius: 8px; font-family: inherit; font-size: 1rem; box-sizing: border-box; margin-bottom: 14px; background: white;">
+
+            <label style="display:block; margin-bottom: 4px; color: #407076; font-size: 0.9rem;">קטגוריה</label>
+            <select id="pm-category" style="width:100%; padding: 10px 12px; border: 2px solid #c5d9dc; border-radius: 8px; font-family: inherit; font-size: 1rem; box-sizing: border-box; margin-bottom: 14px; background: white; cursor: pointer;">
+                ${EDIT_CATEGORIES.map(cat => `<option value="${cat}" ${cat === 'כללי' ? 'selected' : ''}>${cat}</option>`).join('')}
+            </select>
+
+            <label style="display:block; margin-bottom: 4px; color: #407076; font-size: 0.9rem;">קישור לתמונה</label>
+            <input id="pm-image" value="${escapeHtml(image)}" placeholder="https://..." style="width:100%; padding: 10px 12px; border: 2px solid #c5d9dc; border-radius: 8px; font-family: inherit; font-size: 0.85rem; box-sizing: border-box; margin-bottom: 14px; background: white;">
+
+            <label style="display:block; margin-bottom: 4px; color: #407076; font-size: 0.9rem;">הוסיף/ה</label>
+            <input id="pm-addedby" placeholder="שם המוסיף..." style="width:100%; padding: 10px 12px; border: 2px solid #c5d9dc; border-radius: 8px; font-family: inherit; font-size: 1rem; box-sizing: border-box; margin-bottom: 20px; background: white;">
+
+            <div style="display: flex; gap: 10px;">
+                <button id="pm-save" style="flex:1; padding: 12px; background: #407076; color: white; border: none; border-radius: 8px; font-family: inherit; font-size: 1rem; cursor: pointer;">✓ שמור מתכון</button>
+                <button id="pm-cancel" style="flex:1; padding: 12px; background: transparent; color: #407076; border: 2px solid #407076; border-radius: 8px; font-family: inherit; font-size: 1rem; cursor: pointer;">ביטול</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    document.getElementById('pm-cancel').addEventListener('click', () => modal.remove());
+    modal.addEventListener('click', (ev) => { if (ev.target === modal) modal.remove(); });
+
+    document.getElementById('pm-save').addEventListener('click', async () => {
+        const finalName = document.getElementById('pm-name').value.trim() || name;
+        const finalCategory = document.getElementById('pm-category').value;
+        const finalImage = document.getElementById('pm-image').value.trim() || image;
+        const finalAddedBy = document.getElementById('pm-addedby').value.trim();
+
+        const saveBtn = document.getElementById('pm-save');
+        saveBtn.textContent = 'שומר...';
+        saveBtn.disabled = true;
+
+        try {
+            const newRecipe = {
+                name: finalName,
+                category: finalCategory,
+                source: new URL(url).hostname,
+                image: finalImage,
+                url,
+                addedBy: finalAddedBy,
+                ingredients: [],
+                instructions: []
+            };
+            await addDoc(collection(db, 'recipes'), newRecipe);
+            modal.remove();
+            window.location.href = 'index.html';
+        } catch (err) {
+            console.error(err);
+            saveBtn.textContent = '✓ שמור מתכון';
+            saveBtn.disabled = false;
+            alert('שגיאה בשמירה. נסי שוב.');
+        }
+    });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const tabButtons = document.querySelectorAll('.tab-btn');
     const importMode = document.getElementById('import-mode');
@@ -93,7 +175,6 @@ document.addEventListener('DOMContentLoaded', () => {
         importStatus.textContent = '⏳ בודקת כפילות...';
 
         try {
-            // בדיקת כפילות
             const exists = await urlAlreadyExists(url);
             if (exists) {
                 importStatus.className = 'import-status error';
@@ -113,25 +194,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const name = extractRecipeName(doc, url) || 'מתכון חדש';
             const image = extractRecipeImage(doc, url);
 
-            const newRecipe = {
-                name,
-                category: 'כללי',
-                source: new URL(url).hostname,
-                image,
-                url,
-                ingredients: [],
-                instructions: []
-            };
-
-            await addDoc(collection(db, 'recipes'), newRecipe);
             importStatus.className = 'import-status success';
-            importStatus.textContent = '✅ המתכון נשמר! מעבירה...';
-            setTimeout(() => { window.location.href = 'index.html'; }, 800);
+            importStatus.textContent = '✅ המתכון נשלף! בדקי את הפרטים לפני השמירה.';
+
+            showPreviewModal({ name, image, url });
 
         } catch (err) {
             console.error(err);
             importStatus.className = 'import-status error';
-            importStatus.textContent = '⚠️ לא הצלחנו לייבא או לשמור. נסי שוב או השתמשי בהזנה ידנית';
+            importStatus.textContent = '⚠️ לא הצלחנו לייבא. נסי שוב או השתמשי בהזנה ידנית';
         }
     });
 
