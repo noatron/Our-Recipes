@@ -235,6 +235,58 @@ function setupCategoryFilter(allRecipes) {
     });
 }
 
+function showSurpriseModal() {
+    document.getElementById('surprise-modal')?.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'surprise-modal';
+    modal.style.cssText = `
+        position: fixed; inset: 0; z-index: 2000;
+        background: rgba(0,0,0,0.4);
+        display: flex; align-items: center; justify-content: center;
+        padding: 16px;
+    `;
+
+    modal.innerHTML = `
+        <div style="background: #F8F7FF; border-radius: 16px; padding: 28px; width: 100%; max-width: 380px; font-family: 'Varela Round', sans-serif; direction: rtl; box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
+            <h3 style="margin: 0 0 8px; color: #407076; text-align: center; font-size: 1.4rem;">🎲 מה מבשלים היום?</h3>
+            <p style="text-align: center; color: #698996; font-size: 0.95rem; margin-bottom: 20px;">בחרי קטגוריה ואני אבחר מתכון בשבילך</p>
+            <div style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 24px;">
+                ${EDIT_CATEGORIES.map(cat => `
+                    <button class="surprise-cat-btn" data-cat="${cat}" style="
+                        background: white; border: 2px solid #407076; color: #407076;
+                        border-radius: 20px; padding: 8px 18px;
+                        font-family: 'Varela Round', sans-serif; font-size: 0.9rem;
+                        cursor: pointer; transition: all 0.2s;
+                    ">${cat}</button>
+                `).join('')}
+            </div>
+            <button id="surprise-cancel" style="width:100%; padding: 10px; background: transparent; color: #698996; border: 1px solid #c5d9dc; border-radius: 8px; font-family: inherit; font-size: 1rem; cursor: pointer;">ביטול</button>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+    document.getElementById('surprise-cancel').addEventListener('click', () => modal.remove());
+
+    modal.querySelectorAll('.surprise-cat-btn').forEach(btn => {
+        btn.addEventListener('mouseenter', () => { btn.style.background = '#407076'; btn.style.color = 'white'; });
+        btn.addEventListener('mouseleave', () => { btn.style.background = 'white'; btn.style.color = '#407076'; });
+        btn.addEventListener('click', () => {
+            const cat = btn.dataset.cat;
+            const filtered = (window._allRecipes || []).filter(r => r.category === cat);
+            if (filtered.length === 0) {
+                btn.textContent = 'אין מתכונים 😔';
+                return;
+            }
+            const random = filtered[Math.floor(Math.random() * filtered.length)];
+            modal.remove();
+            window.showRecipe(random.id);
+        });
+    });
+}
+
 async function initApp() {
     try {
         const snapshot = await getDocs(collection(db, 'recipes'));
@@ -276,6 +328,12 @@ async function initApp() {
         addBtn.addEventListener('click', () => {
             window.location.href = 'add-recipe.html';
         });
+    }
+
+    // כפתור "מה מבשלים היום?"
+    const surpriseBtn = document.getElementById('surprise-btn');
+    if (surpriseBtn) {
+        surpriseBtn.addEventListener('click', () => showSurpriseModal());
     }
 }
 
