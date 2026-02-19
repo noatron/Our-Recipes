@@ -231,8 +231,50 @@ function setupCategoryFilter(allRecipes) {
         const filtered = activeCategory === 'הכל' 
             ? allRecipes 
             : allRecipes.filter(r => r.category === activeCategory);
-        displayRecipes(filtered);
+        displayRecipes(sortRecipes(filtered));
     });
+}
+
+let currentSort = 'newest'; // ברירת מחדל: חדש לישן
+
+function sortRecipes(recipes) {
+    const sorted = [...recipes];
+    if (currentSort === 'newest') {
+        sorted.sort((a, b) => (b.createdAt || b.id || 0) > (a.createdAt || a.id || 0) ? 1 : -1);
+    } else if (currentSort === 'oldest') {
+        sorted.sort((a, b) => (a.createdAt || a.id || 0) > (b.createdAt || b.id || 0) ? 1 : -1);
+    } else if (currentSort === 'alpha') {
+        sorted.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'he'));
+    }
+    return sorted;
+}
+
+function setupSortButton(allRecipes) {
+    const container = document.getElementById('sort-container');
+    if (!container) return;
+
+    const labels = { newest: 'חדש לישן ↓', oldest: 'ישן לחדש ↑', alpha: 'א-ב' };
+    const order = ['newest', 'oldest', 'alpha'];
+
+    const btn = document.createElement('button');
+    btn.id = 'sort-btn';
+    btn.textContent = labels[currentSort];
+    btn.style.cssText = `
+        background: transparent; border: 1.5px solid #c5d9dc; color: #698996;
+        border-radius: 20px; padding: 6px 14px;
+        font-family: 'Varela Round', sans-serif; font-size: 0.85rem;
+        cursor: pointer; transition: all 0.2s; float: left;
+    `;
+    btn.addEventListener('click', () => {
+        const idx = order.indexOf(currentSort);
+        currentSort = order[(idx + 1) % order.length];
+        btn.textContent = labels[currentSort];
+        const activeChip = document.querySelector('.category-chip.active');
+        const activeCat = activeChip?.dataset.category || 'הכל';
+        const filtered = activeCat === 'הכל' ? allRecipes : allRecipes.filter(r => r.category === activeCat);
+        displayRecipes(sortRecipes(filtered));
+    });
+    container.appendChild(btn);
 }
 
 function showSurpriseModal() {
@@ -304,9 +346,10 @@ async function initApp() {
         console.log('🍽️ נטענו מ-Firebase:', recipes.length, 'מתכונים');
         window._allRecipes = recipes;
         
-        displayRecipes(recipes);
+        displayRecipes(sortRecipes(recipes));
         setupSearch(recipes);
         setupCategoryFilter(recipes);
+        setupSortButton(recipes);
         
     } catch (err) {
         console.error('שגיאה בטעינת מתכונים:', err);
