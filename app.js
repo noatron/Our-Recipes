@@ -2,6 +2,7 @@ import { db } from './firebase.js';
 import { collection, getDocs, setDoc, doc } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
 const CATEGORIES = ['הכל', 'כללי', 'מרקים', 'בשרי', 'חלבי', 'פרווה', 'קינוחים', 'לחמים', 'סלטים', 'תוספות'];
+const EDIT_CATEGORIES = ['כללי', 'מרקים', 'בשרי', 'חלבי', 'פרווה', 'קינוחים', 'לחמים', 'סלטים', 'תוספות'];
 
 const defaultRecipes = [
     {
@@ -82,6 +83,70 @@ function getRecipeSourceLabel(recipe) {
     return recipe.source || '';
 }
 
+function openQuickEdit(recipe, e) {
+    e.stopPropagation();
+    document.getElementById('quick-edit-modal')?.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'quick-edit-modal';
+    modal.style.cssText = `
+        position: fixed; inset: 0; z-index: 2000;
+        background: rgba(0,0,0,0.4);
+        display: flex; align-items: center; justify-content: center;
+        padding: 16px;
+    `;
+
+    modal.innerHTML = `
+        <div style="background: #F8F7FF; border-radius: 16px; padding: 24px; width: 100%; max-width: 360px; font-family: 'Varela Round', sans-serif; direction: rtl;">
+            <h3 style="margin: 0 0 16px; color: #407076; text-align: center;">עריכה מהירה</h3>
+            
+            <label style="display:block; margin-bottom: 4px; color: #407076; font-size: 0.9rem;">שם מתכון</label>
+            <input id="qe-name" value="${escapeHtml(recipe.name || '')}" style="width:100%; padding: 8px 12px; border: 1px solid #c5d9dc; border-radius: 8px; font-family: inherit; font-size: 1rem; box-sizing: border-box; margin-bottom: 12px;">
+            
+            <label style="display:block; margin-bottom: 4px; color: #407076; font-size: 0.9rem;">קטגוריה</label>
+            <select id="qe-category" style="width:100%; padding: 8px 12px; border: 1px solid #c5d9dc; border-radius: 8px; font-family: inherit; font-size: 1rem; box-sizing: border-box; margin-bottom: 12px; background: white;">
+                ${EDIT_CATEGORIES.map(cat => `<option value="${cat}" ${recipe.category === cat ? 'selected' : ''}>${cat}</option>`).join('')}
+            </select>
+            
+            <label style="display:block; margin-bottom: 4px; color: #407076; font-size: 0.9rem;">קישור לתמונה</label>
+            <input id="qe-image" value="${escapeHtml(recipe.image || '')}" placeholder="https://..." style="width:100%; padding: 8px 12px; border: 1px solid #c5d9dc; border-radius: 8px; font-family: inherit; font-size: 0.9rem; box-sizing: border-box; margin-bottom: 20px;">
+            
+            <div style="display: flex; gap: 8px;">
+                <button id="qe-save" style="flex:1; padding: 10px; background: #407076; color: white; border: none; border-radius: 8px; font-family: inherit; font-size: 1rem; cursor: pointer;">✓ שמור</button>
+                <button id="qe-cancel" style="flex:1; padding: 10px; background: transparent; color: #407076; border: 1px solid #407076; border-radius: 8px; font-family: inherit; font-size: 1rem; cursor: pointer;">ביטול</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    document.getElementById('qe-cancel').addEventListener('click', () => modal.remove());
+    modal.addEventListener('click', (ev) => { if (ev.target === modal) modal.remove(); });
+
+    document.getElementById('qe-save').addEventListener('click', async () => {
+        const newName = document.getElementById('qe-name').value.trim();
+        const newCategory = document.getElementById('qe-category').value;
+        const newImage = document.getElementById('qe-image').value.trim();
+
+        if (!newName) { alert('שם המתכון לא יכול להיות ריק'); return; }
+
+        const saveBtn = document.getElementById('qe-save');
+        saveBtn.textContent = 'שומר...';
+        saveBtn.disabled = true;
+
+        try {
+            await setDoc(doc(db, 'recipes', recipe.id), { ...recipe, name: newName, category: newCategory, image: newImage });
+            modal.remove();
+            location.reload();
+        } catch (err) {
+            console.error(err);
+            alert('שגיאה בשמירה, נסי שוב');
+            saveBtn.textContent = '✓ שמור';
+            saveBtn.disabled = false;
+        }
+    });
+}
+
 function displayRecipes(recipesToShow) {
     const recipesContainer = document.getElementById('recipes');
     
@@ -98,8 +163,9 @@ function displayRecipes(recipesToShow) {
             <div class="recipe-content">
                 <h2 class="recipe-name">${escapeHtml(getRecipeDisplayName(recipe))}</h2>
                 ${sourceLabel ? `<p class="recipe-source">${escapeHtml(sourceLabel)}</p>` : ''}
-                <div>
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-top: 4px;">
                     <span class="recipe-category">${escapeHtml(recipe.category || '')}</span>
+                    <button onclick="quickEdit('${recipe.id}')" style="background:none; border:none; cursor:pointer; color:#407076; font-size:0.85rem; padding: 4px 8px; border-radius: 8px; font-family: inherit;">✏️ ערוך</button>
                 </div>
             </div>
         </div>
@@ -109,6 +175,11 @@ function displayRecipes(recipesToShow) {
 window.showRecipe = function(id) {
     localStorage.setItem('selectedRecipeId', id);
     window.location.href = 'recipe-detail.html';
+}
+
+window.quickEdit = function(id) {
+    const recipe = window._allRecipes?.find(r => r.id === id);
+    if (recipe) openQuickEdit(recipe, { stopPropagation: () => {} });
 }
 
 function setupSearch(allRecipes) {
@@ -151,56 +222,6 @@ function setupCategoryFilter(allRecipes) {
     });
 }
 
-function setupRefreshAllButton(recipes) {
-    const refreshAllBtn = document.createElement('button');
-    refreshAllBtn.textContent = '🔄 רענן שמות ותמונות';
-    refreshAllBtn.style.cssText = 'position:fixed; bottom:90px; right:24px; z-index:1000; background:#d32f2f; color:white; border:none; border-radius:20px; padding:10px 16px; font-family:Varela Round,sans-serif; cursor:pointer;';
-    document.body.appendChild(refreshAllBtn);
-
-    refreshAllBtn.addEventListener('click', async () => {
-        const toRefresh = recipes.filter(r => r.url && (!r.name || r.name === 'מתכון' || r.name === 'Error response' || r.name === 'מתכון חדש'));
-        if (toRefresh.length === 0) { alert('אין מתכונים לרענון!'); return; }
-        if (!confirm(`נרענן ${toRefresh.length} מתכונים. זה ייקח כמה דקות. להמשיך?`)) return;
-
-        refreshAllBtn.disabled = true;
-        let done = 0;
-
-        for (let i = 0; i < toRefresh.length; i++) {
-            const recipe = toRefresh[i];
-            try {
-                const proxyUrl = `/.netlify/functions/fetch-recipe?url=${encodeURIComponent(recipe.url)}`;
-                const response = await fetch(proxyUrl);
-                const html = await response.text();
-                const parser = new DOMParser();
-                const parsed = parser.parseFromString(html, 'text/html');
-
-                const ogTitle = parsed.querySelector('meta[property="og:title"]');
-                const title = parsed.querySelector('title');
-                const ogImage = parsed.querySelector('meta[property="og:image"]');
-
-                const name = ogTitle?.content || title?.textContent?.split('|')[0]?.split('-')[0]?.trim() || 'מתכון';
-                const image = ogImage?.content || recipe.image;
-
-                await setDoc(doc(db, 'recipes', recipe.id), { ...recipe, name, image });
-                done++;
-                refreshAllBtn.textContent = `🔄 ${done}/${toRefresh.length}...`;
-            } catch (e) {
-                console.warn('נכשל:', recipe.url);
-            }
-
-            await new Promise(r => setTimeout(r, 3000));
-
-            if ((i + 1) % 20 === 0) {
-                refreshAllBtn.textContent = `⏸️ הפסקה קצרה...`;
-                await new Promise(r => setTimeout(r, 10000));
-            }
-        }
-
-        alert(`✅ סיום! ${done} מתכונים עודכנו.`);
-        location.reload();
-    });
-}
-
 async function initApp() {
     try {
         const snapshot = await getDocs(collection(db, 'recipes'));
@@ -216,11 +237,11 @@ async function initApp() {
         }
 
         console.log('🍽️ נטענו מ-Firebase:', recipes.length, 'מתכונים');
+        window._allRecipes = recipes;
         
         displayRecipes(recipes);
         setupSearch(recipes);
         setupCategoryFilter(recipes);
-        setupRefreshAllButton(recipes);
         
     } catch (err) {
         console.error('שגיאה בטעינת מתכונים:', err);
