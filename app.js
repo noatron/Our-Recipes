@@ -1,9 +1,11 @@
+import { db } from './firebase.js';
+import { collection, getDocs, setDoc, doc } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+
 const CATEGORIES = ['הכל', 'כללי', 'מרקים', 'בשרי', 'חלבי', 'פרווה', 'קינוחים', 'לחמים', 'סלטים', 'תוספות'];
 
-// מתכונים לדוגמה
-const recipes = [
+const defaultRecipes = [
     {
-        id: 1,
+        id: "1",
         name: "שקשוקה",
         category: "כללי",
         source: "סבתא רחל",
@@ -12,7 +14,7 @@ const recipes = [
         instructions: ["חותכים את הבצל והעגבניות לקוביות", "מטגנים את הבצל עד שמזהיב", "מוסיפים את העגבניות והתבלינים", "מבשלים 10 דקות", "עושים גומות ושוברים ביצים", "מכסים ומבשלים עד שהביצים מתקשות"]
     },
     {
-        id: 2,
+        id: "2",
         name: "פסטה בולונז",
         category: "בשרי",
         source: "אתר טעים",
@@ -21,7 +23,7 @@ const recipes = [
         instructions: ["מטגנים בצל ושום", "מוסיפים בשר ומשחימים", "מוסיפים רסק עגבניות", "מבשלים 30 דקות", "מבשלים פסטה", "מערבבים ביחד"]
     },
     {
-        id: 3,
+        id: "3",
         name: "עוגת שוקולד",
         category: "קינוחים",
         source: "מגזין אוכל",
@@ -30,7 +32,7 @@ const recipes = [
         instructions: ["מחממים תנור ל-180 מעלות", "ממיסים שוקולד וחמאה", "מקציפים ביצים וסוכר", "מערבבים הכל", "אופים 35 דקות"]
     },
     {
-        id: 4,
+        id: "4",
         name: "סלט ירקות",
         category: "סלטים",
         source: "ספר בריאות",
@@ -39,7 +41,7 @@ const recipes = [
         instructions: ["חותכים את כל הירקות", "מערבבים בקערה", "מוסיפים לימון ושמן", "מערבבים היטב"]
     },
     {
-        id: 5,
+        id: "5",
         name: "מרק עוף",
         category: "מרקים",
         source: "אמא שלי",
@@ -48,7 +50,7 @@ const recipes = [
         instructions: ["שמים עוף בסיר", "מוסיפים ירקות ומים", "מבשלים 60 דקות", "מסננים", "מגישים חם"]
     },
     {
-        id: 6,
+        id: "6",
         name: "פנקייקים",
         category: "כללי",
         source: "בלוג בישול",
@@ -57,7 +59,7 @@ const recipes = [
         instructions: ["מערבבים מרכיבים יבשים", "מוסיפים ביצים וחלב", "מחממים מחבת", "שופכים בצק", "הופכים כשמופיעים בועות"]
     },
     {
-        id: 7,
+        id: "7",
         name: "חומוס",
         category: "כללי",
         source: "דודה מזל",
@@ -67,7 +69,21 @@ const recipes = [
     }
 ];
 
-// פונקציה להצגת המתכונים
+/** שם המתכון לתצוגה – אם מהאתר נשמר דף שגיאה, מציגים "מתכון" (המקור יופיע מתחת) */
+function getRecipeDisplayName(recipe) {
+    const name = (recipe.name || '').trim();
+    if (!name || /error response|404|forbidden|not found/i.test(name)) return 'מתכון';
+    return name;
+}
+
+/** מקור המתכון – דומיין או טקסט מקור */
+function getRecipeSourceLabel(recipe) {
+    if (recipe.url) {
+        try { return new URL(recipe.url).hostname.replace(/^www\./, ''); } catch (e) {}
+    }
+    return recipe.source || '';
+}
+
 function displayRecipes(recipesToShow) {
     const recipesContainer = document.getElementById('recipes');
     
@@ -76,43 +92,41 @@ function displayRecipes(recipesToShow) {
         return;
     }
     
-    recipesContainer.innerHTML = recipesToShow.map(recipe => `
-        <div class="recipe-card" onclick="showRecipe(${recipe.id})">
+    recipesContainer.innerHTML = recipesToShow.map(recipe => {
+        const sourceLabel = getRecipeSourceLabel(recipe);
+        return `
+        <div class="recipe-card" onclick="showRecipe('${recipe.id}')">
             <img src="${recipe.image || 'https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=400&h=200&fit=crop'}" alt="" class="recipe-image" onerror="this.style.display='none'">
             <div class="recipe-content">
-                <h2 class="recipe-name">${recipe.name}</h2>
-                <div class="recipe-meta"></div>
+                <h2 class="recipe-name">${escapeHtml(getRecipeDisplayName(recipe))}</h2>
+                ${sourceLabel ? `<p class="recipe-source">${escapeHtml(sourceLabel)}</p>` : ''}
                 <div>
-                    <span class="recipe-category">${recipe.category}</span>
+                    <span class="recipe-category">${escapeHtml(recipe.category || '')}</span>
                 </div>
             </div>
         </div>
-    `).join('');
+    `}).join('');
 }
 
-// פונקציה להצגת מתכון ספציפי
-function showRecipe(id) {
+window.showRecipe = function(id) {
     localStorage.setItem('selectedRecipeId', id);
     window.location.href = 'recipe-detail.html';
 }
 
-// פונקציה לחיפוש מתכונים
-function setupSearch() {
+function setupSearch(allRecipes) {
     const searchInput = document.getElementById('searchInput');
-    
     searchInput.addEventListener('input', (e) => {
         const searchTerm = e.target.value.toLowerCase();
-        const savedRecipes = JSON.parse(localStorage.getItem('recipes') || '[]');
-        const filtered = savedRecipes.filter(recipe =>
-            recipe.name.toLowerCase().includes(searchTerm) ||
-            recipe.category.toLowerCase().includes(searchTerm)
-        );
+        const filtered = allRecipes.filter(recipe => {
+            const name = (recipe.name || '').toLowerCase();
+            const source = getRecipeSourceLabel(recipe).toLowerCase();
+            return name.includes(searchTerm) || source.includes(searchTerm);
+        });
         displayRecipes(filtered);
     });
 }
 
-// פונקציה לפילטור לפי קטגוריה
-function setupCategoryFilter() {
+function setupCategoryFilter(allRecipes) {
     const container = document.getElementById('category-filters');
     if (!container) return;
     
@@ -128,38 +142,52 @@ function setupCategoryFilter() {
         if (!e.target.classList.contains('category-chip')) return;
         
         activeCategory = e.target.dataset.category;
-        
-        // עדכון ה-chip הפעיל
         container.querySelectorAll('.category-chip').forEach(btn => btn.classList.remove('active'));
         e.target.classList.add('active');
-        
-        // ניקוי החיפוש
         document.getElementById('searchInput').value = '';
         
-        // פילטור
-        const savedRecipes = JSON.parse(localStorage.getItem('recipes') || '[]');
         const filtered = activeCategory === 'הכל' 
-            ? savedRecipes 
-            : savedRecipes.filter(r => r.category === activeCategory);
+            ? allRecipes 
+            : allRecipes.filter(r => r.category === activeCategory);
         displayRecipes(filtered);
     });
 }
 
-// אתחול האפליקציה
-document.addEventListener('DOMContentLoaded', () => {
-    const savedRecipes = localStorage.getItem('recipes');
-    
-    if (savedRecipes) {
-        const recipesFromStorage = JSON.parse(savedRecipes);
-        displayRecipes(recipesFromStorage);
-    } else {
-        localStorage.setItem('recipes', JSON.stringify(recipes));
+async function initApp() {
+    try {
+        const snapshot = await getDocs(collection(db, 'recipes'));
+        let recipes = [];
+        
+        if (snapshot.empty) {
+            // אין מתכונים ב-Firebase - נעלה את ברירות המחדל
+            for (const recipe of defaultRecipes) {
+                await setDoc(doc(db, 'recipes', recipe.id), recipe);
+            }
+            recipes = defaultRecipes;
+        } else {
+            snapshot.forEach(d => recipes.push({ id: d.id, ...d.data() }));
+        }
+
+        console.log('🍽️ נטענו מ-Firebase:', recipes.length, 'מתכונים');
+        
         displayRecipes(recipes);
+        setupSearch(recipes);
+        setupCategoryFilter(recipes);
+        
+    } catch (err) {
+        console.error('שגיאה בטעינת מתכונים:', err);
+        const msg = err && (err.message || String(err)) || 'שגיאה לא ידועה';
+        const container = document.getElementById('recipes');
+        if (container) {
+            container.innerHTML = `
+                <div class="no-recipes" style="max-width: 400px; margin: 0 auto; text-align: center; padding: 24px;">
+                    <p style="margin-bottom: 12px;">לא הצלחנו לטעון מתכונים מ-Firebase.</p>
+                    <p style="font-size: 0.85rem; color: #c62828; margin-bottom: 16px; word-break: break-all;">${escapeHtml(msg)}</p>
+                    <p style="font-size: 0.9rem; color: #698996;">נסי לרענן את הדף. אם פתחת מקובץ (file://) — הרצי דרך שרת מקומי.</p>
+                </div>
+            `;
+        }
     }
-    
-    setupSearch();
-    setupCategoryFilter();
-    console.log('🍽️ האפליקציה טעונה בהצלחה!');
     
     const addBtn = document.getElementById('add-recipe-btn');
     if (addBtn) {
@@ -167,4 +195,21 @@ document.addEventListener('DOMContentLoaded', () => {
             window.location.href = 'add-recipe.html';
         });
     }
+}
+
+function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    initApp().catch(err => {
+        console.error('initApp rejected:', err);
+        const container = document.getElementById('recipes');
+        if (container) {
+            const msg = err && (err.message || String(err)) || 'שגיאה לא ידועה';
+            container.innerHTML = `<div class="no-recipes" style="max-width: 400px; margin: 0 auto; text-align: center; padding: 24px;"><p>שגיאה בטעינה: ${escapeHtml(msg)}</p></div>`;
+        }
+    });
 });

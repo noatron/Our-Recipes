@@ -73,7 +73,7 @@ header h1 {
 }
 
 main {
-    padding-bottom: 100px;
+    padding-bottom: 120px;
 }
 
 .recipe-image {
@@ -89,8 +89,14 @@ main {
 .recipe-name {
     font-size: 1.5rem;
     font-weight: 400;
-    margin-bottom: 10px;
+    margin-bottom: 4px;
     color: #407076;
+}
+
+.recipe-source {
+    font-size: 0.9rem;
+    color: #698996;
+    margin: 0 0 10px 0;
 }
 
 .recipe-meta {

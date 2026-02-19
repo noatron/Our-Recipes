@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
@@ -15,11 +13,11 @@
         .title-section { position: relative; display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; }
         .title-section h1 { flex: 1; margin: 0; }
         .menu-button { background: transparent; border: none; color: #407076; cursor: pointer; padding: 8px; display: flex; align-items: center; justify-content: center; transition: all 0.3s; margin-right: 10px; flex-shrink: 0; }
-        .menu-button:hover { color: #698996; transform: scale(1.1); }
+        .menu-button:hover { color: #698996; transform: scale(1.1); box-shadow: none; }
         .dropdown-menu { display: none; position: absolute; top: 45px; left: 0; background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); z-index: 100; min-width: 180px; overflow: hidden; }
         .dropdown-menu.show { display: block; }
         .dropdown-menu button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 14px 18px; border: none; background: white; color: #407076; font-family: 'Varela Round', sans-serif; font-size: 1rem; cursor: pointer; transition: all 0.2s; text-align: right; }
-        .dropdown-menu button:hover { background: #f5f5f5; }
+        .dropdown-menu button:hover { background: #f5f5f5; transform: none; box-shadow: none; }
         .dropdown-menu button:last-child { color: #d32f2f; }
         .dropdown-menu button:last-child:hover { background: #ffebee; }
         .dropdown-menu button svg { flex-shrink: 0; }
@@ -28,21 +26,22 @@
         .recipe-detail h2 { color: #407076; font-weight: 400; font-size: 1.8rem; margin-top: 30px; margin-bottom: 15px; font-family: 'Varela Round', sans-serif; }
         .recipe-detail p, .recipe-detail li { color: #407076; line-height: 1.6; }
         .recipe-detail-image { width: 100%; height: 400px; object-fit: cover; border-radius: 15px; margin-bottom: 20px; }
-        .recipe-info { display: flex; gap: 30px; margin-bottom: 30px; padding-bottom: 20px; padding-top: 50px; border-top: 2px solid #FFD8BE; position: relative; }
-        .recipe-info::before { content: ''; position: absolute; top: 10px; left: 0; right: 0; border-top: 2px solid #FFD8BE; }
+        .recipe-info { display: flex; gap: 30px; margin-bottom: 30px; padding-bottom: 20px; padding-top: 20px; border-top: 2px solid #FFD8BE; }
         .info-item { font-size: 1.1rem; color: #698996; }
         .section-title { font-size: 1.8rem; color: #407076; margin: 30px 0 15px 0; }
         .ingredients-list { list-style: none; padding: 30px 20px; margin: 20px 0; background: linear-gradient(transparent 0, transparent 39px, #407076 39px, #407076 40px), linear-gradient(90deg, #FFD8BE 0, #FFD8BE 2px, transparent 2px); background-size: 100% 40px, 100% 100%; background-position: 0 0, 40px 0; position: relative; border-radius: 10px; }
         .ingredients-list::before { content: ''; position: absolute; right: 40px; top: 0; width: 2px; height: 100%; background: #FFD8BE; }
-        .ingredients-list li { padding: 15px 60px 0px 20px; margin: 0; font-family: 'Varela Round', sans-serif; font-size: 1.1rem; line-height: 32px; height: 40px; }
-        .ingredients-list li:hover { color: #698996; cursor: pointer; }
+        .ingredients-list li { padding: 15px 60px 0px 20px; margin: 0; font-family: 'Varela Round', sans-serif; font-size: 1.1rem; line-height: 32px; height: 40px; cursor: pointer; }
+        .ingredients-list li:hover { color: #698996; }
         .ingredients-list li.checked { text-decoration: line-through; opacity: 0.5; color: #698996; }
         .instructions-list { list-style: none; counter-reset: step-counter; padding: 30px 20px; margin: 20px 0; background: linear-gradient(transparent 0, transparent 39px, #407076 39px, #407076 40px), linear-gradient(90deg, #FFD8BE 0, #FFD8BE 2px, transparent 2px); background-size: 100% 40px, 100% 100%; background-position: 0 0, 40px 0; position: relative; border-radius: 10px; }
         .instructions-list::before { content: ''; position: absolute; right: 40px; top: 0; width: 2px; height: 100%; background: #FFD8BE; }
-        .instructions-list li { counter-increment: step-counter; padding: 12px 60px 0px 20px; margin: 0; font-family: 'Varela Round', sans-serif; font-size: 1.1rem; line-height: 30px; min-height: 40px; color: #407076; cursor: pointer; transition: all 0.3s; background: transparent; border: none; position: relative; }
+        .instructions-list li { counter-increment: step-counter; padding: 12px 60px 0px 20px; margin: 0; font-family: 'Varela Round', sans-serif; font-size: 1.1rem; line-height: 30px; min-height: 40px; color: #407076; cursor: pointer; transition: all 0.3s; position: relative; }
         .instructions-list li::before { content: counter(step-counter) "."; position: absolute; right: 25px; top: 16px; font-family: 'Varela Round', sans-serif; color: #407076; font-size: 1.1rem; }
         .instructions-list li:hover { color: #698996; }
         .instructions-list li.checked { text-decoration: line-through; opacity: 0.5; color: #698996; }
+        .open-recipe-btn { display: block; text-align: center; background: #407076; color: white; padding: 16px; border-radius: 12px; margin-top: 20px; font-family: 'Varela Round', sans-serif; font-size: 1.1rem; text-decoration: none; transition: all 0.3s; }
+        .open-recipe-btn:hover { background: #698996; }
         .edit-input { width: 100%; background: #F8F7FF; border: none; border-radius: 6px; font-family: 'Varela Round', sans-serif; font-size: 1.1rem; color: #407076; padding: 4px 8px; outline: none; direction: rtl; }
         .edit-title-input { width: 100%; background: #F8F7FF; border: none; border-radius: 6px; font-family: 'Varela Round', sans-serif; font-size: 2.5rem; color: #407076; font-weight: 400; outline: none; direction: rtl; padding: 4px 8px; }
         .save-button { display: none; width: 100%; background: #407076; color: white; border: none; border-radius: 12px; padding: 14px; font-family: 'Varela Round', sans-serif; font-size: 1.1rem; cursor: pointer; margin-top: 20px; transition: all 0.3s; }
@@ -50,10 +49,14 @@
         .save-button.visible { display: block; }
         .cancel-button { display: none; width: 100%; background: transparent; color: #698996; border: 2px solid #698996; border-radius: 12px; padding: 12px; font-family: 'Varela Round', sans-serif; font-size: 1rem; cursor: pointer; margin-top: 10px; transition: all 0.3s; }
         .cancel-button.visible { display: block; }
+        .refresh-from-link-block { margin-top: 8px; margin-bottom: 16px; }
+        .refresh-from-link-btn { display: inline-flex; align-items: center; gap: 8px; background: #407076; color: #FFEEDD; border: none; border-radius: 10px; padding: 10px 18px; font-family: 'Varela Round', sans-serif; font-size: 0.95rem; cursor: pointer; transition: all 0.3s; }
+        .refresh-from-link-btn:hover:not(:disabled) { background: #698996; }
+        .refresh-from-link-btn:disabled { opacity: 0.7; cursor: not-allowed; }
     </style>
 </head>
 <body>
-    <button class="back-button" onclick="goBack()">
+    <button class="back-button" id="backButton">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="m9 18 6-6-6-6"/>
         </svg>
@@ -66,20 +69,26 @@
             
             <div class="title-section">
                 <h1 id="recipeTitle"></h1>
-                <button class="menu-button" onclick="toggleMenu()">
+                <button class="menu-button" id="menuButton">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/>
                     </svg>
                 </button>
                 
                 <div class="dropdown-menu" id="dropdownMenu">
-                    <button onclick="editRecipe()">
+                    <button id="refreshFromLinkBtn" style="display: none;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/>
+                        </svg>
+                        רענן מהקישור
+                    </button>
+                    <button id="editBtn">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/>
                         </svg>
                         ערוך מתכון
                     </button>
-                    <button onclick="deleteRecipe()">
+                    <button id="deleteBtn">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
                             <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
@@ -93,12 +102,21 @@
             <p class="recipe-source-meta" id="recipeSourceContainer" style="display: none;">
                 <span id="recipeSource"></span>
             </p>
+
+            <div id="refreshFromLinkBlock" class="refresh-from-link-block" style="display: none;">
+                <button type="button" class="refresh-from-link-btn" id="refreshFromLinkBtnVisible">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/>
+                    </svg>
+                    רענן שם ותמונה מהקישור
+                </button>
+            </div>
             
             <div class="recipe-info">
                 <span class="info-item"><span id="recipeCategory"></span></span>
             </div>
             
-            <h2 class="section-title">
+            <h2 class="section-title" id="ingredientsTitle">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-left: 8px;">
                     <path d="M3 5h.01"/><path d="M3 12h.01"/><path d="M3 19h.01"/>
                     <path d="M8 5h13"/><path d="M8 12h13"/><path d="M8 19h13"/>
@@ -107,7 +125,7 @@
             </h2>
             <ul id="ingredientsList" class="ingredients-list"></ul>
             
-            <h2 class="section-title">
+            <h2 class="section-title" id="instructionsTitle">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-left: 8px;">
                     <path d="M17 21a1 1 0 0 0 1-1v-5.35c0-.457.316-.844.727-1.041a4 4 0 0 0-2.134-7.589 5 5 0 0 0-9.186 0 4 4 0 0 0-2.134 7.588c.411.198.727.585.727 1.041V20a1 1 0 0 0 1 1Z"/>
                     <path d="M6 17h12"/>
@@ -116,70 +134,111 @@
             </h2>
             <ul id="instructionsList" class="instructions-list"></ul>
 
-            <button class="save-button" id="saveButton" onclick="saveEdit()">✓ שמור שינויים</button>
-            <button class="cancel-button" id="cancelButton" onclick="cancelEdit()">ביטול</button>
+            <button class="save-button" id="saveButton">✓ שמור שינויים</button>
+            <button class="cancel-button" id="cancelButton">ביטול</button>
         </div>
     </div>
 
-    <script>
-        function goBack() {
+    <script type="module">
+        import { db } from './firebase.js';
+        import { getDoc, doc, updateDoc, deleteDoc } from 'https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js';
+        import { fetchRecipeMeta } from './recipe-import-utils.js';
+
+        let recipe = null;
+
+        // --- כפתורים ---
+        document.getElementById('backButton').addEventListener('click', () => {
             window.location.href = 'index.html';
-        }
+        });
 
-        function toggleMenu() {
-            const menu = document.getElementById('dropdownMenu');
-            menu.classList.toggle('show');
-        }
+        document.getElementById('menuButton').addEventListener('click', () => {
+            document.getElementById('dropdownMenu').classList.toggle('show');
+        });
 
-        window.onclick = function(event) {
-            if (!event.target.matches('.menu-button') && !event.target.closest('.menu-button')) {
-                const menu = document.getElementById('dropdownMenu');
-                if (menu.classList.contains('show')) {
-                    menu.classList.remove('show');
-                }
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.menu-button') && !e.target.closest('.dropdown-menu')) {
+                document.getElementById('dropdownMenu').classList.remove('show');
             }
+        });
+
+        document.getElementById('editBtn').addEventListener('click', () => {
+            document.getElementById('dropdownMenu').classList.remove('show');
+            editRecipe();
+        });
+
+        document.getElementById('deleteBtn').addEventListener('click', () => {
+            document.getElementById('dropdownMenu').classList.remove('show');
+            deleteRecipe();
+        });
+
+        document.getElementById('refreshFromLinkBtn').addEventListener('click', refreshFromLink);
+        document.getElementById('refreshFromLinkBtnVisible').addEventListener('click', refreshFromLink);
+        document.getElementById('saveButton').addEventListener('click', saveEdit);
+        document.getElementById('cancelButton').addEventListener('click', () => location.reload());
+
+        // --- טעינת מתכון ---
+        async function loadRecipe() {
+            const recipeId = localStorage.getItem('selectedRecipeId');
+            if (!recipeId) {
+                document.querySelector('.recipe-detail').innerHTML = '<p class="no-recipes">לא נבחר מתכון. <a href="index.html">חזרה לרשימה</a></p>';
+                return;
+            }
+
+            const snap = await getDoc(doc(db, 'recipes', String(recipeId)));
+            if (!snap.exists()) {
+                document.querySelector('.recipe-detail').innerHTML = '<p class="no-recipes">המתכון לא נמצא. <a href="index.html">חזרה לרשימה</a></p>';
+                return;
+            }
+
+            recipe = { id: snap.id, ...snap.data() };
+            renderRecipe(recipe);
         }
 
-        const recipeId = parseInt(localStorage.getItem('selectedRecipeId'));
-        const recipes = JSON.parse(localStorage.getItem('recipes') || '[]');
-        const recipe = recipes.find(r => r.id === recipeId);
+        function renderRecipe(recipe) {
+            const img = document.getElementById('recipeImage');
+            img.src = recipe.image || '';
+            img.alt = recipe.name || '';
 
-        if (recipe) {
-            document.getElementById('recipeImage').src = recipe.image;
-            document.getElementById('recipeImage').alt = recipe.name;
-            document.getElementById('recipeTitle').textContent = recipe.name;
-            document.getElementById('recipeCategory').textContent = recipe.category;
-            
-            if (recipe.source) {
-                try {
-                    document.getElementById('recipeSource').textContent = recipe.url ? new URL(recipe.url).hostname : recipe.source;
-                } catch(e) {
-                    document.getElementById('recipeSource').textContent = recipe.source || '';
+            document.getElementById('recipeTitle').textContent = recipe.name || 'מתכון';
+            document.getElementById('recipeCategory').textContent = recipe.category || '';
+
+            if (recipe.source || recipe.url) {
+                let sourceText = recipe.source || '';
+                if (recipe.url) {
+                    try { sourceText = new URL(recipe.url).hostname; } catch (e) {}
                 }
+                document.getElementById('recipeSource').textContent = sourceText;
                 document.getElementById('recipeSourceContainer').style.display = 'block';
             }
 
             if (recipe.url) {
-                document.querySelector('.section-title').style.display = 'none';
-                document.querySelectorAll('.section-title')[1].style.display = 'none';
+                // מתכון מקישור - הצג כפתור פתיחה
+                document.getElementById('ingredientsTitle').style.display = 'none';
+                document.getElementById('instructionsTitle').style.display = 'none';
                 document.getElementById('ingredientsList').style.display = 'none';
                 document.getElementById('instructionsList').style.display = 'none';
-                
-                const iframe = document.createElement('iframe');
-                iframe.src = recipe.url;
-                iframe.style.cssText = 'width:100%; height:80vh; border:none; border-radius:12px; margin-top:20px;';
-                document.querySelector('.recipe-detail').appendChild(iframe);
+
+                const btn = document.createElement('a');
+                btn.href = recipe.url;
+                btn.target = '_blank';
+                btn.className = 'open-recipe-btn';
+                btn.textContent = '🔗 פתחי את המתכון המקורי';
+                document.querySelector('.recipe-detail').appendChild(btn);
+
+                document.getElementById('refreshFromLinkBtn').style.display = 'flex';
+                document.getElementById('refreshFromLinkBlock').style.display = 'block';
             } else {
+                // מתכון ידני - הצג מרכיבים והוראות
                 const ingredientsList = document.getElementById('ingredientsList');
-                recipe.ingredients.forEach(ingredient => {
+                (recipe.ingredients || []).forEach(ingredient => {
                     const li = document.createElement('li');
                     li.textContent = ingredient;
                     li.addEventListener('click', function() { this.classList.toggle('checked'); });
                     ingredientsList.appendChild(li);
                 });
-                
+
                 const instructionsList = document.getElementById('instructionsList');
-                recipe.instructions.forEach(instruction => {
+                (recipe.instructions || []).forEach(instruction => {
                     const li = document.createElement('li');
                     li.textContent = instruction;
                     li.addEventListener('click', function() { this.classList.toggle('checked'); });
@@ -188,24 +247,46 @@
             }
         }
 
-        function deleteRecipe() {
-            const menu = document.getElementById('dropdownMenu');
-            menu.classList.remove('show');
-            const confirmDelete = confirm('את בטוחה שאת רוצה למחוק את המתכון "' + recipe.name + '"?');
-            if (confirmDelete) {
-                const recipeIndex = recipes.findIndex(r => r.id === recipeId);
-                if (recipeIndex !== -1) {
-                    recipes.splice(recipeIndex, 1);
-                    localStorage.setItem('recipes', JSON.stringify(recipes));
-                    alert('המתכון נמחק בהצלחה! ✓');
-                    window.location.href = 'index.html';
-                }
+        // --- רענון מקישור ---
+        async function refreshFromLink() {
+            if (!recipe?.url) return;
+            const btn = document.getElementById('refreshFromLinkBtnVisible');
+            btn.disabled = true;
+            btn.textContent = 'מרענן...';
+            try {
+                const { name, image } = await fetchRecipeMeta(recipe.url);
+                recipe.name = name;
+                if (image) recipe.image = image;
+                const { id, ...data } = recipe;
+                await updateDoc(doc(db, 'recipes', id), data);
+                alert('שם ותמונה עודכנו ✓');
+                location.reload();
+            } catch (err) {
+                console.error(err);
+                alert('לא הצלחנו לרענן. נסי שוב.');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'רענן שם ותמונה מהקישור';
             }
         }
 
+        // --- מחיקה ---
+        async function deleteRecipe() {
+            if (!recipe) return;
+            if (!confirm(`את בטוחה שאת רוצה למחוק את "${recipe.name}"?`)) return;
+            try {
+                await deleteDoc(doc(db, 'recipes', recipe.id));
+                alert('המתכון נמחק ✓');
+                window.location.href = 'index.html';
+            } catch (err) {
+                console.error(err);
+                alert('שגיאה במחיקה. נסי שוב.');
+            }
+        }
+
+        // --- עריכה ---
         function editRecipe() {
-            const menu = document.getElementById('dropdownMenu');
-            menu.classList.remove('show');
+            if (!recipe) return;
             if (recipe.url) {
                 editLinkRecipe();
             } else {
@@ -214,36 +295,34 @@
         }
 
         function editLinkRecipe() {
-            const titleEl = document.getElementById('recipeTitle');
-            titleEl.innerHTML = '<input class="edit-title-input" id="editTitle" value="' + recipe.name + '">';
-
-            const categoryEl = document.getElementById('recipeCategory');
-            categoryEl.innerHTML = '<input class="edit-input" id="editCategory" value="' + recipe.category + '" placeholder="קטגוריה">';
-
+            document.getElementById('recipeTitle').innerHTML =
+                `<input class="edit-title-input" id="editTitle" value="${escapeHtml(recipe.name)}">`;
+            document.getElementById('recipeCategory').innerHTML =
+                `<input class="edit-input" id="editCategory" value="${escapeHtml(recipe.category || '')}" placeholder="קטגוריה">`;
             const img = document.getElementById('recipeImage');
-            img.insertAdjacentHTML('afterend', '<input class="edit-input" id="editImage" value="' + (recipe.image || '') + '" placeholder="קישור לתמונה (URL)" style="margin-bottom: 15px;">');
-
+            img.insertAdjacentHTML('afterend',
+                `<input class="edit-input" id="editImage" value="${escapeHtml(recipe.image || '')}" placeholder="קישור לתמונה" style="margin-bottom:15px;">`);
             document.getElementById('saveButton').classList.add('visible');
             document.getElementById('cancelButton').classList.add('visible');
         }
 
         function editFullRecipe() {
-            const titleEl = document.getElementById('recipeTitle');
-            titleEl.innerHTML = '<input class="edit-title-input" id="editTitle" value="' + recipe.name + '">';
+            document.getElementById('recipeTitle').innerHTML =
+                `<input class="edit-title-input" id="editTitle" value="${escapeHtml(recipe.name)}">`;
 
             const ingredientsList = document.getElementById('ingredientsList');
             ingredientsList.innerHTML = '';
-            recipe.ingredients.forEach((ingredient, index) => {
+            (recipe.ingredients || []).forEach((ingredient, index) => {
                 const li = document.createElement('li');
-                li.innerHTML = '<input class="edit-input" data-index="' + index + '" data-type="ingredient" value="' + ingredient + '">';
+                li.innerHTML = `<input class="edit-input" data-index="${index}" data-type="ingredient" value="${escapeHtml(ingredient)}">`;
                 ingredientsList.appendChild(li);
             });
 
             const instructionsList = document.getElementById('instructionsList');
             instructionsList.innerHTML = '';
-            recipe.instructions.forEach((instruction, index) => {
+            (recipe.instructions || []).forEach((instruction, index) => {
                 const li = document.createElement('li');
-                li.innerHTML = '<input class="edit-input" data-index="' + index + '" data-type="instruction" value="' + instruction + '">';
+                li.innerHTML = `<input class="edit-input" data-index="${index}" data-type="instruction" value="${escapeHtml(instruction)}">`;
                 instructionsList.appendChild(li);
             });
 
@@ -251,31 +330,38 @@
             document.getElementById('cancelButton').classList.add('visible');
         }
 
-        function saveEdit() {
-            recipe.name = document.getElementById('editTitle').value;
+        // --- שמירה ---
+        async function saveEdit() {
+            if (!recipe) return;
+            recipe.name = document.getElementById('editTitle')?.value || recipe.name;
 
             if (recipe.url) {
-                const categoryInput = document.getElementById('editCategory');
-                const imageInput = document.getElementById('editImage');
-                if (categoryInput) recipe.category = categoryInput.value;
-                if (imageInput) recipe.image = imageInput.value;
+                recipe.category = document.getElementById('editCategory')?.value || recipe.category;
+                recipe.image = document.getElementById('editImage')?.value || recipe.image;
             } else {
-                const ingredientInputs = document.querySelectorAll('[data-type="ingredient"]');
-                recipe.ingredients = Array.from(ingredientInputs).map(input => input.value).filter(v => v.trim() !== '');
-
-                const instructionInputs = document.querySelectorAll('[data-type="instruction"]');
-                recipe.instructions = Array.from(instructionInputs).map(input => input.value).filter(v => v.trim() !== '');
+                recipe.ingredients = Array.from(document.querySelectorAll('[data-type="ingredient"]'))
+                    .map(i => i.value).filter(v => v.trim());
+                recipe.instructions = Array.from(document.querySelectorAll('[data-type="instruction"]'))
+                    .map(i => i.value).filter(v => v.trim());
             }
 
-            const recipeIndex = recipes.findIndex(r => r.id === recipeId);
-            recipes[recipeIndex] = recipe;
-            localStorage.setItem('recipes', JSON.stringify(recipes));
-            location.reload();
+            try {
+                const { id, ...data } = recipe;
+                await updateDoc(doc(db, 'recipes', id), data);
+                location.reload();
+            } catch (err) {
+                console.error(err);
+                alert('שגיאה בשמירה. נסי שוב.');
+            }
         }
 
-        function cancelEdit() {
-            location.reload();
+        function escapeHtml(s) {
+            const div = document.createElement('div');
+            div.textContent = s || '';
+            return div.innerHTML;
         }
+
+        loadRecipe();
     </script>
 </body>
 </html>

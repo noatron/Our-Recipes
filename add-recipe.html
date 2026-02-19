@@ -39,6 +39,16 @@
                         </svg>
                         <span>הזנה ידנית</span>
                     </button>
+                    <button type="button" class="tab-btn" data-mode="csv">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <path d="M16 13H8"></path>
+                            <path d="M16 17H8"></path>
+                            <path d="M10 9H8"></path>
+                        </svg>
+                        <span>ייבוא מקובץ CSV</span>
+                    </button>
                 </div>
         
                 <!-- Import Mode -->
@@ -67,6 +77,30 @@
                             <p class="supported-sites">שיפודון, 10 דקות, טעים מאוד, ועוד...</p>
                             <p class="fallback-note">אם הייבוא לא עובד, תמיד אפשר לעבור להזנה ידנית ↖️</p>
                         </div>
+                    </div>
+                </div>
+
+                <!-- CSV Bulk Import Mode -->
+                <div id="csv-mode" class="mode-content">
+                    <div class="import-section">
+                        <p class="mode-description">העלי קובץ CSV עם עמודת קישורים (או קישור אחד בשורה), והמערכת תייבא את כל המתכונים ל-Firebase.</p>
+                        <div class="form-group">
+                            <label for="csvFile">בחרי קובץ CSV</label>
+                            <input type="file" id="csvFile" accept=".csv,text/csv,text/plain">
+                        </div>
+                        <p class="mode-description or-divider">או הדביקי קישורים (שורה אחת לכל קישור):</p>
+                        <div class="form-group">
+                            <textarea id="csvPaste" rows="8" placeholder="https://www.example.com/recipe/1&#10;https://www.example.com/recipe/2&#10;..."></textarea>
+                        </div>
+                        <button type="button" class="btn-primary" id="csvImportBtn">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                            ייבא את כל הלינקים
+                        </button>
+                        <div id="csv-status" class="import-status csv-bulk-status"></div>
                     </div>
                 </div>
         
@@ -135,6 +169,6 @@
         </main>
     </div>
 
-    <script src="add-recipe.js"></script>
+    <script type="module" src="add-recipe.js"></script>
 </body>
 </html>
