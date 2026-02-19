@@ -1,239 +1,176 @@
-import { db } from './firebase.js';
-import { collection, addDoc, getDocs, query, where } from 'https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js';
-import { extractRecipeName, extractRecipeImage } from './recipe-import-utils.js';
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>הוספת מתכון - מתכונים שווים</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app">
+        <header>
+            <a href="index.html" class="back-link">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m9 18 6-6-6-6"/>
+                </svg>
+                חזור
+            </a>
+            <h1>
+                <img src="Logo.svg" alt="" class="logo">
+                הוספת מתכון חדש
+            </h1>
+        </header>
 
-/** בדיקת כפילות לפי URL */
-async function urlAlreadyExists(url) {
-    const q = query(collection(db, 'recipes'), where('url', '==', url));
-    const existing = await getDocs(q);
-    return !existing.empty;
-}
+        <main>
+            <div class="add-recipe-form">
+                
+                <!-- Mode Toggle Tabs -->
+                <div class="mode-tabs">
+                    <button type="button" class="tab-btn active" data-mode="import">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                        </svg>
+                        <span>ייבוא מקישור</span>
+                    </button>
+                    <button type="button" class="tab-btn" data-mode="manual">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path>
+                        </svg>
+                        <span>הזנה ידנית</span>
+                    </button>
+                    <button type="button" class="tab-btn" data-mode="csv">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <path d="M16 13H8"></path>
+                            <path d="M16 17H8"></path>
+                            <path d="M10 9H8"></path>
+                        </svg>
+                        <span>ייבוא מקובץ CSV</span>
+                    </button>
+                </div>
+        
+                <!-- Import Mode -->
+                <div id="import-mode" class="mode-content active">
+                    <div class="import-section">
+                        <p class="mode-description">הדביקי קישור למתכון מאתר בישול, והמערכת תייבא אוטומטית את כל הפרטים</p>
+                        
+                        <div class="form-group">
+                            <label for="recipeUrl">קישור למתכון</label>
+                            <input type="url" id="recipeUrl" placeholder="https://www.10dakot.co.il/recipe/...">
+                        </div>
+                        
+                        <button type="button" class="btn-primary" id="importBtn">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                            ייבא מתכון
+                        </button>
+                        
+                        <div id="import-status" class="import-status"></div>
+                        
+                        <div class="import-info">
+                            <p><strong>אתרים נתמכים:</strong></p>
+                            <p class="supported-sites">שיפודון, 10 דקות, טעים מאוד, ועוד...</p>
+                            <p class="fallback-note">אם הייבוא לא עובד, תמיד אפשר לעבור להזנה ידנית ↖️</p>
+                        </div>
+                    </div>
+                </div>
 
-/** מפרק CSV או טקסט לשורות ומחלץ URLs */
-function parseUrlsFromCsv(text) {
-    if (!text || !text.trim()) return [];
-    const lines = text.trim().split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-    const urlLike = /^https?:\/\//i;
-    const urls = [];
-    for (const line of lines) {
-        const parts = line.split(/[\t,;]/).map(p => p.trim());
-        let found = false;
-        for (const p of parts) {
-            if (urlLike.test(p)) {
-                urls.push(p);
-                found = true;
-                break;
-            }
-        }
-        if (!found && urlLike.test(line)) urls.push(line);
-    }
-    return [...new Set(urls)];
-}
+                <!-- CSV Bulk Import Mode -->
+                <div id="csv-mode" class="mode-content">
+                    <div class="import-section">
+                        <p class="mode-description">העלי קובץ CSV עם עמודת קישורים (או קישור אחד בשורה), והמערכת תייבא את כל המתכונים ל-Firebase.</p>
+                        <div class="form-group">
+                            <label for="csvFile">בחרי קובץ CSV</label>
+                            <input type="file" id="csvFile" accept=".csv,text/csv,text/plain">
+                        </div>
+                        <p class="mode-description or-divider">או הדביקי קישורים (שורה אחת לכל קישור):</p>
+                        <div class="form-group">
+                            <textarea id="csvPaste" rows="8" placeholder="https://www.example.com/recipe/1&#10;https://www.example.com/recipe/2&#10;..."></textarea>
+                        </div>
+                        <button type="button" class="btn-primary" id="csvImportBtn">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                            ייבא את כל הלינקים
+                        </button>
+                        <div id="csv-status" class="import-status csv-bulk-status"></div>
+                    </div>
+                </div>
+        
+                <!-- Manual Mode -->
+                <div id="manual-mode" class="mode-content">
+                    <form id="recipeForm">
+                        
+                        <p class="mode-description">מלאי את פרטי המתכון באופן ידני</p>
+        
+                        <!-- שם המתכון -->
+                        <div class="form-group">
+                            <label for="recipeName">שם המתכון *</label>
+                            <input type="text" id="recipeName" required placeholder="לדוגמה: עוגת שוקולד של סבתא">
+                        </div>
+        
+                        <!-- קטגוריה -->
+                        <div class="form-group">
+                            <label for="recipeCategory">קטגוריה *</label>
+                            <select id="recipeCategory" required>
+                                <option value="עיקריות">עיקריות</option>
+<option value="תוספות">תוספות</option>
+<option value="סלטים">סלטים</option>
+<option value="מרקים">מרקים</option>
+<option value="קינוחים">קינוחים</option>
+<option value="עוגות">עוגות</option>
+<option value="עוגיות">עוגיות</option>
+<option value="מאפים">מאפים</option>
+<option value="לחמים">לחמים</option>
+<option value="כללי">כללי</option>
+<option value="ממרחים">ממרחים</option>
+</select>
+                        </div>
+        
+                        <!-- מקור -->
+                        <div class="form-group">
+                            <label for="recipeSource">מקור</label>
+                            <input type="text" id="recipeSource" placeholder="לדוגמה: סבתא רחל">
+                        </div>
+        
+                        <!-- URL לתמונה -->
+                        <div class="form-group">
+                            <label for="recipeImage">קישור לתמונה</label>
+                            <input type="url" id="recipeImage" placeholder="https://example.com/image.jpg">
+                        </div>
+        
+                        <!-- מרכיבים -->
+                        <div class="form-group">
+                            <label for="recipeIngredients">מרכיבים * <span class="hint">(כל שורה = מרכיב)</span></label>
+                            <textarea id="recipeIngredients" required rows="6" placeholder="2 כוסות קמח&#10;3 ביצים&#10;כוס סוכר"></textarea>
+                        </div>
+        
+                        <!-- הוראות הכנה -->
+                        <div class="form-group">
+                            <label for="recipeInstructions">הוראות הכנה * <span class="hint">(כל שורה = שלב)</span></label>
+                            <textarea id="recipeInstructions" required rows="8" placeholder="מחממים תנור ל-180 מעלות&#10;מערבבים מרכיבים יבשים"></textarea>
+                        </div>
+        
+                        <!-- כפתורים -->
+                        <div class="form-actions">
+                            <button type="submit" class="btn-primary">שמור מתכון</button>
+                            <button type="button" class="btn-secondary" onclick="window.location.href='index.html'">ביטול</button>
+                        </div>
+        
+                    </form>
+                </div>
+        
+            </div>
+        </main>
+    </div>
 
-/** מייבא מתכון בודד מקישור */
-async function importOneRecipe(url) {
-    const proxyUrl = `/.netlify/functions/fetch-recipe?url=${encodeURIComponent(url)}`;
-    const response = await fetch(proxyUrl);
-    const html = await response.text();
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, 'text/html');
-
-    const name = extractRecipeName(doc, url) || 'מתכון חדש';
-    const image = extractRecipeImage(doc, url);
-
-    const newRecipe = {
-        name,
-        category: 'כללי',
-        source: new URL(url).hostname,
-        image,
-        url,
-        ingredients: [],
-        instructions: []
-    };
-    await addDoc(collection(db, 'recipes'), newRecipe);
-    return { name, url };
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-    const tabButtons = document.querySelectorAll('.tab-btn');
-    const importMode = document.getElementById('import-mode');
-    const manualMode = document.getElementById('manual-mode');
-    const csvMode = document.getElementById('csv-mode');
-
-    tabButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            const mode = button.getAttribute('data-mode');
-            tabButtons.forEach(btn => btn.classList.remove('active'));
-            button.classList.add('active');
-            importMode.classList.remove('active');
-            manualMode.classList.remove('active');
-            if (csvMode) csvMode.classList.remove('active');
-            if (mode === 'import') {
-                importMode.classList.add('active');
-            } else if (mode === 'csv') {
-                if (csvMode) csvMode.classList.add('active');
-            } else {
-                manualMode.classList.add('active');
-            }
-        });
-    });
-
-    const importBtn = document.getElementById('importBtn');
-    const importStatus = document.getElementById('import-status');
-
-    importBtn.addEventListener('click', async () => {
-        const url = document.getElementById('recipeUrl').value.trim();
-        if (!url) {
-            importStatus.className = 'import-status error';
-            importStatus.textContent = '⚠️ נא להזין קישור למתכון';
-            return;
-        }
-
-        importStatus.className = 'import-status loading';
-        importStatus.textContent = '⏳ בודקת כפילות...';
-
-        try {
-            // בדיקת כפילות
-            const exists = await urlAlreadyExists(url);
-            if (exists) {
-                importStatus.className = 'import-status error';
-                importStatus.textContent = '⚠️ המתכון הזה כבר קיים באוסף!';
-                return;
-            }
-
-            importStatus.textContent = '⏳ מייבאת מתכון...';
-
-            const proxyUrl = `/.netlify/functions/fetch-recipe?url=${encodeURIComponent(url)}`;
-            const response = await fetch(proxyUrl);
-            const html = await response.text();
-
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, 'text/html');
-
-            const name = extractRecipeName(doc, url) || 'מתכון חדש';
-            const image = extractRecipeImage(doc, url);
-
-            const newRecipe = {
-                name,
-                category: 'כללי',
-                source: new URL(url).hostname,
-                image,
-                url,
-                ingredients: [],
-                instructions: []
-            };
-
-            await addDoc(collection(db, 'recipes'), newRecipe);
-            importStatus.className = 'import-status success';
-            importStatus.textContent = '✅ המתכון נשמר! מעבירה...';
-            setTimeout(() => { window.location.href = 'index.html'; }, 800);
-
-        } catch (err) {
-            console.error(err);
-            importStatus.className = 'import-status error';
-            importStatus.textContent = '⚠️ לא הצלחנו לייבא או לשמור. נסי שוב או השתמשי בהזנה ידנית';
-        }
-    });
-
-    const recipeForm = document.getElementById('recipeForm');
-    if (recipeForm) {
-        recipeForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            const name = document.getElementById('recipeName').value;
-            const category = document.getElementById('recipeCategory').value;
-            const source = document.getElementById('recipeSource').value || 'מתכון ביתי';
-            const image = document.getElementById('recipeImage').value || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=300&fit=crop';
-
-            const ingredientsText = document.getElementById('recipeIngredients').value;
-            const ingredients = ingredientsText.split('\n').filter(line => line.trim() !== '');
-
-            const instructionsText = document.getElementById('recipeInstructions').value;
-            const instructions = instructionsText.split('\n').filter(line => line.trim() !== '');
-
-            const submitBtn = recipeForm.querySelector('button[type="submit"]');
-            const originalText = submitBtn.textContent;
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'שומר...';
-
-            try {
-                const newRecipe = { name, category, source, image, ingredients, instructions };
-                await addDoc(collection(db, 'recipes'), newRecipe);
-                window.location.href = 'index.html';
-            } catch (err) {
-                console.error(err);
-                submitBtn.disabled = false;
-                submitBtn.textContent = originalText;
-                alert('שגיאה בשמירת המתכון. נסי שוב.');
-            }
-        });
-    }
-
-    // ייבוא מקובץ CSV
-    const csvFile = document.getElementById('csvFile');
-    const csvPaste = document.getElementById('csvPaste');
-    const csvImportBtn = document.getElementById('csvImportBtn');
-    const csvStatus = document.getElementById('csv-status');
-
-    async function runCsvImport() {
-        let text = (csvPaste?.value || '').trim();
-        if (csvFile?.files?.length) {
-            text = await new Promise((resolve, reject) => {
-                const r = new FileReader();
-                r.onload = () => resolve(r.result || '');
-                r.onerror = () => reject(new Error('שגיאה בקריאת הקובץ'));
-                r.readAsText(csvFile.files[0], 'UTF-8');
-            });
-        }
-        const urls = parseUrlsFromCsv(text);
-        if (urls.length === 0) {
-            csvStatus.className = 'import-status error csv-bulk-status';
-            csvStatus.textContent = '⚠️ לא נמצאו קישורים. הדביקי קישורים (שורה לכל קישור) או בחרי קובץ CSV.';
-            return;
-        }
-
-        csvImportBtn.disabled = true;
-        let done = 0;
-        let skipped = 0;
-        let failed = 0;
-        const total = urls.length;
-
-        const setStatus = (msg, isError = false) => {
-            csvStatus.className = 'import-status csv-bulk-status' + (isError ? ' error' : ' loading');
-            csvStatus.textContent = msg;
-        };
-
-        setStatus(`⏳ מייבא 0 מתוך ${total}...`);
-
-        for (let i = 0; i < urls.length; i++) {
-            try {
-                const exists = await urlAlreadyExists(urls[i]);
-                if (exists) {
-                    skipped++;
-                    setStatus(`⏳ מייבא ${done} מתוך ${total} (${skipped} כפולים דולגו)...`);
-                } else {
-                    await importOneRecipe(urls[i]);
-                    done++;
-                    setStatus(`⏳ מייבא ${done} מתוך ${total}...`);
-                }
-            } catch (err) {
-                console.warn('ייבוא נכשל:', urls[i], err);
-                failed++;
-                setStatus(`⏳ מייבא ${done} מתוך ${total} (${failed} נכשלו)...`);
-            }
-            if (i < urls.length - 1) await new Promise(r => setTimeout(r, 1200));
-        }
-
-        csvImportBtn.disabled = false;
-        csvStatus.className = 'import-status success csv-bulk-status';
-        csvStatus.textContent = `✅ סיום: ${done} יובאו, ${skipped} כפולים דולגו${failed ? `, ${failed} נכשלו.` : '.'}`;
-        if (csvFile) csvFile.value = '';
-        if (csvPaste) csvPaste.value = '';
-    }
-
-    if (csvImportBtn) {
-        csvImportBtn.addEventListener('click', runCsvImport);
-    }
-
-    console.log('✅ add-recipe.js loaded (Firebase)');
-});
+    <script type="module" src="add-recipe.js"></script>
+</body>
+</html>
