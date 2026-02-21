@@ -698,4 +698,19 @@ header .logo {
         width: 16px;
         height: 16px;
     }
+}.fav-btn {
+    background: none;
+    border: none;
+    font-size: 1.1rem;
+    cursor: pointer;
+    padding: 4px;
+    line-height: 1;
+    color: transparent;
+    -webkit-text-stroke: 1.5px #407076;
+    transition: all 0.2s;
+}
+
+.fav-btn.active {
+    color: #407076;
+    -webkit-text-stroke: 0;
 }

@@ -27,7 +27,11 @@ async function toggleFavorite(recipeId, e) {
     }
     await setDoc(doc(db, 'favorites', currentUser.uid), { ids: [...userFavorites] });
     const btn = document.querySelector(`.fav-btn[data-id="${recipeId}"]`);
-    if (btn) btn.textContent = userFavorites.has(recipeId) ? '❤️' : '🤍';
+    if (btn) {
+        const isFav = userFavorites.has(recipeId);
+        btn.style.color = isFav ? '#407076' : 'transparent';
+        btn.style['-webkit-text-stroke'] = isFav ? '0' : '1.5px #407076';
+    }
 }
 window.toggleFavorite = toggleFavorite;
 
@@ -193,10 +197,9 @@ function displayRecipes(recipesToShow) {
             <div class="recipe-content">
                 <h2 class="recipe-name">${escapeHtml(getRecipeDisplayName(recipe))}</h2>
                 ${sourceLabel ? `<p class="recipe-source">${escapeHtml(sourceLabel)}</p>` : ''}
-                <div style="display:flex; align-items:center; justify-content:space-between; margin-top: 4px;">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-top: 8px;">
                     <span class="recipe-category">${escapeHtml(recipe.category || '')}</span>
-                  <div style="display:flex; align-items:center; gap:4px;">
-                    <button class="fav-btn" data-id="${recipe.id}" onclick="toggleFavorite('${recipe.id}', event)" style="background:none;border:none;font-size:1.2rem;cursor:pointer;padding:4px;">${userFavorites.has(recipe.id) ? '❤️' : '🤍'}</button>
+                  <div style="display:flex; align-items:center; gap:2px; flex-shrink:0;">
                     <div class="recipe-menu-wrapper">
                       <button class="recipe-menu-btn" onclick="toggleRecipeMenu(event, '${recipe.id}')">⋮</button>
                       <div class="recipe-menu-dropdown" id="menu-${recipe.id}">
@@ -204,6 +207,7 @@ function displayRecipes(recipesToShow) {
                         <button onclick="deleteRecipeClick('${recipe.id}', event)">🗑️ מחק</button>
                       </div>
                     </div>
+                    <button class="fav-btn" data-id="${recipe.id}" onclick="toggleFavorite('${recipe.id}', event)" style="background:none;border:none;font-size:1.1rem;cursor:pointer;padding:4px;line-height:1;color:${userFavorites.has(recipe.id) ? '#407076' : 'transparent'};-webkit-text-stroke:${userFavorites.has(recipe.id) ? '0' : '1.5px'} #407076;">♥</button>
                   </div>
                 </div>
             </div>
