@@ -1,4 +1,4 @@
-import { db, signInWithGoogle, signOutUser, onUserChange } from './firebase-config.js';
+import { db, signInWithGoogle, signOutUser, onUserChange } from './firebase.js';
 import { collection, getDocs, setDoc, doc, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
 const ADMIN_UIDS = ['xFDkce3C3uPAXt662tkyrwUju9d2'];
