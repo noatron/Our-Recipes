@@ -2,7 +2,7 @@ import { db, signInWithGoogle, signOutUser, onUserChange } from './firebase.js';
 import { collection, getDocs, setDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
 // אדמינים — נוסיף UIDs אחרי הכניסה הראשונה
-const ADMIN_UIDS = [xFDkce3C3uPAXt662tkyrwUju9d2];
+const ADMIN_UIDS = ['xFDkce3C3uPAXt662tkyrwUju9d2'];
 
 let currentUser = null;
 function isAdmin() {
