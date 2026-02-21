@@ -76,7 +76,7 @@ function sortWithFavoritesFirst(recipes) {
     const rest = recipes.filter(r => !userFavorites.has(r.id));
     return [...favs, ...rest];
 }
-javascriptfunction getRecipeDisplayName(recipe) {
+function getRecipeDisplayName(recipe) {
     const name = (recipe.name || '').trim();
     if (!name || /error response|404|forbidden|not found/i.test(name)) return 'מתכון';
     return name;
