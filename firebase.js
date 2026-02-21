@@ -1,5 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
-import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+import { getFirestore } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyAZH8KZfhz6V1zPWEL3qIBgekIgUJvmMeY",
@@ -12,3 +13,24 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
+export const auth = getAuth(app);
+
+const provider = new GoogleAuthProvider();
+
+export async function signInWithGoogle() {
+    try {
+        const result = await signInWithPopup(auth, provider);
+        return result.user;
+    } catch (err) {
+        console.error('שגיאה בהתחברות:', err);
+        return null;
+    }
+}
+
+export async function signOutUser() {
+    await signOut(auth);
+}
+
+export function onUserChange(callback) {
+    return onAuthStateChanged(auth, callback);
+}
