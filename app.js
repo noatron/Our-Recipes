@@ -1,39 +1,5 @@
-import { db, signInWithGoogle, signOutUser, onUserChange } from './firebase.js';
-import { collection, getDocs, setDoc, doc, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
-
-const ADMIN_UIDS = ['xFDkce3C3uPAXt662tkyrwUju9d2'];
-let currentUser = null;
-let userFavorites = new Set();
-
-function isAdmin() {
-    return currentUser && ADMIN_UIDS.includes(currentUser.uid);
-}
-
-async function loadFavorites() {
-    if (!currentUser) { userFavorites = new Set(); return; }
-    try {
-        const snap = await getDoc(doc(db, 'favorites', currentUser.uid));
-        userFavorites = new Set(snap.exists() ? (snap.data().ids || []) : []);
-    } catch(e) { userFavorites = new Set(); }
-}
-
-async function toggleFavorite(recipeId, e) {
-    e.stopPropagation();
-    if (!currentUser) { alert('יש להתחבר כדי לשמור מועדפים'); return; }
-    if (userFavorites.has(recipeId)) {
-        userFavorites.delete(recipeId);
-    } else {
-        userFavorites.add(recipeId);
-    }
-    await setDoc(doc(db, 'favorites', currentUser.uid), { ids: [...userFavorites] });
-    const btn = document.querySelector(`.fav-btn[data-id="${recipeId}"]`);
-    if (btn) {
-        const isFav = userFavorites.has(recipeId);
-        btn.style.color = isFav ? '#407076' : 'transparent';
-        btn.style['-webkit-text-stroke'] = isFav ? '0' : '1.5px #407076';
-    }
-}
-window.toggleFavorite = toggleFavorite;
+import { db } from './firebase.js';
+import { collection, getDocs, setDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
 const CATEGORIES = ['הכל', 'עיקריות', 'תוספות', 'סלטים', 'מרקים', 'קינוחים', 'עוגות', 'עוגיות', 'מאפים', 'לחמים', 'כללי', 'ממרחים'];
 const EDIT_CATEGORIES = ['עיקריות', 'תוספות', 'סלטים', 'מרקים', 'קינוחים', 'עוגות', 'עוגיות', 'מאפים', 'לחמים', 'כללי', 'ממרחים'];
@@ -104,7 +70,12 @@ const defaultRecipes = [
     }
 ];
 
-function getRecipeDisplayName(recipe) {
+function sortWithFavoritesFirst(recipes) {
+    if (!currentUser || userFavorites.size === 0) return recipes;
+    const favs = recipes.filter(r => userFavorites.has(r.id));
+    const rest = recipes.filter(r => !userFavorites.has(r.id));
+    return [...favs, ...rest];
+}
     const name = (recipe.name || '').trim();
     if (!name || /error response|404|forbidden|not found/i.test(name)) return 'מתכון';
     return name;
@@ -197,18 +168,15 @@ function displayRecipes(recipesToShow) {
             <div class="recipe-content">
                 <h2 class="recipe-name">${escapeHtml(getRecipeDisplayName(recipe))}</h2>
                 ${sourceLabel ? `<p class="recipe-source">${escapeHtml(sourceLabel)}</p>` : ''}
-                <div class="card-footer">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-top: 4px;">
                     <span class="recipe-category">${escapeHtml(recipe.category || '')}</span>
-                    <div style="display:flex; align-items:center; gap:2px;">
-                        <button class="${userFavorites.has(recipe.id) ? 'fav-btn active' : 'fav-btn'}" data-id="${recipe.id}" onclick="toggleFavorite('${recipe.id}', event)">♥</button>
-                        <div class="recipe-menu-wrapper">
-                            <button class="recipe-menu-btn" onclick="toggleRecipeMenu(event, '${recipe.id}')">⋮</button>
-                            <div class="recipe-menu-dropdown" id="menu-${recipe.id}">
-                                <button onclick="quickEdit('${recipe.id}', event)">✏️ ערוך</button>
-                                <button onclick="deleteRecipeClick('${recipe.id}', event)">🗑️ מחק</button>
-                            </div>
-                        </div>
-                    </div>
+                  <div class="recipe-menu-wrapper">
+    <button class="recipe-menu-btn" onclick="toggleRecipeMenu(event, '${recipe.id}')">⋮</button>
+    <div class="recipe-menu-dropdown" id="menu-${recipe.id}">
+        <button onclick="quickEdit('${recipe.id}', event)">✏️ ערוך</button>
+        <button onclick="deleteRecipeClick('${recipe.id}', event)">🗑️ מחק</button>
+    </div>
+</div>
                 </div>
             </div>
         </div>
@@ -341,7 +309,7 @@ async function initApp() {
         console.log('🍽️ נטענו מ-Firebase:', recipes.length, 'מתכונים');
         window._allRecipes = recipes;
         
-        displayRecipes(recipes);
+        displayRecipes(sortWithFavoritesFirst(recipes));
         setupSearch(recipes);
         setupCategoryFilter(recipes);
         
@@ -455,8 +423,7 @@ document.addEventListener('DOMContentLoaded', () => {
             userName.style.display = 'none';
             userName.textContent = '';
         }
-        // רענון תצוגה עם מועדפים מעודכנים
-        if (window._allRecipes) displayRecipes(window._allRecipes);
+        if (window._allRecipes) displayRecipes(sortWithFavoritesFirst(window._allRecipes));
     });
 
     authBtn?.addEventListener('click', async () => {
