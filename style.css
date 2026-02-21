@@ -509,3 +509,35 @@ button:hover {
     .tab-btn.active::after { display: none; }
     .form-actions { flex-direction: column; }
 }
+/* ===== TAG FILTERS ===== */
+.tag-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    max-width: 800px;
+    margin: 0 auto 24px;
+    justify-content: center;
+}
+
+.tag-chip {
+    background: white;
+    color: #698996;
+    border: 1.5px solid #c5d9dc;
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-family: 'Varela Round', sans-serif;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.tag-chip:hover {
+    border-color: #407076;
+    color: #407076;
+}
+
+.tag-chip.active {
+    background: #407076;
+    color: white;
+    border-color: #407076;
+}

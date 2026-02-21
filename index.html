@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>מתכונים שווים</title>
     <link rel="stylesheet" href="style.css">
-
 </head>
 <body>
     <div id="app">
@@ -19,32 +18,25 @@
                 <button id="auth-btn" style="background: transparent; border: 2px solid #407076; color: #407076; border-radius: 20px; padding: 6px 16px; font-family: 'Varela Round', sans-serif; font-size: 0.85rem; cursor: pointer;">התחברות</button>
             </div>
         </header>
-            <div class="search-bar">
-                <input type="text" id="searchInput" placeholder="חפשי מתכון, מרכיב...">
-            </div>
-           
-            <div id="category-filters" class="category-filters">
-            </div>
 
-            <div id="sort-container" style="max-width: 1200px; margin: 0 auto 8px; padding: 0 4px; min-height: 32px;">
-            </div>
+        <div class="search-bar">
+            <input type="text" id="searchInput" placeholder="חפשי מתכון, מרכיב...">
+        </div>
 
-            <div id="recipes" class="recipes-grid">
-                <!-- המתכונים יופיעו כאן -->
-            </div>
-        </main>
+        <div id="category-filters" class="category-filters"></div>
+
+        <div id="tag-filters" class="tag-filters"></div>
+
+        <div id="recipes" class="recipes-grid">
+            <!-- המתכונים יופיעו כאן -->
+        </div>
     </div>
 
     <script type="module" src="app.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            if (typeof lucide !== 'undefined') lucide.createIcons();
-        });
-    </script>
 
     <!-- Add Recipe Button -->
-<button id="add-recipe-btn" class="floating-add-btn" aria-label="הוסף מתכון">
-    <span class="plus-icon">+</span>
-</button>
+    <button id="add-recipe-btn" class="floating-add-btn" aria-label="הוסף מתכון">
+        <span class="plus-icon">+</span>
+    </button>
 </body>
 </html>

@@ -33,6 +33,8 @@ window.toggleFavorite = toggleFavorite;
 
 const CATEGORIES = ['הכל', 'עיקריות', 'תוספות', 'סלטים', 'מרקים', 'קינוחים', 'עוגות', 'עוגיות', 'מאפים', 'לחמים', 'כללי', 'ממרחים'];
 const EDIT_CATEGORIES = ['עיקריות', 'תוספות', 'סלטים', 'מרקים', 'קינוחים', 'עוגות', 'עוגיות', 'מאפים', 'לחמים', 'כללי', 'ממרחים'];
+const ALL_TAGS = ['מהיר', 'בינוני', 'ארוך', 'מנה עיקרית', 'תוספת', 'מרק', 'סלט', 'קינוח', 'לחם ומאפה', 'עוגות ועוגיות', 'רוטב וממרח', 'שתייה', 'בוקר', 'צהריים', 'ערב', 'חטיף', 'צמחוני', 'טבעוני', 'ללא גלוטן', 'ילדים', 'שבת וחגים', 'אירוח', 'כל השבוע'];
+let activeTagFilters = new Set();
 
 const defaultRecipes = [
     { id: "1", name: "שקשוקה", category: "כללי", source: "סבתא רחל", image: "https://images.unsplash.com/photo-1587217850473-0238d26d4785?w=400&h=300&fit=crop" },
@@ -190,7 +192,32 @@ function setupCategoryFilter(allRecipes) {
         container.querySelectorAll('.category-chip').forEach(btn => btn.classList.remove('active'));
         e.target.classList.add('active');
         document.getElementById('searchInput').value = '';
+        activeTagFilters.clear();
+        document.querySelectorAll('.tag-chip').forEach(btn => btn.classList.remove('active'));
         const filtered = activeCategory === 'הכל' ? allRecipes : allRecipes.filter(r => r.category === activeCategory);
+        displayRecipes(filtered);
+    });
+}
+
+function setupTagFilter(allRecipes) {
+    const container = document.getElementById('tag-filters');
+    if (!container) return;
+    container.innerHTML = ALL_TAGS.map(tag => `
+        <button class="tag-chip" data-tag="${tag}">${tag}</button>
+    `).join('');
+    container.addEventListener('click', (e) => {
+        if (!e.target.classList.contains('tag-chip')) return;
+        const tag = e.target.dataset.tag;
+        if (activeTagFilters.has(tag)) {
+            activeTagFilters.delete(tag);
+            e.target.classList.remove('active');
+        } else {
+            activeTagFilters.add(tag);
+            e.target.classList.add('active');
+        }
+        const filtered = activeTagFilters.size === 0
+            ? allRecipes
+            : allRecipes.filter(r => (r.tags || []).some(t => activeTagFilters.has(t)));
         displayRecipes(filtered);
     });
 }
@@ -242,6 +269,7 @@ async function initApp() {
         displayRecipes(sortWithFavoritesFirst(recipes));
         setupSearch(recipes);
         setupCategoryFilter(recipes);
+        setupTagFilter(recipes);
     } catch (err) {
         console.error('שגיאה בטעינת מתכונים:', err);
         const container = document.getElementById('recipes');
