@@ -72,11 +72,13 @@ function openQuickEdit(recipe, e) {
     e.stopPropagation();
     document.getElementById('quick-edit-modal')?.remove();
 
+    const currentTags = recipe.tags || [];
+
     const modal = document.createElement('div');
     modal.id = 'quick-edit-modal';
     modal.style.cssText = `position: fixed; inset: 0; z-index: 2000; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; padding: 16px;`;
     modal.innerHTML = `
-        <div style="background: #F8F7FF; border-radius: 16px; padding: 24px; width: 100%; max-width: 360px; font-family: 'Varela Round', sans-serif; direction: rtl;">
+        <div style="background: #F8F7FF; border-radius: 16px; padding: 24px; width: 100%; max-width: 420px; font-family: 'Varela Round', sans-serif; direction: rtl; max-height: 90vh; overflow-y: auto;">
             <h3 style="margin: 0 0 16px; color: #407076; text-align: center;">עריכה מהירה</h3>
             <label style="display:block; margin-bottom: 4px; color: #407076; font-size: 0.9rem;">שם מתכון</label>
             <input id="qe-name" value="${escapeHtml(recipe.name || '')}" style="width:100%; padding: 8px 12px; border: 1px solid #c5d9dc; border-radius: 8px; font-family: inherit; font-size: 1rem; box-sizing: border-box; margin-bottom: 12px;">
@@ -85,7 +87,20 @@ function openQuickEdit(recipe, e) {
                 ${EDIT_CATEGORIES.map(cat => `<option value="${cat}" ${recipe.category === cat ? 'selected' : ''}>${cat}</option>`).join('')}
             </select>
             <label style="display:block; margin-bottom: 4px; color: #407076; font-size: 0.9rem;">קישור לתמונה</label>
-            <input id="qe-image" value="${escapeHtml(recipe.image || '')}" placeholder="https://..." style="width:100%; padding: 8px 12px; border: 1px solid #c5d9dc; border-radius: 8px; font-family: inherit; font-size: 0.9rem; box-sizing: border-box; margin-bottom: 20px;">
+            <input id="qe-image" value="${escapeHtml(recipe.image || '')}" placeholder="https://..." style="width:100%; padding: 8px 12px; border: 1px solid #c5d9dc; border-radius: 8px; font-family: inherit; font-size: 0.9rem; box-sizing: border-box; margin-bottom: 12px;">
+            <label style="display:block; margin-bottom: 6px; color: #407076; font-size: 0.9rem;">תגיות — לחצי להפעיל/לבטל</label>
+            <div id="qe-tags" style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px;">
+                ${ALL_TAGS.map(tag => `
+                    <button type="button" class="qe-tag-btn ${currentTags.includes(tag) ? 'active' : ''}" data-tag="${tag}"
+                        style="background:${currentTags.includes(tag) ? '#407076' : 'white'}; color:${currentTags.includes(tag) ? 'white' : '#698996'}; border:1.5px solid ${currentTags.includes(tag) ? '#407076' : '#c5d9dc'}; border-radius:20px; padding:4px 12px; font-family:'Varela Round',sans-serif; font-size:0.8rem; cursor:pointer;">
+                        ${tag}
+                    </button>
+                `).join('')}
+            </div>
+            <div style="display:flex; gap:8px; margin-bottom:12px;">
+                <input id="qe-new-tag" placeholder="תגית חדשה..." style="flex:1; padding:6px 10px; border:1px solid #c5d9dc; border-radius:8px; font-family:inherit; font-size:0.85rem;">
+                <button type="button" id="qe-add-tag" style="padding:6px 12px; background:#407076; color:white; border:none; border-radius:8px; font-family:inherit; font-size:0.85rem; cursor:pointer;">+ הוסף</button>
+            </div>
             <div style="display: flex; gap: 8px;">
                 <button id="qe-save" style="flex:1; padding: 10px; background: #407076; color: white; border: none; border-radius: 8px; font-family: inherit; font-size: 1rem; cursor: pointer;">✓ שמור</button>
                 <button id="qe-cancel" style="flex:1; padding: 10px; background: transparent; color: #407076; border: 1px solid #407076; border-radius: 8px; font-family: inherit; font-size: 1rem; cursor: pointer;">ביטול</button>
@@ -93,18 +108,54 @@ function openQuickEdit(recipe, e) {
         </div>
     `;
     document.body.appendChild(modal);
+
+    // toggle existing tags
+    modal.querySelectorAll('.qe-tag-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            btn.classList.toggle('active');
+            const isActive = btn.classList.contains('active');
+            btn.style.background = isActive ? '#407076' : 'white';
+            btn.style.color = isActive ? 'white' : '#698996';
+            btn.style.borderColor = isActive ? '#407076' : '#c5d9dc';
+        });
+    });
+
+    // add custom tag
+    document.getElementById('qe-add-tag').addEventListener('click', () => {
+        const input = document.getElementById('qe-new-tag');
+        const newTag = input.value.trim();
+        if (!newTag) return;
+        const tagsContainer = document.getElementById('qe-tags');
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'qe-tag-btn active';
+        btn.dataset.tag = newTag;
+        btn.textContent = newTag;
+        btn.style.cssText = 'background:#407076; color:white; border:1.5px solid #407076; border-radius:20px; padding:4px 12px; font-family:"Varela Round",sans-serif; font-size:0.8rem; cursor:pointer;';
+        btn.addEventListener('click', () => {
+            btn.classList.toggle('active');
+            const isActive = btn.classList.contains('active');
+            btn.style.background = isActive ? '#407076' : 'white';
+            btn.style.color = isActive ? 'white' : '#698996';
+            btn.style.borderColor = isActive ? '#407076' : '#c5d9dc';
+        });
+        tagsContainer.appendChild(btn);
+        input.value = '';
+    });
+
     document.getElementById('qe-cancel').addEventListener('click', () => modal.remove());
     modal.addEventListener('click', (ev) => { if (ev.target === modal) modal.remove(); });
     document.getElementById('qe-save').addEventListener('click', async () => {
         const newName = document.getElementById('qe-name').value.trim();
         const newCategory = document.getElementById('qe-category').value;
         const newImage = document.getElementById('qe-image').value.trim();
+        const newTags = [...modal.querySelectorAll('.qe-tag-btn.active')].map(b => b.dataset.tag);
         if (!newName) { alert('שם המתכון לא יכול להיות ריק'); return; }
         const saveBtn = document.getElementById('qe-save');
         saveBtn.textContent = 'שומר...';
         saveBtn.disabled = true;
         try {
-            await setDoc(doc(db, 'recipes', recipe.id), { ...recipe, name: newName, category: newCategory, image: newImage });
+            await setDoc(doc(db, 'recipes', recipe.id), { ...recipe, name: newName, category: newCategory, image: newImage, tags: newTags });
             modal.remove();
             location.reload();
         } catch (err) {
