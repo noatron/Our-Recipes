@@ -128,6 +128,7 @@ function displayRecipes(recipesToShow) {
             <div class="recipe-content">
                 <h2 class="recipe-name">${escapeHtml(getRecipeDisplayName(recipe))}</h2>
                 ${sourceLabel ? `<p class="recipe-source">${escapeHtml(sourceLabel)}</p>` : ''}
+                ${recipe.addedBy ? `<p style="font-size:0.8rem; color:#698996; margin: 0 0 6px;">הוסיפה: ${escapeHtml(recipe.addedBy)}</p>` : ''}
                 <div class="card-footer">
                     <span class="recipe-category">${escapeHtml(recipe.category || '')}</span>
                     <div style="display:flex; align-items:center; gap:2px;">
