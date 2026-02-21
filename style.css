@@ -52,24 +52,24 @@ header h1 {
 }
 
 .recipe-card {
-    background: #FFEEDD;
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 2px 8px rgba(64, 112, 118, 0.1);
-    cursor: pointer;
-    transition: transform 0.3s, box-shadow 0.3s;
+    position: relative;
+    display: flex;
+    flex-direction: column;
 }
 
-.recipe-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 4px 12px rgba(64, 112, 118, 0.2);
+.recipe-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
 }
-.recipes-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 30px;
-    max-width: 1200px;
-    margin: 0 auto;
+
+.card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: auto;
+    padding-top: 8px;
 }
 
 main {

@@ -193,20 +193,22 @@ function displayRecipes(recipesToShow) {
         const sourceLabel = getRecipeSourceLabel(recipe);
         return `
         <div class="recipe-card" onclick="showRecipe('${recipe.id}')">
-            <div class="recipe-menu-wrapper card-menu">
-                <button class="recipe-menu-btn" onclick="toggleRecipeMenu(event, '${recipe.id}')">⋮</button>
-                <div class="recipe-menu-dropdown" id="menu-${recipe.id}">
-                    <button onclick="quickEdit('${recipe.id}', event)">✏️ ערוך</button>
-                    <button onclick="deleteRecipeClick('${recipe.id}', event)">🗑️ מחק</button>
-                </div>
-            </div>
             <img src="${recipe.image || 'https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=400&h=200&fit=crop'}" alt="" class="recipe-image" onerror="this.style.display='none'">
             <div class="recipe-content">
                 <h2 class="recipe-name">${escapeHtml(getRecipeDisplayName(recipe))}</h2>
                 ${sourceLabel ? `<p class="recipe-source">${escapeHtml(sourceLabel)}</p>` : ''}
                 <div class="card-footer">
                     <span class="recipe-category">${escapeHtml(recipe.category || '')}</span>
-                    <button class="${userFavorites.has(recipe.id) ? 'fav-btn active' : 'fav-btn'}" data-id="${recipe.id}" onclick="toggleFavorite('${recipe.id}', event)">♥</button>
+                    <div style="display:flex; align-items:center; gap:2px;">
+                        <button class="${userFavorites.has(recipe.id) ? 'fav-btn active' : 'fav-btn'}" data-id="${recipe.id}" onclick="toggleFavorite('${recipe.id}', event)">♥</button>
+                        <div class="recipe-menu-wrapper">
+                            <button class="recipe-menu-btn" onclick="toggleRecipeMenu(event, '${recipe.id}')">⋮</button>
+                            <div class="recipe-menu-dropdown" id="menu-${recipe.id}">
+                                <button onclick="quickEdit('${recipe.id}', event)">✏️ ערוך</button>
+                                <button onclick="deleteRecipeClick('${recipe.id}', event)">🗑️ מחק</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
