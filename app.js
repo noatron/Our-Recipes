@@ -1,13 +1,35 @@
 import { db, signInWithGoogle, signOutUser, onUserChange } from './firebase.js';
-import { collection, getDocs, setDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+import { collection, getDocs, setDoc, doc, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
-// אדמינים — נוסיף UIDs אחרי הכניסה הראשונה
 const ADMIN_UIDS = ['xFDkce3C3uPAXt662tkyrwUju9d2'];
-
 let currentUser = null;
+let userFavorites = new Set();
+
 function isAdmin() {
     return currentUser && ADMIN_UIDS.includes(currentUser.uid);
 }
+
+async function loadFavorites() {
+    if (!currentUser) { userFavorites = new Set(); return; }
+    try {
+        const snap = await getDoc(doc(db, 'favorites', currentUser.uid));
+        userFavorites = new Set(snap.exists() ? (snap.data().ids || []) : []);
+    } catch(e) { userFavorites = new Set(); }
+}
+
+async function toggleFavorite(recipeId, e) {
+    e.stopPropagation();
+    if (!currentUser) { alert('יש להתחבר כדי לשמור מועדפים'); return; }
+    if (userFavorites.has(recipeId)) {
+        userFavorites.delete(recipeId);
+    } else {
+        userFavorites.add(recipeId);
+    }
+    await setDoc(doc(db, 'favorites', currentUser.uid), { ids: [...userFavorites] });
+    const btn = document.querySelector(`.fav-btn[data-id="${recipeId}"]`);
+    if (btn) btn.textContent = userFavorites.has(recipeId) ? '❤️' : '🤍';
+}
+window.toggleFavorite = toggleFavorite;
 
 const CATEGORIES = ['הכל', 'עיקריות', 'תוספות', 'סלטים', 'מרקים', 'קינוחים', 'עוגות', 'עוגיות', 'מאפים', 'לחמים', 'כללי', 'ממרחים'];
 const EDIT_CATEGORIES = ['עיקריות', 'תוספות', 'סלטים', 'מרקים', 'קינוחים', 'עוגות', 'עוגיות', 'מאפים', 'לחמים', 'כללי', 'ממרחים'];
@@ -173,13 +195,16 @@ function displayRecipes(recipesToShow) {
                 ${sourceLabel ? `<p class="recipe-source">${escapeHtml(sourceLabel)}</p>` : ''}
                 <div style="display:flex; align-items:center; justify-content:space-between; margin-top: 4px;">
                     <span class="recipe-category">${escapeHtml(recipe.category || '')}</span>
-                  <div class="recipe-menu-wrapper">
-    <button class="recipe-menu-btn" onclick="toggleRecipeMenu(event, '${recipe.id}')">⋮</button>
-    <div class="recipe-menu-dropdown" id="menu-${recipe.id}">
-        <button onclick="quickEdit('${recipe.id}', event)">✏️ ערוך</button>
-        <button onclick="deleteRecipeClick('${recipe.id}', event)">🗑️ מחק</button>
-    </div>
-</div>
+                  <div style="display:flex; align-items:center; gap:4px;">
+                    <button class="fav-btn" data-id="${recipe.id}" onclick="toggleFavorite('${recipe.id}', event)" style="background:none;border:none;font-size:1.2rem;cursor:pointer;padding:4px;">${userFavorites.has(recipe.id) ? '❤️' : '🤍'}</button>
+                    <div class="recipe-menu-wrapper">
+                      <button class="recipe-menu-btn" onclick="toggleRecipeMenu(event, '${recipe.id}')">⋮</button>
+                      <div class="recipe-menu-dropdown" id="menu-${recipe.id}">
+                        <button onclick="quickEdit('${recipe.id}', event)">✏️ ערוך</button>
+                        <button onclick="deleteRecipeClick('${recipe.id}', event)">🗑️ מחק</button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
             </div>
         </div>
@@ -411,32 +436,26 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // כפתור התחברות
     const authBtn = document.getElementById('auth-btn');
     const userName = document.getElementById('user-name');
 
-    onUserChange((user) => {
+    onUserChange(async (user) => {
         currentUser = user;
+        await loadFavorites();
         if (user) {
             authBtn.textContent = 'התנתקות';
             userName.style.display = 'inline';
             userName.textContent = user.displayName?.split(' ')[0] || '';
-            // רענון כדי לעדכן כפתורי עריכה/מחיקה
-            document.querySelectorAll('.recipe-menu-btn').forEach(btn => {
-                btn.style.display = isAdmin() ? '' : 'none';
-            });
         } else {
             authBtn.textContent = 'התחברות';
             userName.style.display = 'none';
             userName.textContent = '';
         }
+        // רענון תצוגה עם מועדפים מעודכנים
+        if (window._allRecipes) displayRecipes(window._allRecipes);
     });
 
     authBtn?.addEventListener('click', async () => {
-        if (currentUser) {
-            await signOutUser();
-        } else {
-            await signInWithGoogle();
-        }
+        if (currentUser) { await signOutUser(); } else { await signInWithGoogle(); }
     });
 });
