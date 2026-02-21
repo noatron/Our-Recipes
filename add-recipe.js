@@ -1,4 +1,4 @@
-import { db, onUserChange } from './firebase-v2.js';
+import { db, onUserChange } from './firebase.js';
 import { collection, addDoc, getDocs, query, where } from 'https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js';
 import { extractRecipeName, extractRecipeImage, suggestTags } from './recipe-import-utils.js';
 
