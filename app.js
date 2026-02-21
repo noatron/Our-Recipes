@@ -76,17 +76,26 @@ function sortWithFavoritesFirst(recipes) {
     const rest = recipes.filter(r => !userFavorites.has(r.id));
     return [...favs, ...rest];
 }
+javascriptfunction getRecipeDisplayName(recipe) {
     const name = (recipe.name || '').trim();
     if (!name || /error response|404|forbidden|not found/i.test(name)) return 'מתכון';
     return name;
 }
 
-function getRecipeSourceLabel(recipe) {
-    if (recipe.url) {
-        try { return new URL(recipe.url).hostname.replace(/^www\./, ''); } catch (e) {}
-    }
-    return recipe.source || '';
+function sortWithFavoritesFirst(recipes) {
+    if (!currentUser || userFavorites.size === 0) return recipes;
+    const favs = recipes.filter(r => userFavorites.has(r.id));
+    const rest = recipes.filter(r => !userFavorites.has(r.id));
+    return [...favs, ...rest];
 }
+
+function getRecipeSourceLabel(recipe) {
+    function getRecipeSourceLabel(recipe) {
+        if (recipe.url) {
+            try { return new URL(recipe.url).hostname.replace(/^www\./, ''); } catch (e) {}
+        }
+        return recipe.source || '';
+    }
 
 function openQuickEdit(recipe, e) {
     e.stopPropagation();
