@@ -1,10 +1,13 @@
 import { db, signInWithGoogle, signOutUser, onUserChange } from './firebase.js';
 import { collection, getDocs, setDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
-
+// אדמינים — נוסיף UIDs אחרי הכניסה הראשונה
 const ADMIN_UIDS = [xFDkce3C3uPAXt662tkyrwUju9d2];
+
 let currentUser = null;
-function isAdmin() { return currentUser && ADMIN_UIDS.includes(currentUser.uid); }
+function isAdmin() {
+    return currentUser && ADMIN_UIDS.includes(currentUser.uid);
+}
 
 const CATEGORIES = ['הכל', 'עיקריות', 'תוספות', 'סלטים', 'מרקים', 'קינוחים', 'עוגות', 'עוגיות', 'מאפים', 'לחמים', 'כללי', 'ממרחים'];
 const EDIT_CATEGORIES = ['עיקריות', 'תוספות', 'סלטים', 'מרקים', 'קינוחים', 'עוגות', 'עוגיות', 'מאפים', 'לחמים', 'כללי', 'ממרחים'];
@@ -236,50 +239,8 @@ function setupCategoryFilter(allRecipes) {
         const filtered = activeCategory === 'הכל' 
             ? allRecipes 
             : allRecipes.filter(r => r.category === activeCategory);
-        displayRecipes(sortRecipes(filtered));
+        displayRecipes(filtered);
     });
-}
-
-let currentSort = 'newest'; // ברירת מחדל: חדש לישן
-
-function sortRecipes(recipes) {
-    const sorted = [...recipes];
-    if (currentSort === 'newest') {
-        sorted.sort((a, b) => (b.createdAt || b.id || 0) > (a.createdAt || a.id || 0) ? 1 : -1);
-    } else if (currentSort === 'oldest') {
-        sorted.sort((a, b) => (a.createdAt || a.id || 0) > (b.createdAt || b.id || 0) ? 1 : -1);
-    } else if (currentSort === 'alpha') {
-        sorted.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'he'));
-    }
-    return sorted;
-}
-
-function setupSortButton(allRecipes) {
-    const container = document.getElementById('sort-container');
-    if (!container) return;
-
-    const labels = { newest: 'חדש לישן ↓', oldest: 'ישן לחדש ↑', alpha: 'א-ב' };
-    const order = ['newest', 'oldest', 'alpha'];
-
-    const btn = document.createElement('button');
-    btn.id = 'sort-btn';
-    btn.textContent = labels[currentSort];
-    btn.style.cssText = `
-        background: transparent; border: 1.5px solid #c5d9dc; color: #698996;
-        border-radius: 20px; padding: 6px 14px;
-        font-family: 'Varela Round', sans-serif; font-size: 0.85rem;
-        cursor: pointer; transition: all 0.2s; float: left;
-    `;
-    btn.addEventListener('click', () => {
-        const idx = order.indexOf(currentSort);
-        currentSort = order[(idx + 1) % order.length];
-        btn.textContent = labels[currentSort];
-        const activeChip = document.querySelector('.category-chip.active');
-        const activeCat = activeChip?.dataset.category || 'הכל';
-        const filtered = activeCat === 'הכל' ? allRecipes : allRecipes.filter(r => r.category === activeCat);
-        displayRecipes(sortRecipes(filtered));
-    });
-    container.appendChild(btn);
 }
 
 function showSurpriseModal() {
@@ -351,10 +312,9 @@ async function initApp() {
         console.log('🍽️ נטענו מ-Firebase:', recipes.length, 'מתכונים');
         window._allRecipes = recipes;
         
-        displayRecipes(sortRecipes(recipes));
+        displayRecipes(recipes);
         setupSearch(recipes);
         setupCategoryFilter(recipes);
-        setupSortButton(recipes);
         
     } catch (err) {
         console.error('שגיאה בטעינת מתכונים:', err);
@@ -450,9 +410,8 @@ document.addEventListener('DOMContentLoaded', () => {
             container.innerHTML = `<div class="no-recipes" style="max-width: 400px; margin: 0 auto; text-align: center; padding: 24px;"><p>שגיאה בטעינה: ${escapeHtml(msg)}</p></div>`;
         }
     });
-});
-// Auth
-document.addEventListener('DOMContentLoaded', () => {
+
+    // כפתור התחברות
     const authBtn = document.getElementById('auth-btn');
     const userName = document.getElementById('user-name');
 
@@ -462,9 +421,14 @@ document.addEventListener('DOMContentLoaded', () => {
             authBtn.textContent = 'התנתקות';
             userName.style.display = 'inline';
             userName.textContent = user.displayName?.split(' ')[0] || '';
+            // רענון כדי לעדכן כפתורי עריכה/מחיקה
+            document.querySelectorAll('.recipe-menu-btn').forEach(btn => {
+                btn.style.display = isAdmin() ? '' : 'none';
+            });
         } else {
             authBtn.textContent = 'התחברות';
             userName.style.display = 'none';
+            userName.textContent = '';
         }
     });
 
