@@ -1,41 +1,36 @@
-<!DOCTYPE html>
-<html dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <title>Backfill Tags</title>
-</head>
-<body>
-    <h2>תיוג רטרואקטיבי</h2>
-    <button id="run">הרצי תיוג על כל המתכונים</button>
-    <div id="status" style="margin-top:20px; font-family: monospace; white-space: pre-line;"></div>
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+import { getFirestore } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
 
-    <script type="module">
-        import { db } from './firebase.js';
-        import { collection, getDocs, updateDoc, doc } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
-        import { suggestTags } from './recipe-import-utils.js';
+const firebaseConfig = {
+    apiKey: "AIzaSyAZH8KZfhz6V1zPWEL3qIBgekIgUJvmMeY",
+    authDomain: "our-recipes-1d97e.firebaseapp.com",
+    projectId: "our-recipes-1d97e",
+    storageBucket: "our-recipes-1d97e.firebasestorage.app",
+    messagingSenderId: "34335322566",
+    appId: "1:34335322566:web:290e1438e050a7353882c7"
+};
 
-        const status = document.getElementById('status');
+const app = initializeApp(firebaseConfig);
+export const db = getFirestore(app);
+export const auth = getAuth(app);
 
-        document.getElementById('run').addEventListener('click', async () => {
-            status.textContent = 'טוענת מתכונים...';
-            const snapshot = await getDocs(collection(db, 'recipes'));
-            const recipes = [];
-            snapshot.forEach(d => recipes.push({ id: d.id, ...d.data() }));
-            status.textContent = `נמצאו ${recipes.length} מתכונים. מתייגת...\n`;
+const provider = new GoogleAuthProvider();
 
-            let done = 0, skipped = 0;
-            for (const recipe of recipes) {
-                if (recipe.tags && recipe.tags.length > 0) {
-                    skipped++;
-                    continue;
-                }
-                const tags = suggestTags(recipe.name || '');
-                await updateDoc(doc(db, 'recipes', recipe.id), { tags });
-                done++;
-                status.textContent += `✅ ${recipe.name} → ${tags.join(', ') || 'ללא תגיות'}\n`;
-            }
-            status.textContent += `\nסיום! ${done} תויגו, ${skipped} כבר היה להם תגיות.`;
-        });
-    </script>
-</body>
-</html>
+export async function signInWithGoogle() {
+    try {
+        const result = await signInWithPopup(auth, provider);
+        return result.user;
+    } catch (err) {
+        console.error('שגיאה בהתחברות:', err);
+        return null;
+    }
+}
+
+export async function signOutUser() {
+    await signOut(auth);
+}
+
+export function onUserChange(callback) {
+    return onAuthStateChanged(auth, callback);
+}
