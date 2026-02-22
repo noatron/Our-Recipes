@@ -155,6 +155,7 @@
         import { getDoc, doc, updateDoc, deleteDoc } from 'https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js';
         import { fetchRecipeMeta } from './recipe-import-utils.js';
 
+        const ALL_TAGS = ['מהיר', 'בינוני', 'ארוך', 'מנה עיקרית', 'תוספת', 'מרק', 'סלט', 'קינוח', 'לחם ומאפה', 'עוגות ועוגיות', 'רוטב וממרח', 'שתייה', 'בוקר', 'צהריים', 'ערב', 'חטיף', 'צמחוני', 'טבעוני', 'ללא גלוטן', 'ילדים', 'שבת וחגים', 'אירוח', 'כל השבוע'];
         let recipe = null;
 
         // --- כפתורים ---
@@ -318,6 +319,11 @@
                 `<input class="edit-input" id="editImage" value="${escapeHtml(recipe.image || '')}" placeholder="קישור לתמונה" style="margin-bottom:15px;">`);
             document.getElementById('saveButton').classList.add('visible');
             document.getElementById('cancelButton').classList.add('visible');
+            // tags
+            const tagsDiv = document.createElement('div');
+            tagsDiv.id = 'tags-editor-container';
+            document.getElementById('saveButton').before(tagsDiv);
+            renderTagsEditor('tags-editor-container');
         }
 
         function editFullRecipe() {
@@ -349,6 +355,65 @@
             document.getElementById('cancelButton').classList.add('visible');
         }
 
+
+        function renderTagsEditor(containerId) {
+            const currentTags = recipe.tags || [];
+            const container = document.getElementById(containerId);
+            container.innerHTML = `
+                <div style="margin-bottom:16px;">
+                    <p style="color:#407076; font-size:0.9rem; margin-bottom:8px;">תגיות — לחצי להפעיל/לבטל</p>
+                    <div id="tag-edit-chips" style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px;">
+                        ${ALL_TAGS.map(tag => `
+                            <button type="button" class="edit-tag-chip ${currentTags.includes(tag) ? 'active' : ''}" data-tag="${tag}"
+                                style="background:${currentTags.includes(tag) ? '#407076' : 'white'}; color:${currentTags.includes(tag) ? 'white' : '#698996'}; border:1.5px solid ${currentTags.includes(tag) ? '#407076' : '#c5d9dc'}; border-radius:20px; padding:4px 12px; font-family:'Varela Round',sans-serif; font-size:0.8rem; cursor:pointer;">
+                                ${tag}
+                            </button>
+                        `).join('')}
+                    </div>
+                    <div style="display:flex; gap:8px;">
+                        <input id="new-tag-input" placeholder="תגית חדשה..." style="flex:1; padding:6px 10px; border:1px solid #c5d9dc; border-radius:8px; font-family:'Varela Round',sans-serif; font-size:0.85rem; color:#407076;">
+                        <button type="button" id="add-tag-btn" style="padding:6px 12px; background:#407076; color:white; border:none; border-radius:8px; font-family:'Varela Round',sans-serif; font-size:0.85rem; cursor:pointer;">+ הוסף</button>
+                    </div>
+                </div>
+            `;
+            // toggle chips
+            container.querySelectorAll('.edit-tag-chip').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    btn.classList.toggle('active');
+                    const isActive = btn.classList.contains('active');
+                    btn.style.background = isActive ? '#407076' : 'white';
+                    btn.style.color = isActive ? 'white' : '#698996';
+                    btn.style.borderColor = isActive ? '#407076' : '#c5d9dc';
+                });
+            });
+            // add custom tag
+            document.getElementById('add-tag-btn').addEventListener('click', () => {
+                const input = document.getElementById('new-tag-input');
+                const newTag = input.value.trim();
+                if (!newTag) return;
+                const chips = document.getElementById('tag-edit-chips');
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'edit-tag-chip active';
+                btn.dataset.tag = newTag;
+                btn.textContent = newTag;
+                btn.style.cssText = 'background:#407076; color:white; border:1.5px solid #407076; border-radius:20px; padding:4px 12px; font-family:"Varela Round",sans-serif; font-size:0.8rem; cursor:pointer;';
+                btn.addEventListener('click', () => {
+                    btn.classList.toggle('active');
+                    const isActive = btn.classList.contains('active');
+                    btn.style.background = isActive ? '#407076' : 'white';
+                    btn.style.color = isActive ? 'white' : '#698996';
+                    btn.style.borderColor = isActive ? '#407076' : '#c5d9dc';
+                });
+                chips.appendChild(btn);
+                input.value = '';
+            });
+        }
+
+        function getEditedTags() {
+            return [...document.querySelectorAll('.edit-tag-chip.active')].map(b => b.dataset.tag);
+        }
+
         // --- שמירה ---
         async function saveEdit() {
             if (!recipe) return;
@@ -365,6 +430,11 @@
                     .map(i => i.value).filter(v => v.trim());
             }
 
+            // save tags if editor was open
+            const tagChips = document.querySelectorAll('.edit-tag-chip');
+            if (tagChips.length > 0) {
+                recipe.tags = getEditedTags();
+            }
             try {
                 const { id, ...data } = recipe;
                 await updateDoc(doc(db, 'recipes', id), data);
