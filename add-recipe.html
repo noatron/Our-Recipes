@@ -39,6 +39,7 @@
                         </svg>
                         <span>הזנה ידנית</span>
                     </button>
+                    <button type="button" class="tab-btn" data-mode="image"><span>מתמונה</span></button>
                     <button type="button" class="tab-btn" data-mode="csv">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -104,6 +105,20 @@
                     </div>
                 </div>
         
+                <div id="image-mode" class="mode-content">
+                    <div class="import-section">
+                        <p class="mode-description">צלמי screenshot של מתכון מאינסטגרם או טיקטוק</p>
+                        <div class="form-group">
+                            <label for="recipeImageFile">העלי תמונה</label>
+                            <input type="file" id="recipeImageFile" accept="image/*">
+                        </div>
+                        <div id="image-preview-container" style="display:none; margin-bottom:16px;">
+                            <img id="image-preview" style="max-width:100%; max-height:300px; border-radius:8px; border:2px solid #c5d9dc;">
+                        </div>
+                        <button type="button" class="btn-primary" id="extractImageBtn" disabled>חלצי מתכון מהתמונה</button>
+                        <div id="image-status" class="import-status"></div>
+                    </div>
+                </div>
                 <!-- Manual Mode -->
                 <div id="manual-mode" class="mode-content">
                     <form id="recipeForm">
