@@ -306,5 +306,253 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 
+    // --- ייבוא מתמונה ---
+    const imageFileInput = document.getElementById('recipeImageFile');
+    const extractImageBtn = document.getElementById('extractImageBtn');
+    const imageStatus = document.getElementById('image-status');
+
+    if (imageFileInput) {
+        imageFileInput.addEventListener('change', () => {
+            const file = imageFileInput.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                document.getElementById('image-preview').src = e.target.result;
+                document.getElementById('image-preview-container').style.display = 'block';
+                extractImageBtn.disabled = false;
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    if (extractImageBtn) {
+        extractImageBtn.addEventListener('click', async () => {
+            const file = imageFileInput.files[0];
+            if (!file) return;
+            extractImageBtn.disabled = true;
+            extractImageBtn.textContent = 'מחלצת...';
+            imageStatus.className = 'import-status loading';
+            imageStatus.textContent = 'שולחת תמונה ל-AI...';
+            try {
+                const base64 = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => resolve(e.target.result.split(',')[1]);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(file);
+                });
+                const response = await fetch('/.netlify/functions/extract-image', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ image: base64, mediaType: file.type })
+                });
+                const result = await response.json();
+                if (result.error) {
+                    imageStatus.className = 'import-status error';
+                    imageStatus.textContent = result.error;
+                    extractImageBtn.disabled = false;
+                    extractImageBtn.textContent = 'חלצי מתכון מהתמונה';
+                    return;
+                }
+                imageStatus.className = 'import-status success';
+                imageStatus.textContent = 'המתכון חולץ! בדקי לפני השמירה.';
+                showImageModal(result);
+            } catch (err) {
+                imageStatus.className = 'import-status error';
+                imageStatus.textContent = 'שגיאה. נסי שוב.';
+                extractImageBtn.disabled = false;
+                extractImageBtn.textContent = 'חלצי מתכון מהתמונה';
+            }
+        });
+    }
+
+    function showImageModal({ name, ingredients, instructions, suggestedTags }) {
+        const tags = suggestedTags || [];
+        const ALL_TAGS = ['מהיר','בינוני','ארוך','מנה עיקרית','תוספת','מרק','סלט','קינוח','לחם ומאפה','עוגות ועוגיות','רוטב וממרח','שתייה','בוקר','צהריים','ערב','חטיף','צמחוני','טבעוני','ללא גלוטן','ילדים','שבת וחגים','אירוח','כל השבוע'];
+        const modal = document.createElement('div');
+        modal.style.cssText = 'position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;padding:16px;';
+        modal.innerHTML = `<div style="background:#F8F7FF;border-radius:16px;padding:28px;width:100%;max-width:500px;font-family:'Varela Round',sans-serif;direction:rtl;max-height:90vh;overflow-y:auto;">
+            <h3 style="margin:0 0 20px;color:#407076;text-align:center;">בדיקה לפני שמירה</h3>
+            <label style="display:block;margin-bottom:4px;color:#407076;font-size:0.9rem;">שם המתכון</label>
+            <input id="ipm-name" value="${escapeHtml(name||'')}" style="width:100%;padding:10px 12px;border:2px solid #c5d9dc;border-radius:8px;font-family:inherit;font-size:1rem;box-sizing:border-box;margin-bottom:14px;background:white;">
+            <label style="display:block;margin-bottom:4px;color:#407076;font-size:0.9rem;">קטגוריה</label>
+            <select id="ipm-category" style="width:100%;padding:10px 12px;border:2px solid #c5d9dc;border-radius:8px;font-family:inherit;font-size:1rem;box-sizing:border-box;margin-bottom:14px;background:white;">
+                ${EDIT_CATEGORIES.map(cat => '<option value="'+cat+'">'+cat+'</option>').join('')}
+            </select>
+            <label style="display:block;margin-bottom:4px;color:#407076;font-size:0.9rem;">מרכיבים</label>
+            <textarea id="ipm-ingredients" rows="5" style="width:100%;padding:10px 12px;border:2px solid #c5d9dc;border-radius:8px;font-family:inherit;font-size:0.9rem;box-sizing:border-box;margin-bottom:14px;resize:vertical;">${escapeHtml((ingredients||[]).join('\n'))}</textarea>
+            <label style="display:block;margin-bottom:4px;color:#407076;font-size:0.9rem;">הוראות הכנה</label>
+            <textarea id="ipm-instructions" rows="6" style="width:100%;padding:10px 12px;border:2px solid #c5d9dc;border-radius:8px;font-family:inherit;font-size:0.9rem;box-sizing:border-box;margin-bottom:14px;resize:vertical;">${escapeHtml((instructions||[]).join('\n'))}</textarea>
+            <label style="display:block;margin-bottom:6px;color:#407076;font-size:0.9rem;">תגיות</label>
+            <div id="ipm-tags" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:20px;">
+                ${ALL_TAGS.map(tag => '<button type="button" class="ipm-tag" data-tag="'+tag+'" style="background:'+(tags.includes(tag)?'#407076':'white')+';color:'+(tags.includes(tag)?'white':'#698996')+';border:1.5px solid '+(tags.includes(tag)?'#407076':'#c5d9dc')+';border-radius:20px;padding:4px 12px;font-family:Varela Round,sans-serif;font-size:0.8rem;cursor:pointer;">'+tag+'</button>').join('')}
+            </div>
+            <div style="display:flex;gap:10px;">
+                <button id="ipm-save" style="flex:1;padding:12px;background:#407076;color:white;border:none;border-radius:8px;font-family:inherit;font-size:1rem;cursor:pointer;">שמור מתכון</button>
+                <button id="ipm-cancel" style="flex:1;padding:12px;background:transparent;color:#407076;border:2px solid #407076;border-radius:8px;font-family:inherit;font-size:1rem;cursor:pointer;">ביטול</button>
+            </div>
+        </div>`;
+        document.body.appendChild(modal);
+        modal.querySelectorAll('.ipm-tag').forEach(btn => {
+            btn.addEventListener('click', () => {
+                btn.classList.toggle('active');
+                const on = btn.classList.contains('active');
+                btn.style.background = on ? '#407076' : 'white';
+                btn.style.color = on ? 'white' : '#698996';
+                btn.style.borderColor = on ? '#407076' : '#c5d9dc';
+            });
+        });
+        document.getElementById('ipm-cancel').addEventListener('click', () => modal.remove());
+        modal.addEventListener('click', ev => { if (ev.target === modal) modal.remove(); });
+        document.getElementById('ipm-save').addEventListener('click', async () => {
+            const saveBtn = document.getElementById('ipm-save');
+            saveBtn.textContent = 'שומר...'; saveBtn.disabled = true;
+            try {
+                await addDoc(collection(db, 'recipes'), {
+                    name: document.getElementById('ipm-name').value.trim() || name,
+                    category: document.getElementById('ipm-category').value,
+                    ingredients: document.getElementById('ipm-ingredients').value.split('\n').filter(l=>l.trim()),
+                    instructions: document.getElementById('ipm-instructions').value.split('\n').filter(l=>l.trim()),
+                    tags: [...modal.querySelectorAll('.ipm-tag.active')].map(b=>b.dataset.tag),
+                    source: 'מתמונה', image: '', url: '',
+                    addedBy: 'אנונימי'
+                });
+                modal.remove();
+                window.location.href = 'index.html';
+            } catch(err) {
+                saveBtn.textContent = 'שמור מתכון'; saveBtn.disabled = false;
+                alert('שגיאה בשמירה');
+            }
+        });
+    }
+
+    // ייבוא מתמונה
+    const imageFileInput = document.getElementById('recipeImageFile');
+    const extractImageBtn = document.getElementById('extractImageBtn');
+    const imageStatus = document.getElementById('image-status');
+
+    if (imageFileInput) {
+        imageFileInput.addEventListener('change', () => {
+            const file = imageFileInput.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const preview = document.getElementById('image-preview');
+                const previewContainer = document.getElementById('image-preview-container');
+                preview.src = e.target.result;
+                previewContainer.style.display = 'block';
+                extractImageBtn.disabled = false;
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    if (extractImageBtn) {
+        extractImageBtn.addEventListener('click', async () => {
+            const file = imageFileInput.files[0];
+            if (!file) return;
+            extractImageBtn.disabled = true;
+            extractImageBtn.textContent = 'מחלצת...';
+            imageStatus.className = 'import-status loading';
+            imageStatus.textContent = 'שולחת תמונה ל-AI...';
+            try {
+                const base64 = await new Promise((resolve, reject) => {
+                    const r = new FileReader();
+                    r.onload = (e) => resolve(e.target.result.split(',')[1]);
+                    r.onerror = reject;
+                    r.readAsDataURL(file);
+                });
+                const response = await fetch('/.netlify/functions/extract-image', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ image: base64, mediaType: file.type })
+                });
+                const result = await response.json();
+                if (result.error) {
+                    imageStatus.className = 'import-status error';
+                    imageStatus.textContent = result.error;
+                    extractImageBtn.disabled = false;
+                    extractImageBtn.textContent = 'חלצי מתכון מהתמונה';
+                    return;
+                }
+                imageStatus.className = 'import-status success';
+                imageStatus.textContent = 'המתכון חולץ! בדקי את הפרטים.';
+                showImageModal(result);
+            } catch (err) {
+                imageStatus.className = 'import-status error';
+                imageStatus.textContent = 'שגיאה. נסי שוב.';
+                extractImageBtn.disabled = false;
+                extractImageBtn.textContent = 'חלצי מתכון מהתמונה';
+            }
+        });
+    }
+
+    function showImageModal({ name, ingredients, instructions, suggestedTags }) {
+        document.getElementById('image-modal')?.remove();
+        const tags = suggestedTags || [];
+        const ALL_TAGS = ['מהיר','בינוני','ארוך','מנה עיקרית','תוספת','מרק','סלט','קינוח','לחם ומאפה','עוגות ועוגיות','רוטב וממרח','שתייה','בוקר','צהריים','ערב','חטיף','צמחוני','טבעוני','ללא גלוטן','ילדים','שבת וחגים','אירוח','כל השבוע'];
+        const CATS = ['עיקריות','תוספות','סלטים','מרקים','קינוחים','עוגות','עוגיות','מאפים','לחמים','כללי','ממרחים'];
+        const modal = document.createElement('div');
+        modal.id = 'image-modal';
+        modal.style.cssText = 'position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;padding:16px;';
+        modal.innerHTML = `
+            <div style="background:#F8F7FF;border-radius:16px;padding:28px;width:100%;max-width:500px;font-family:'Varela Round',sans-serif;direction:rtl;max-height:90vh;overflow-y:auto;">
+                <h3 style="margin:0 0 20px;color:#407076;text-align:center;">בדיקה לפני שמירה</h3>
+                <label style="display:block;margin-bottom:4px;color:#407076;font-size:0.9rem;">שם המתכון</label>
+                <input id="im-name" value="${(name||'').replace(/"/g,'')}" style="width:100%;padding:10px 12px;border:2px solid #c5d9dc;border-radius:8px;font-family:inherit;font-size:1rem;box-sizing:border-box;margin-bottom:14px;background:white;">
+                <label style="display:block;margin-bottom:4px;color:#407076;font-size:0.9rem;">קטגוריה</label>
+                <select id="im-category" style="width:100%;padding:10px 12px;border:2px solid #c5d9dc;border-radius:8px;font-family:inherit;font-size:1rem;box-sizing:border-box;margin-bottom:14px;background:white;">
+                    ${CATS.map(c => `<option>${c}</option>`).join('')}
+                </select>
+                <label style="display:block;margin-bottom:4px;color:#407076;font-size:0.9rem;">מרכיבים</label>
+                <textarea id="im-ingredients" rows="5" style="width:100%;padding:10px 12px;border:2px solid #c5d9dc;border-radius:8px;font-family:inherit;font-size:0.9rem;box-sizing:border-box;margin-bottom:14px;resize:vertical;">${(ingredients||[]).join('\n')}</textarea>
+                <label style="display:block;margin-bottom:4px;color:#407076;font-size:0.9rem;">הוראות הכנה</label>
+                <textarea id="im-instructions" rows="6" style="width:100%;padding:10px 12px;border:2px solid #c5d9dc;border-radius:8px;font-family:inherit;font-size:0.9rem;box-sizing:border-box;margin-bottom:14px;resize:vertical;">${(instructions||[]).join('\n')}</textarea>
+                <label style="display:block;margin-bottom:6px;color:#407076;font-size:0.9rem;">תגיות</label>
+                <div id="im-tags" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:20px;">
+                    ${ALL_TAGS.map(t => `<button type="button" class="im-tag" data-tag="${t}" style="background:${tags.includes(t)?'#407076':'white'};color:${tags.includes(t)?'white':'#698996'};border:1.5px solid ${tags.includes(t)?'#407076':'#c5d9dc'};border-radius:20px;padding:4px 12px;font-family:'Varela Round',sans-serif;font-size:0.8rem;cursor:pointer;">${t}</button>`).join('')}
+                </div>
+                <div style="display:flex;gap:10px;">
+                    <button id="im-save" style="flex:1;padding:12px;background:#407076;color:white;border:none;border-radius:8px;font-family:inherit;font-size:1rem;cursor:pointer;">שמור מתכון</button>
+                    <button id="im-cancel" style="flex:1;padding:12px;background:transparent;color:#407076;border:2px solid #407076;border-radius:8px;font-family:inherit;font-size:1rem;cursor:pointer;">ביטול</button>
+                </div>
+            </div>`;
+        document.body.appendChild(modal);
+        modal.querySelectorAll('.im-tag').forEach(btn => {
+            btn.addEventListener('click', () => {
+                btn.classList.toggle('active');
+                const on = btn.classList.contains('active');
+                btn.style.background = on ? '#407076' : 'white';
+                btn.style.color = on ? 'white' : '#698996';
+                btn.style.borderColor = on ? '#407076' : '#c5d9dc';
+            });
+        });
+        document.getElementById('im-cancel').addEventListener('click', () => modal.remove());
+        modal.addEventListener('click', ev => { if (ev.target === modal) modal.remove(); });
+        document.getElementById('im-save').addEventListener('click', async () => {
+            const saveBtn = document.getElementById('im-save');
+            saveBtn.textContent = 'שומר...';
+            saveBtn.disabled = true;
+            try {
+                const newRecipe = {
+                    name: document.getElementById('im-name').value.trim() || name,
+                    category: document.getElementById('im-category').value,
+                    source: 'מתמונה',
+                    image: '',
+                    tags: [...modal.querySelectorAll('.im-tag.active')].map(b => b.dataset.tag),
+                    ingredients: document.getElementById('im-ingredients').value.split('\n').filter(l => l.trim()),
+                    instructions: document.getElementById('im-instructions').value.split('\n').filter(l => l.trim()),
+                    addedBy: 'נועה'
+                };
+                await addDoc(collection(db, 'recipes'), newRecipe);
+                modal.remove();
+                window.location.href = 'index.html';
+            } catch (err) {
+                saveBtn.textContent = 'שמור מתכון';
+                saveBtn.disabled = false;
+                alert('שגיאה בשמירה. נסי שוב.');
+            }
+        });
+    }
+
     console.log('✅ add-recipe.js loaded (Firebase)');
 });
