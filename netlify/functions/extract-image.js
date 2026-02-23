@@ -1,118 +1,75 @@
-const https = require('https');
+const Anthropic = require('@anthropic-ai/sdk');
 
-exports.handler = async function(event) {
-  // רק POST
-  if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, body: 'Method Not Allowed' };
-  }
-
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    return { statusCode: 500, body: 'Missing API key' };
-  }
-
-  let body;
-  try {
-    body = JSON.parse(event.body);
-  } catch (e) {
-    return { statusCode: 400, body: 'Invalid JSON' };
-  }
-
-  const { image, mediaType } = body;
-  if (!image) {
-    return { statusCode: 400, body: 'Missing image' };
-  }
-
-  const requestBody = JSON.stringify({
-    model: 'claude-opus-4-6',
-    max_tokens: 1024,
-    messages: [
-      {
-        role: 'user',
-        content: [
-          {
-            type: 'image',
-            source: {
-              type: 'base64',
-              media_type: mediaType || 'image/jpeg',
-              data: image
-            }
-          },
-          {
-            type: 'text',
-            text: `זהי תמונה של מתכון מרשתות חברתיות. חלצי את המידע הבא בעברית והחזירי JSON בלבד ללא הסברים:
-{
-  "name": "שם המתכון",
-  "ingredients": ["מרכיב 1", "מרכיב 2"],
-  "instructions": ["שלב 1", "שלב 2"],
-  "suggestedTags": ["תגית1", "תגית2"]
-}
-
-עבור suggestedTags, בחרי רק מהרשימה הזו: מהיר, בינוני, ארוך, מנה עיקרית, תוספת, מרק, סלט, קינוח, לחם ומאפה, עוגות ועוגיות, רוטב וממרח, שתייה, בוקר, צהריים, ערב, חטיף, צמחוני, טבעוני, ללא גלוטן, ילדים, שבת וחגים, אירוח, כל השבוע.
-
-אם לא מדובר במתכון, החזירי: {"error": "לא זוהה מתכון בתמונה"}`
-          }
-        ]
-      }
-    ]
-  });
-
-  return new Promise((resolve) => {
-    const options = {
-      hostname: 'api.anthropic.com',
-      path: '/v1/messages',
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'Content-Length': Buffer.byteLength(requestBody)
-      }
+exports.handler = async (event) => {
+    const headers = {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Content-Type',
+        'Content-Type': 'application/json'
     };
 
-    const req = https.request(options, (res) => {
-      let data = '';
-      res.on('data', chunk => data += chunk);
-      res.on('end', () => {
-        try {
-          const parsed = JSON.parse(data);
-          const text = parsed.content?.[0]?.text || '';
-          // נקה markdown אם יש
-          const clean = text.replace(/```json|```/g, '').trim();
-          const result = JSON.parse(clean);
-          resolve({
-            statusCode: 200,
-            headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' },
-            body: JSON.stringify(result)
-          });
-        } catch (e) {
-          resolve({
-            statusCode: 500,
-            headers: { 'Access-Control-Allow-Origin': '*' },
-            body: JSON.stringify({ error: 'שגיאה בניתוח התגובה' })
-          });
+    if (event.httpMethod === 'OPTIONS') {
+        return { statusCode: 200, headers, body: '' };
+    }
+
+    if (event.httpMethod !== 'POST') {
+        return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method not allowed' }) };
+    }
+
+    try {
+        const body = JSON.parse(event.body);
+
+        // תמיכה בתמונה אחת (ישן) או מערך תמונות (חדש)
+        let images = [];
+        if (body.images && Array.isArray(body.images)) {
+            images = body.images;
+        } else if (body.image) {
+            images = [{ data: body.image, mediaType: body.mediaType || 'image/jpeg' }];
         }
-      });
-    });
 
-    req.on('error', (err) => {
-      resolve({
-        statusCode: 500,
-        headers: { 'Access-Control-Allow-Origin': '*' },
-        body: JSON.stringify({ error: err.message })
-      });
-    });
+        if (!images.length) {
+            return { statusCode: 400, headers, body: JSON.stringify({ error: 'לא התקבלו תמונות' }) };
+        }
 
-    req.setTimeout(30000, () => {
-      req.destroy();
-      resolve({
-        statusCode: 504,
-        headers: { 'Access-Control-Allow-Origin': '*' },
-        body: JSON.stringify({ error: 'timeout' })
-      });
-    });
+        const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-    req.write(requestBody);
-    req.end();
-  });
+        // בניית הודעה עם כל התמונות לפי הסדר
+        const imageBlocks = images.map((img, i) => ({
+            type: 'image',
+            source: {
+                type: 'base64',
+                media_type: img.mediaType || 'image/jpeg',
+                data: img.data
+            }
+        }));
+
+        const textBlock = {
+            type: 'text',
+            text: images.length > 1
+                ? `אלו ${images.length} תמונות של אותו מתכון, לפי הסדר. חלץ מהן מתכון שלם ומאוחד. החזר JSON בלבד (ללא הסברים) עם המבנה הבא:
+{"name": "שם המתכון", "ingredients": ["מרכיב 1", "מרכיב 2"], "instructions": ["שלב 1", "שלב 2"], "suggestedTags": ["תגית1"]}
+השתמש רק בתגיות מהרשימה: מהיר, בינוני, ארוך, מנה עיקרית, תוספת, מרק, סלט, קינוח, לחם ומאפה, עוגות ועוגיות, רוטב וממרח, שתייה, בוקר, צהריים, ערב, חטיף, צמחוני, טבעוני, ללא גלוטן, ילדים, שבת וחגים, אירוח, כל השבוע`
+                : `זו תמונה של מתכון. חלץ ממנה את המתכון המלא. החזר JSON בלבד (ללא הסברים) עם המבנה הבא:
+{"name": "שם המתכון", "ingredients": ["מרכיב 1", "מרכיב 2"], "instructions": ["שלב 1", "שלב 2"], "suggestedTags": ["תגית1"]}
+השתמש רק בתגיות מהרשימה: מהיר, בינוני, ארוך, מנה עיקרית, תוספת, מרק, סלט, קינוח, לחם ומאפה, עוגות ועוגיות, רוטב וממרח, שתייה, בוקר, צהריים, ערב, חטיף, צמחוני, טבעוני, ללא גלוטן, ילדים, שבת וחגים, אירוח, כל השבוע`
+        };
+
+        const message = await client.messages.create({
+            model: 'claude-opus-4-6',
+            max_tokens: 2048,
+            messages: [{ role: 'user', content: [...imageBlocks, textBlock] }]
+        });
+
+        const text = message.content[0].text.trim();
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) {
+            return { statusCode: 200, headers, body: JSON.stringify({ error: 'לא הצלחתי לחלץ מתכון מהתמונות' }) };
+        }
+
+        const recipe = JSON.parse(jsonMatch[0]);
+        return { statusCode: 200, headers, body: JSON.stringify(recipe) };
+
+    } catch (err) {
+        console.error('extract-image error:', err);
+        return { statusCode: 500, headers, body: JSON.stringify({ error: 'שגיאה בחילוץ המתכון. נסי שוב.' }) };
+    }
 };
