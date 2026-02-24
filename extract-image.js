@@ -42,39 +42,62 @@ exports.handler = async (event) => {
             }
         }));
 
+        const multiImagePrompt = `אלו ${images.length} תמונות של מתכון אחד (לפי הסדר). כל תמונה יכולה להכיל חלק מהמתכון – למשל תמונה 1: כותרת/מרכיבים, תמונה 2: המשך מרכיבים, תמונה 3: הוראות הכנה.
+
+משימה:
+1. קרא את כל הטקסט מכל תמונה (כותרות, כיתוב, רשימות, קפשן).
+2. איחד למתכון אחד: שם, רשימת מרכיבים מלאה, הוראות הכנה מלאות לפי סדר.
+3. כל מרכיב – פריט נפרד במערך ingredients. כל שלב הכנה – פריט נפרד במערך instructions. אם מופיע טקסט רצוף (פסקה) – פרק לפריטים (לפי שורות או לפי משפטים/שלבים).
+4. התעלם מאשטגים ואמוג'ים.
+
+פלט: החזר רק JSON תקין, בלי הסברים ובלי markdown. המבנה בדיוק:
+{"name": "שם המתכון", "ingredients": ["מרכיב 1", "מרכיב 2", "..."], "instructions": ["שלב 1", "שלב 2", "..."], "suggestedTags": ["תגית1", "תגית2"]}
+תגיות – רק מהרשימה: מהיר, בינוני, ארוך, מנה עיקרית, תוספת, מרק, סלט, קינוח, לחם ומאפה, עוגות ועוגיות, רוטב וממרח, שתייה, בוקר, צהריים, ערב, חטיף, צמחוני, טבעוני, ללא גלוטן, ילדים, שבת וחגים, אירוח, כל השבוע`;
+
+        const singleImagePrompt = `בתמונה מופיע מתכון (צילום מסך, פוסט וכו'). קרא את כל הטקסט בתמונה – כותרות, כיתוב, רשימות – וחלץ מתכון מלא.
+
+חובה: להחזיר בהכרח מערך ingredients (כל מרכיב פריט נפרד) ומערך instructions (כל שלב הכנה פריט נפרד). אם המרכיבים או ההוראות כתובים כפסקה – פרק לפריטים. התעלם מאשטגים ואמוג'ים.
+
+פלט: רק JSON, בלי הסברים:
+{"name": "שם המתכון", "ingredients": ["מרכיב 1", "מרכיב 2"], "instructions": ["שלב 1", "שלב 2"], "suggestedTags": ["תגית1"]}
+תגיות – רק מהרשימה: מהיר, בינוני, ארוך, מנה עיקרית, תוספת, מרק, סלט, קינוח, לחם ומאפה, עוגות ועוגיות, רוטב וממרח, שתייה, בוקר, צהריים, ערב, חטיף, צמחוני, טבעוני, ללא גלוטן, ילדים, שבת וחגים, אירוח, כל השבוע`;
+
         const textBlock = {
             type: 'text',
-            text: images.length > 1
-                ? `אלו ${images.length} צילומי מסך (למשל מאינסטגרם או טיקטוק) של אותו מתכון, לפי הסדר. ייתכן שכל תמונה היא "שקף" עם טקסט או כיתוב.
-עבור על כל התמונות, קרא את כל הטקסט המופיע עליהן (כותרות, כיתוב, קפשן) וחלץ מתכון מלא ומאוחד.
-חשוב: חלץ בהכרח את רשימת המרכיבים (ingredients) ואת הוראות ההכנה (instructions) – כל מרכיב בשורה נפרדת, כל שלב בשורה נפרדת. אם המרכיבים או ההוראות כתובים בטקסט על התמונה – העתק אותם למבנה המבוקש. התעלם מהאשטגים ואמוג'ים לצורך התוכן.
-החזר JSON בלבד (בלי הסברים) במבנה הזה:
-{"name": "שם המתכון", "ingredients": ["מרכיב 1", "מרכיב 2"], "instructions": ["שלב 1", "שלב 2"], "suggestedTags": ["תגית1"]}
-תגיות – רק מהרשימה: מהיר, בינוני, ארוך, מנה עיקרית, תוספת, מרק, סלט, קינוח, לחם ומאפה, עוגות ועוגיות, רוטב וממרח, שתייה, בוקר, צהריים, ערב, חטיף, צמחוני, טבעוני, ללא גלוטן, ילדים, שבת וחגים, אירוח, כל השבוע`
-                : `זו צילום מסך של מתכון (למשל מאינסטגרם או טיקטוק). ייתכן שיש על התמונה כיתוב, קפשן או טקסט עם המרכיבים והוראות.
-קרא את כל הטקסט המופיע בתמונה (כולל טקסט על הרקע, כותרות, רשימות) וחלץ מתכון מלא.
-חשוב: חלץ בהכרח רשימת מרכיבים (ingredients) והוראות הכנה (instructions) – כל מרכיב בפריט נפרד, כל שלב בפריט נפרד. אם המרכיבים או ההוראות כתובים כפסקה אחת – פרק אותם לפריטים. התעלם מאשטגים ואמוג'ים לצורך התוכן.
-החזר JSON בלבד (בלי הסברים) במבנה:
-{"name": "שם המתכון", "ingredients": ["מרכיב 1", "מרכיב 2"], "instructions": ["שלב 1", "שלב 2"], "suggestedTags": ["תגית1"]}
-תגיות – רק מהרשימה: מהיר, בינוני, ארוך, מנה עיקרית, תוספת, מרק, סלט, קינוח, לחם ומאפה, עוגות ועוגיות, רוטב וממרח, שתייה, בוקר, צהריים, ערב, חטיף, צמחוני, טבעוני, ללא גלוטן, ילדים, שבת וחגים, אירוח, כל השבוע`
+            text: images.length > 1 ? multiImagePrompt : singleImagePrompt
         };
 
         const message = await client.messages.create({
             model: 'claude-opus-4-6',
-            max_tokens: 2048,
+            max_tokens: 4096,
             messages: [{ role: 'user', content: [...imageBlocks, textBlock] }]
         });
 
         const text = message.content[0].text.trim();
-        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        // extract JSON (may be wrapped in ```json ... ```)
+        let jsonStr = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '');
+        const jsonMatch = jsonStr.match(/\{[\s\S]*\}/);
         if (!jsonMatch) {
             return { statusCode: 200, headers, body: JSON.stringify({ error: 'לא הצלחתי לחלץ מתכון מהתמונות' }) };
         }
 
         const recipe = JSON.parse(jsonMatch[0]);
-        if (!Array.isArray(recipe.ingredients)) recipe.ingredients = Array.isArray(recipe.ingredient) ? recipe.ingredient : (recipe.ingredients ? [String(recipe.ingredients)] : []);
-        if (!Array.isArray(recipe.instructions)) recipe.instructions = Array.isArray(recipe.instruction) ? recipe.instruction : (recipe.instructions ? [String(recipe.instructions)] : []);
+        // Normalize ingredients: always array of strings, split by newlines if single string
+        if (!Array.isArray(recipe.ingredients)) {
+            if (Array.isArray(recipe.ingredient)) recipe.ingredients = recipe.ingredient;
+            else if (recipe.ingredients != null) recipe.ingredients = String(recipe.ingredients).split(/\n+/).map(s => s.trim()).filter(Boolean);
+            else recipe.ingredients = [];
+        }
+        recipe.ingredients = recipe.ingredients.map(i => String(i).trim()).filter(Boolean);
+        // Normalize instructions: always array of strings
+        if (!Array.isArray(recipe.instructions)) {
+            if (Array.isArray(recipe.instruction)) recipe.instructions = recipe.instruction;
+            else if (recipe.instructions != null) recipe.instructions = String(recipe.instructions).split(/\n+|(?<=[.!?])\s+/).map(s => s.trim()).filter(Boolean);
+            else recipe.instructions = [];
+        }
+        recipe.instructions = recipe.instructions.map(s => String(s).trim()).filter(Boolean);
         if (!Array.isArray(recipe.suggestedTags)) recipe.suggestedTags = [];
+        recipe.name = (recipe.name && String(recipe.name).trim()) || 'מתכון';
         return { statusCode: 200, headers, body: JSON.stringify(recipe) };
 
     } catch (err) {
