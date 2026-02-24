@@ -1,1 +1,19 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#407076" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-cooking-pot-icon lucide-cooking-pot"><path d="M2 12h20"/><path d="M20 12v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8"/><path d="m4 8 16-4"/><path d="m8.86 6.78-.45-1.81a2 2 0 0 1 1.45-2.43l1.94-.48a2 2 0 0 1 2.43 1.46l.45 1.8"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 130 140" width="130" height="140">
+  <rect x="5" y="4" width="90" height="58" rx="18" ry="18" fill="#407076"/>
+  <path d="M80,62 Q95,62 90,75 Q85,62 80,62 Z" fill="#407076"/>
+  <line x1="38" y1="18" x2="38" y2="50" stroke="#FFD8BE" stroke-width="3" stroke-linecap="round"/>
+  <line x1="32" y1="18" x2="32" y2="31" stroke="#FFD8BE" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="44" y1="18" x2="44" y2="31" stroke="#FFD8BE" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M32,31 Q38,36 44,31" fill="none" stroke="#FFD8BE" stroke-width="2.5" stroke-linecap="round"/>
+  <ellipse cx="65" cy="28" rx="7" ry="11" fill="none" stroke="#FFD8BE" stroke-width="2.5"/>
+  <line x1="65" y1="39" x2="65" y2="50" stroke="#FFD8BE" stroke-width="3" stroke-linecap="round"/>
+  <path d="M50,84 Q40,84 42,71 Q46,82 50,84 Z" fill="#FFD8BE"/>
+  <rect x="35" y="82" width="90" height="58" rx="18" ry="18" fill="#FFD8BE" stroke="#407076" stroke-width="2.5"/>
+  <path d="M50,84 Q40,83 42,70" fill="none" stroke="#407076" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="72" y1="96" x2="72" y2="128" stroke="#407076" stroke-width="3" stroke-linecap="round"/>
+  <line x1="66" y1="96" x2="66" y2="109" stroke="#407076" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="78" y1="96" x2="78" y2="109" stroke="#407076" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M66,109 Q72,114 78,109" fill="none" stroke="#407076" stroke-width="2.5" stroke-linecap="round"/>
+  <ellipse cx="99" cy="106" rx="7" ry="11" fill="none" stroke="#407076" stroke-width="2.5"/>
+  <line x1="99" y1="117" x2="99" y2="128" stroke="#407076" stroke-width="3" stroke-linecap="round"/>
+</svg>

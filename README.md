@@ -1,5 +1,5 @@
 # Our-Recipes 🍳
-### מתכונים שווים
+### מפה לפה
 
 A Hebrew recipe management PWA for two users to collect, organize, and cook from their favorite recipes.
 
