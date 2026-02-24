@@ -1,6 +1,10 @@
 [build]
   command = "node scripts/generate-firebase-config.js"
   publish = "."
+  [build.environment]
+    # Don't fail when FIREBASE_API_KEY appears in these files (client needs it in firebase.js; docs have examples)
+    SECRETS_SCAN_OMIT_KEYS = "FIREBASE_API_KEY"
+    SECRETS_SCAN_OMIT_PATHS = "firebase.js,firebase-v2.js.,הגדרת-מפתחות-צעד-אחר-צעד.md,מחיקת-ה-API-key-מהקוד.md"
 [functions]
   directory = "netlify/functions"
 

@@ -10,7 +10,7 @@
 2. **Add a variable** / **New variable**.
 3. **Key:** `FIREBASE_API_KEY`  
    **Value:** להדביק את המפתח (הערך שמופיע כרגע ב-firebase.js בשורת apiKey, בלי המרכאות).  
-   לדוגמה: `AIzaSyAZH8KZfhz6V1zPWEL3qIBgekIgUJvmMeY`
+   לדוגמה: `AIzaSy...המפתח_שלך`
 4. **Create variable** / **Save**.
 
 (מספיק משתנה **אחד** – רק ה-API key. שאר הערכים נשארים בסקריפט ולא סודיים.)
@@ -67,9 +67,9 @@
 1. בתיקיית הפרויקט ליצור קובץ **.env** (נקודה בהתחלה).
 2. לכתוב בו שורה אחת:
    ```
-   FIREBASE_API_KEY=AIzaSyAZH8KZfhz6V1zPWEL3qIBgekIgUJvmMeY
+   FIREBASE_API_KEY=המפתח_שלך_מfirebase
    ```
-   (או הערך האמיתי שלך.)
+   (החליפי במפתח האמיתי מ-firebase.js.)
 3. להריץ:
    ```bash
    node --env-file=.env scripts/generate-firebase-config.js
@@ -81,7 +81,7 @@
 בטרמינל (לפני ההרצה):
 
 ```bash
-export FIREBASE_API_KEY=AIzaSyAZH8KZfhz6V1zPWEL3qIBgekIgUJvmMeY
+export FIREBASE_API_KEY=המפתח_שלך
 node scripts/generate-firebase-config.js
 ```
 

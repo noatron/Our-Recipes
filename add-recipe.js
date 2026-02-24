@@ -47,11 +47,21 @@ async function importOneRecipe(url) {
     return { name, url };
 }
 
+const EDIT_CATEGORIES = ['עיקריות', 'תוספות', 'סלטים', 'מרקים', 'קינוחים', 'עוגות', 'עוגיות', 'מאפים', 'לחמים', 'כללי', 'ממרחים'];
+const ALL_TAGS = ['מהיר', 'בינוני', 'ארוך', 'מנה עיקרית', 'תוספת', 'מרק', 'סלט', 'קינוח', 'לחם ומאפה', 'עוגות ועוגיות', 'רוטב וממרח', 'שתייה', 'בוקר', 'צהריים', 'ערב', 'חטיף', 'צמחוני', 'טבעוני', 'ללא גלוטן', 'ילדים', 'שבת וחגים', 'אירוח', 'כל השבוע'];
+
+function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str || '';
+    return div.innerHTML;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const tabButtons = document.querySelectorAll('.tab-btn');
     const importMode = document.getElementById('import-mode');
     const manualMode = document.getElementById('manual-mode');
     const csvMode = document.getElementById('csv-mode');
+    const imagesMode = document.getElementById('images-mode');
 
     tabButtons.forEach(button => {
         button.addEventListener('click', () => {
@@ -61,10 +71,13 @@ document.addEventListener('DOMContentLoaded', () => {
             importMode.classList.remove('active');
             manualMode.classList.remove('active');
             if (csvMode) csvMode.classList.remove('active');
+            if (imagesMode) imagesMode.classList.remove('active');
             if (mode === 'import') {
                 importMode.classList.add('active');
             } else if (mode === 'csv') {
                 if (csvMode) csvMode.classList.add('active');
+            } else if (mode === 'images') {
+                if (imagesMode) imagesMode.classList.add('active');
             } else {
                 manualMode.classList.add('active');
             }
@@ -210,6 +223,151 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (csvImportBtn) {
         csvImportBtn.addEventListener('click', runCsvImport);
+    }
+
+    // --- ייבוא מכמה תמונות ---
+    const recipeImageFiles = document.getElementById('recipeImageFiles');
+    const imagesPreview = document.getElementById('images-preview');
+    const extractFromImagesBtn = document.getElementById('extractFromImagesBtn');
+    const imagesStatus = document.getElementById('images-status');
+
+    if (recipeImageFiles) {
+        recipeImageFiles.addEventListener('change', () => {
+            const files = Array.from(recipeImageFiles.files || []);
+            extractFromImagesBtn.disabled = files.length === 0;
+            if (files.length === 0) {
+                imagesPreview.style.display = 'none';
+                imagesPreview.innerHTML = '';
+                return;
+            }
+            imagesPreview.style.display = 'flex';
+            imagesPreview.innerHTML = files.map((f, i) => {
+                const url = URL.createObjectURL(f);
+                return `<div class="image-preview-item"><img src="${url}" alt="תמונה ${i + 1}"><span>תמונה ${i + 1}</span></div>`;
+            }).join('');
+        });
+    }
+
+    function showImageResultModal(recipe) {
+        const modal = document.createElement('div');
+        modal.className = 'image-result-modal';
+        modal.style.cssText = 'position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;padding:16px;';
+        const tags = recipe.suggestedTags || [];
+        modal.innerHTML = `
+            <div style="background:#F8F7FF;border-radius:16px;padding:28px;width:100%;max-width:500px;font-family:'Varela Round',sans-serif;direction:rtl;max-height:90vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.2);">
+                <h3 style="margin:0 0 20px;color:#407076;text-align:center;">בדיקה לפני שמירה</h3>
+                <label style="display:block;margin-bottom:4px;color:#407076;font-size:0.9rem;">שם המתכון</label>
+                <input id="irm-name" value="${escapeHtml(recipe.name || '')}" style="width:100%;padding:10px 12px;border:2px solid #c5d9dc;border-radius:8px;font-family:inherit;font-size:1rem;box-sizing:border-box;margin-bottom:14px;background:white;">
+                <label style="display:block;margin-bottom:4px;color:#407076;font-size:0.9rem;">קטגוריה</label>
+                <select id="irm-category" style="width:100%;padding:10px 12px;border:2px solid #c5d9dc;border-radius:8px;font-family:inherit;font-size:1rem;box-sizing:border-box;margin-bottom:14px;background:white;">
+                    ${EDIT_CATEGORIES.map(cat => `<option value="${cat}">${cat}</option>`).join('')}
+                </select>
+                <label style="display:block;margin-bottom:4px;color:#407076;font-size:0.9rem;">מרכיבים</label>
+                <textarea id="irm-ingredients" rows="5" style="width:100%;padding:10px 12px;border:2px solid #c5d9dc;border-radius:8px;font-family:inherit;font-size:0.9rem;box-sizing:border-box;margin-bottom:14px;resize:vertical;">${escapeHtml((recipe.ingredients || []).join('\n'))}</textarea>
+                <label style="display:block;margin-bottom:4px;color:#407076;font-size:0.9rem;">הוראות הכנה</label>
+                <textarea id="irm-instructions" rows="6" style="width:100%;padding:10px 12px;border:2px solid #c5d9dc;border-radius:8px;font-family:inherit;font-size:0.9rem;box-sizing:border-box;margin-bottom:14px;resize:vertical;">${escapeHtml((recipe.instructions || []).join('\n'))}</textarea>
+                <label style="display:block;margin-bottom:6px;color:#407076;font-size:0.9rem;">תגיות</label>
+                <div id="irm-tags" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:20px;">
+                    ${ALL_TAGS.map(tag => `<button type="button" class="irm-tag ${tags.includes(tag) ? 'active' : ''}" data-tag="${escapeHtml(tag)}" style="background:${tags.includes(tag) ? '#407076' : 'white'};color:${tags.includes(tag) ? 'white' : '#698996'};border:1.5px solid ${tags.includes(tag) ? '#407076' : '#c5d9dc'};border-radius:20px;padding:4px 12px;font-family:Varela Round,sans-serif;font-size:0.8rem;cursor:pointer;">${escapeHtml(tag)}</button>`).join('')}
+                </div>
+                <div style="display:flex;gap:10px;">
+                    <button id="irm-save" style="flex:1;padding:12px;background:#407076;color:white;border:none;border-radius:8px;font-family:inherit;font-size:1rem;cursor:pointer;">שמור מתכון</button>
+                    <button id="irm-cancel" style="flex:1;padding:12px;background:transparent;color:#407076;border:2px solid #407076;border-radius:8px;font-family:inherit;font-size:1rem;cursor:pointer;">ביטול</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+        modal.querySelectorAll('.irm-tag').forEach(btn => {
+            btn.addEventListener('click', () => {
+                btn.classList.toggle('active');
+                const on = btn.classList.contains('active');
+                btn.style.background = on ? '#407076' : 'white';
+                btn.style.color = on ? 'white' : '#698996';
+                btn.style.borderColor = on ? '#407076' : '#c5d9dc';
+            });
+        });
+        modal.querySelector('#irm-cancel').addEventListener('click', () => modal.remove());
+        modal.addEventListener('click', ev => { if (ev.target === modal) modal.remove(); });
+
+        modal.querySelector('#irm-save').addEventListener('click', async () => {
+            const saveBtn = modal.querySelector('#irm-save');
+            saveBtn.textContent = 'שומר...';
+            saveBtn.disabled = true;
+            try {
+                const name = document.getElementById('irm-name').value.trim() || recipe.name || 'מתכון';
+                const category = document.getElementById('irm-category').value;
+                const ingredients = document.getElementById('irm-ingredients').value.split('\n').filter(l => l.trim());
+                const instructions = document.getElementById('irm-instructions').value.split('\n').filter(l => l.trim());
+                const tags = [...modal.querySelectorAll('.irm-tag.active')].map(b => b.dataset.tag);
+
+                await addDoc(collection(db, 'recipes'), {
+                    name,
+                    category,
+                    source: 'מתמונה',
+                    image: '',
+                    url: '',
+                    ingredients,
+                    instructions,
+                    tags
+                });
+                modal.remove();
+                window.location.href = 'index.html';
+            } catch (err) {
+                console.error(err);
+                saveBtn.textContent = 'שמור מתכון';
+                saveBtn.disabled = false;
+                alert('שגיאה בשמירה. נסי שוב.');
+            }
+        });
+    }
+
+    if (extractFromImagesBtn) {
+        extractFromImagesBtn.addEventListener('click', async () => {
+            const files = Array.from(recipeImageFiles?.files || []);
+            if (files.length === 0) {
+                imagesStatus.className = 'import-status error';
+                imagesStatus.textContent = '⚠️ נא לבחור לפחות תמונה אחת';
+                return;
+            }
+            extractFromImagesBtn.disabled = true;
+            imagesStatus.className = 'import-status loading';
+            imagesStatus.textContent = '⏳ שולח תמונות ל-AI...';
+
+            try {
+                const images = await Promise.all(files.map(file => {
+                    return new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = e => resolve({ data: e.target.result.split(',')[1], mediaType: file.type || 'image/jpeg' });
+                        reader.onerror = reject;
+                        reader.readAsDataURL(file);
+                    });
+                }));
+
+                const response = await fetch('/.netlify/functions/extract-image', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ images })
+                });
+                const result = await response.json();
+                if (result.error) {
+                    imagesStatus.className = 'import-status error';
+                    imagesStatus.textContent = result.error;
+                    extractFromImagesBtn.disabled = false;
+                    return;
+                }
+                imagesStatus.className = 'import-status success';
+                imagesStatus.textContent = '✅ המתכון חולץ! בדקי ועדכני לפני השמירה.';
+                showImageResultModal(result);
+            } catch (err) {
+                console.error(err);
+                imagesStatus.className = 'import-status error';
+                imagesStatus.textContent = 'שגיאה בחיבור ל-AI. נסי שוב.';
+                extractFromImagesBtn.disabled = false;
+                return;
+            }
+            extractFromImagesBtn.disabled = false;
+        });
     }
 
     console.log('✅ add-recipe.js loaded (Firebase)');

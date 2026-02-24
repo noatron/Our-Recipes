@@ -39,6 +39,14 @@
                         </svg>
                         <span>הזנה ידנית</span>
                     </button>
+                    <button type="button" class="tab-btn" data-mode="images">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect>
+                            <circle cx="9" cy="9" r="2"></circle>
+                            <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path>
+                        </svg>
+                        <span>ייבוא מתמונות</span>
+                    </button>
                     <button type="button" class="tab-btn" data-mode="csv">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -77,6 +85,23 @@
                             <p class="supported-sites">שיפודון, 10 דקות, טעים מאוד, ועוד...</p>
                             <p class="fallback-note">אם הייבוא לא עובד, תמיד אפשר לעבור להזנה ידנית ↖️</p>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Multi-image import mode -->
+                <div id="images-mode" class="mode-content">
+                    <div class="import-section">
+                        <p class="mode-description">העלי תמונה אחת או כמה תמונות של אותו מתכון (דף ממגזין, צילום מסך וכו') – ה-AI יחלץ מתכון מאוחד.</p>
+                        <div class="form-group">
+                            <label for="recipeImageFiles">בחרי תמונות</label>
+                            <input type="file" id="recipeImageFiles" accept="image/*" multiple>
+                        </div>
+                        <div id="images-preview" class="images-preview" style="display: none;"></div>
+                        <button type="button" class="btn-primary" id="extractFromImagesBtn" disabled>
+                            <span class="btn-icon">🖼️</span>
+                            חלצי מתכון מהתמונות
+                        </button>
+                        <div id="images-status" class="import-status"></div>
                     </div>
                 </div>
 

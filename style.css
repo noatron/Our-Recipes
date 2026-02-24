@@ -321,6 +321,30 @@ header .logo {
 }
 
 /* Import Section */
+.images-preview {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+.images-preview .image-preview-item {
+    width: 80px;
+    text-align: center;
+}
+.images-preview .image-preview-item img {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 2px solid #c5d9dc;
+}
+.images-preview .image-preview-item span {
+    display: block;
+    font-size: 0.75rem;
+    color: #698996;
+    margin-top: 4px;
+}
+
 .import-section {
     display: flex;
     flex-direction: column;
@@ -559,6 +583,27 @@ header .logo {
         top: 10px;
         right: 10px;
     }
+.favorites-filter-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    max-width: 600px;
+    margin: 0 auto 16px;
+}
+.favorites-chip {
+    background: white;
+    color: #407076;
+    border: 2px solid #FFD8BE;
+    padding: 8px 18px;
+    border-radius: 20px;
+    font-family: 'Varela Round', sans-serif;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.favorites-chip:hover { background: #FFF5EE; border-color: #407076; }
+.favorites-chip.active { background: #407076; color: white; border-color: #407076; }
+
 /* Category Filter Chips */
 .category-filters {
     display: flex;
@@ -589,3 +634,132 @@ header .logo {
     background: #407076;
     color: white;
 }
+
+/* Tag filters (תגיות) */
+.tag-filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    max-width: 800px;
+    margin: 0 auto 20px;
+}
+.tag-filters-label {
+    font-size: 0.9rem;
+    color: #407076;
+    margin-left: 8px;
+}
+.tag-chip {
+    background: white;
+    color: #698996;
+    border: 1.5px solid #c5d9dc;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-family: 'Varela Round', sans-serif;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.tag-chip:hover {
+    border-color: #407076;
+    color: #407076;
+}
+.tag-chip.active {
+    background: #407076;
+    color: white;
+    border-color: #407076;
+}
+.recipe-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+}
+.recipe-tag {
+    background: #e8f0f1;
+    color: #407076;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+}
+
+.recipe-meta-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 8px;
+}
+.recipe-like-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-family: 'Varela Round', sans-serif;
+    font-size: 0.95rem;
+    color: #698996;
+    transition: all 0.2s;
+}
+.recipe-like-btn:hover {
+    color: #407076;
+    background: rgba(64, 112, 118, 0.08);
+}
+.recipe-like-btn.liked,
+.recipe-like-btn .like-icon { font-size: 1.1rem; }
+.recipe-like-btn .like-count { font-weight: 400; }
+
+/* Recipe detail: like + comments */
+.recipe-like-detail { margin-right: auto; margin-left: 12px; }
+.detail-like-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #FFD8BE;
+    border: none;
+    border-radius: 24px;
+    padding: 8px 16px;
+    font-family: 'Varela Round', sans-serif;
+    font-size: 1rem;
+    color: #407076;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.detail-like-btn:hover { background: #ffccab; }
+.detail-like-btn.liked { background: rgba(64, 112, 118, 0.15); }
+.detail-like-icon { font-size: 1.2rem; }
+
+.comments-title { margin-top: 36px; }
+.comments-list { margin: 16px 0 24px; }
+.comment-item {
+    background: #F8F7FF;
+    border-radius: 12px;
+    padding: 14px 18px;
+    margin-bottom: 12px;
+    border-right: 4px solid #FFD8BE;
+}
+.comment-author { color: #407076; font-size: 0.95rem; }
+.comment-date { color: #698996; font-size: 0.85rem; margin-right: 8px; }
+.comment-text-p { margin: 8px 0 0; color: #407076; line-height: 1.5; }
+.no-comments { color: #698996; font-size: 1rem; padding: 20px 0; }
+.comment-form-wrap { margin-top: 20px; }
+.comment-form-wrap .comment-text {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #c5d9dc;
+    border-radius: 12px;
+    font-family: 'Varela Round', sans-serif;
+    font-size: 1rem;
+    resize: vertical;
+    margin-bottom: 12px;
+    box-sizing: border-box;
+}
+.comment-form-wrap .comment-text:focus {
+    outline: none;
+    border-color: #407076;
+}
+.comment-login-hint { color: #698996; font-size: 0.95rem; margin-top: 12px; }
