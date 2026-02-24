@@ -1,9 +1,27 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+#!/usr/bin/env node
+/**
+ * יוצר את firebase.js – רק ה-API key מגיע ממשתנה סביבה (סודי).
+ * הרצה: node scripts/generate-firebase-config.js
+ * דרוש: FIREBASE_API_KEY (ב-Netlify או ב-.env מקומי)
+ */
+
+const fs = require('fs');
+const path = require('path');
+
+const apiKey = process.env.FIREBASE_API_KEY && process.env.FIREBASE_API_KEY.trim();
+if (!apiKey) {
+  console.error('Missing: FIREBASE_API_KEY');
+  console.error('Set it in Netlify (Site configuration → Environment variables) or in .env for local.');
+  process.exit(1);
+}
+
+// שאר הערכים לא סודיים – נשארים קבועים
+const content = `import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyAZH8KZfhz6V1zPWEL3qIBgekIgUJvmMeY",
+    apiKey: "${apiKey}",
     authDomain: "our-recipes-1d97e.firebaseapp.com",
     projectId: "our-recipes-1d97e",
     storageBucket: "our-recipes-1d97e.firebasestorage.app",
@@ -34,3 +52,8 @@ export async function signOutUser() {
 export function onUserChange(callback) {
     return onAuthStateChanged(auth, callback);
 }
+`;
+
+const outPath = path.join(__dirname, '..', 'firebase.js');
+fs.writeFileSync(outPath, content, 'utf8');
+console.log('Written', outPath);

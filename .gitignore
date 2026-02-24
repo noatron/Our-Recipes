@@ -1,2 +1,8 @@
 .DS_Store
 persona.html
+
+# לא מעלים מפתחות – firebase.js נוצר בזמן build ממשתני סביבה
+firebase.js
+.env
+.env.local
+.env.*.local

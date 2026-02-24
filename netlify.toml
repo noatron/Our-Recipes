@@ -1,4 +1,5 @@
 [build]
+  command = "node scripts/generate-firebase-config.js"
   publish = "."
 [functions]
   directory = "netlify/functions"
