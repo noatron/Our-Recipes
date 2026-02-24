@@ -33,6 +33,7 @@ header h1 {
     margin: 0 auto 20px;
 }
 
+
 .search-bar input {
     width: 100%;
     padding: 15px 20px;
@@ -44,6 +45,7 @@ header h1 {
     color: #407076;
     outline: none;
     transition: all 0.3s;
+    touch-action: manipulation;
 }
 
 .search-bar input:focus {
@@ -127,13 +129,79 @@ main {
 
 /* Responsive */
 @media (max-width: 768px) {
-    header h1 {
-        font-size: 2rem;
+    body {
+        padding: 12px;
     }
-    
+
+    header {
+        margin-bottom: 24px;
+    }
+
+    header h1 {
+        font-size: 1.5rem;
+        padding-inline: 80px 0;
+    }
+
+    #auth-area {
+        left: 8px !important;
+    }
+
+    #auth-area button,
+    #auth-btn {
+        padding: 6px 12px;
+        font-size: 0.8rem;
+    }
+
     .recipes-grid {
         grid-template-columns: 1fr;
         gap: 20px;
+    }
+
+    .recipe-detail {
+        padding: 20px 16px !important;
+    }
+
+    .recipe-detail-image {
+        height: 240px !important;
+    }
+
+    .recipe-info {
+        flex-direction: column;
+        gap: 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    body {
+        padding: 10px;
+    }
+
+    header h1 {
+        font-size: 1.35rem;
+        padding-inline: 70px 0;
+    }
+
+    .add-recipe-form {
+        padding: 16px;
+    }
+
+    .recipe-detail {
+        padding: 16px 12px !important;
+    }
+
+    .recipe-detail-image {
+        height: 200px !important;
+    }
+
+    .floating-add-btn {
+        width: 48px;
+        height: 48px;
+        bottom: 12px;
+        right: 12px;
+    }
+
+    .floating-add-btn .plus-icon {
+        font-size: 40px;
     }
 }
 
@@ -545,10 +613,9 @@ header .logo {
 .back-link:hover {
     color: #698996;
     transform: translateX(-3px);  /* שינוי מ-3px ל--3px */
-}@media (max-width: 768px) {
-    /* הקוד הקיים... */
-    
-    /* מוסיפים את זה: */
+}
+
+@media (max-width: 768px) {
     .recipe-card {
         min-height: 120px;
     }
@@ -565,7 +632,6 @@ header .logo {
         bottom: 16px;
         right: 16px;
     }
-}
 
     .recipe-detail h1 {
         font-size: 1.8rem;
@@ -587,6 +653,8 @@ header .logo {
         top: 10px;
         right: 10px;
     }
+}
+
 .favorites-filter-wrap {
     display: flex;
     flex-wrap: wrap;
