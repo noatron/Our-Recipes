@@ -79,6 +79,13 @@ function getRecipeDisplayName(recipe) {
     return name;
 }
 
+/** SVG לב בצבע האפליקציה – מלא (liked) או רק קו (לא liked) */
+function getHeartSvg(liked) {
+    const fill = liked ? '#407076' : 'none';
+    const stroke = liked ? '#407076' : '#698996';
+    return `<svg class="heart-svg" viewBox="0 0 24 24" width="22" height="22" fill="${fill}" stroke="${stroke}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`;
+}
+
 /** מקור המתכון – דומיין או טקסט מקור */
 function getRecipeSourceLabel(recipe) {
     if (recipe.url) {
@@ -97,6 +104,7 @@ function displayRecipes(recipesToShow) {
     }
 
     const likeCount = (r) => (r.likesCount != null ? r.likesCount : 0);
+    const commentsCount = (r) => (r.commentsCount != null ? r.commentsCount : 0);
     recipesContainer.innerHTML = recipesToShow.map(recipe => {
         const sourceLabel = getRecipeSourceLabel(recipe);
         const tags = Array.isArray(recipe.tags) ? recipe.tags : [];
@@ -105,6 +113,9 @@ function displayRecipes(recipesToShow) {
             : '';
         const liked = !!recipe.likedByMe;
         const count = likeCount(recipe);
+        const numComments = commentsCount(recipe);
+        const commentsLabel = numComments === 0 ? 'תגובות' : (numComments === 1 ? 'תגובה' : 'תגובות');
+        const commentsLinkHtml = `<a href="recipe-detail.html#comments" class="recipe-comments-link" data-recipe-id="${recipe.id}" onclick="event.preventDefault(); event.stopPropagation(); window.showRecipeToComments('${recipe.id}')">${numComments} ${commentsLabel}</a>`;
         return `
         <div class="recipe-card" data-recipe-id="${recipe.id}" onclick="window.showRecipe('${recipe.id}')">
             <img src="${recipe.image || 'https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=400&h=200&fit=crop'}" alt="" class="recipe-image" onerror="this.style.display='none'">
@@ -114,10 +125,11 @@ function displayRecipes(recipesToShow) {
                 <div class="recipe-meta-row">
                     <span class="recipe-category">${escapeHtml(recipe.category || '')}</span>
                     <button type="button" class="recipe-like-btn ${liked ? 'liked' : ''}" data-recipe-id="${recipe.id}" aria-label="עשי לב">
-                        <span class="like-icon">${liked ? '❤️' : '🤍'}</span>
+                        <span class="like-icon">${getHeartSvg(liked)}</span>
                         <span class="like-count">${count}</span>
                     </button>
                 </div>
+                <div class="recipe-comments-row">${commentsLinkHtml}</div>
                 ${tagsHtml}
             </div>
         </div>
@@ -136,6 +148,11 @@ function displayRecipes(recipesToShow) {
 window.showRecipe = function(id) {
     localStorage.setItem('selectedRecipeId', id);
     window.location.href = 'recipe-detail.html';
+}
+
+window.showRecipeToComments = function(id) {
+    localStorage.setItem('selectedRecipeId', id);
+    window.location.href = 'recipe-detail.html#comments';
 }
 
 /** מעשיר את רשימת המתכונים ב-likedByMe לפי המשתמש המחובר */

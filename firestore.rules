@@ -1,0 +1,24 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // מתכונים – כולם יכולים לקרוא; רק מחוברים יכולים ליצור/לערוך/למחוק
+    match /recipes/{recipeId} {
+      allow read: if true;
+      allow create, update, delete: if request.auth != null;
+
+      // לבבות (מועדפים) – קוראים כולם; רק המשתמש יכול להוסיף/להסיר את הלב של עצמו
+      match /likes/{userId} {
+        allow read: if true;
+        allow create, delete: if request.auth != null && request.auth.uid == userId;
+      }
+
+      // תגובות – קוראים כולם; רק מחוברים יכולים לכתוב; מחיקה רק למחבר/ת התגובה
+      match /comments/{commentId} {
+        allow read: if true;
+        allow create: if request.auth != null;
+        allow update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+      }
+    }
+  }
+}

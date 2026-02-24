@@ -602,7 +602,9 @@ header .logo {
     transition: all 0.2s;
 }
 .favorites-chip:hover { background: #FFF5EE; border-color: #407076; }
+.favorites-chip .favorites-heart { vertical-align: middle; margin-left: 4px; stroke: #407076; }
 .favorites-chip.active { background: #407076; color: white; border-color: #407076; }
+.favorites-chip.active .favorites-heart { fill: white; stroke: white; }
 
 /* Category Filter Chips */
 .category-filters {
@@ -709,9 +711,23 @@ header .logo {
     color: #407076;
     background: rgba(64, 112, 118, 0.08);
 }
-.recipe-like-btn.liked,
-.recipe-like-btn .like-icon { font-size: 1.1rem; }
+.recipe-like-btn .like-icon { display: inline-flex; align-items: center; }
+.recipe-like-btn .heart-svg { flex-shrink: 0; }
+.recipe-like-btn.liked .heart-svg { fill: #407076; stroke: #407076; }
 .recipe-like-btn .like-count { font-weight: 400; }
+
+.recipe-comments-row { margin-top: 8px; }
+.recipe-comments-link {
+    font-size: 0.9rem;
+    color: #407076;
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.2s, color 0.2s;
+}
+.recipe-comments-link:hover {
+    border-bottom-color: #407076;
+    color: #698996;
+}
 
 /* Recipe detail: like + comments */
 .recipe-like-detail { margin-right: auto; margin-left: 12px; }
@@ -731,7 +747,9 @@ header .logo {
 }
 .detail-like-btn:hover { background: #ffccab; }
 .detail-like-btn.liked { background: rgba(64, 112, 118, 0.15); }
-.detail-like-icon { font-size: 1.2rem; }
+.detail-like-btn.liked .heart-svg { fill: #407076; stroke: #407076; }
+.detail-like-icon { display: inline-flex; align-items: center; }
+.detail-like-icon .heart-svg { display: block; }
 
 .comments-title { margin-top: 36px; }
 .comments-list { margin: 16px 0 24px; }

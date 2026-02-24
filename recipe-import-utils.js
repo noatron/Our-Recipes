@@ -61,15 +61,116 @@ export function extractRecipeImage(doc, pageUrl) {
     return '';
 }
 
-/** שליפה מהקישור: מחזיר { name, image } או זורק בשגיאה */
+/** חילוץ מרכיבים והוראות מ-JSON-LD (Schema.org Recipe) או מהעמוד */
+function extractFromJsonLd(doc) {
+    const scripts = doc.querySelectorAll('script[type="application/ld+json"]');
+    for (const script of scripts) {
+        try {
+            const raw = script.textContent?.trim();
+            if (!raw) continue;
+            let data = JSON.parse(raw);
+            if (Array.isArray(data)) data = data.find(item => item['@type'] === 'Recipe' || (Array.isArray(item['@type']) && item['@type'].includes('Recipe')));
+            else if (data['@graph']) data = data['@graph'].find(item => item['@type'] === 'Recipe' || (Array.isArray(item['@type']) && item['@type'].includes('Recipe')));
+            if (!data || (data['@type'] !== 'Recipe' && (!Array.isArray(data['@type']) || !data['@type'].includes('Recipe')))) continue;
+
+            const ingredients = Array.isArray(data.recipeIngredient)
+                ? data.recipeIngredient.map(i => typeof i === 'string' ? i.trim() : (i?.text || String(i)).trim()).filter(Boolean)
+                : [];
+            let instructions = [];
+            if (Array.isArray(data.recipeInstructions)) {
+                instructions = data.recipeInstructions.map(step => {
+                    if (typeof step === 'string') return step.trim();
+                    if (step['@type'] === 'HowToStep' && step.text) return step.text.trim();
+                    if (step.name) return step.name.trim();
+                    return '';
+                }).filter(Boolean);
+            }
+            if (ingredients.length || instructions.length) return { ingredients, instructions };
+        } catch (e) { /* ignore */ }
+    }
+    return null;
+}
+
+/** חילוץ רשימת מרכיבים מהעמוד לפי סלקטורים נפוצים */
+function extractIngredientsFromDom(doc) {
+    const selectors = [
+        '[class*="ingredient"] li', '[class*="Ingredient"] li',
+        '.wprm-recipe-ingredient', '.recipe-ingredients li', '.ingredients-list li',
+        '[itemprop="recipeIngredient"]', '.ingredient',
+        'ul.ingredients li', 'ol.ingredients li',
+        '[data-ingredient]', '.list-ingredients li'
+    ];
+    for (const sel of selectors) {
+        const nodes = doc.querySelectorAll(sel);
+        if (nodes.length < 2) continue;
+        const items = [];
+        nodes.forEach(el => {
+            const text = (el.textContent || '').trim().replace(/\s+/g, ' ');
+            if (text.length > 1 && text.length < 500) items.push(text);
+        });
+        if (items.length >= 2) return [...new Set(items)];
+    }
+    const allLists = doc.querySelectorAll('ul, ol');
+    for (const list of allLists) {
+        const prev = list.previousElementSibling?.textContent?.toLowerCase() || '';
+        const prevPrev = list.previousElementSibling?.previousElementSibling?.textContent?.toLowerCase() || '';
+        if (!/מרכיב|ingredient|רכיב/.test(prev + prevPrev)) continue;
+        const items = [...list.querySelectorAll('li')].map(li => (li.textContent || '').trim().replace(/\s+/g, ' ')).filter(t => t.length > 1 && t.length < 500);
+        if (items.length >= 2) return items;
+    }
+    return [];
+}
+
+/** חילוץ הוראות הכנה מהעמוד לפי סלקטורים נפוצים */
+function extractInstructionsFromDom(doc) {
+    const selectors = [
+        '[class*="instruction"] li', '[class*="Instruction"] li',
+        '.wprm-recipe-instruction', '.recipe-steps li', '.instructions-list li',
+        '[itemprop="recipeInstructions"] li', '[itemprop="recipeInstructions"] p',
+        '.directions li', '.steps li', '.method li',
+        'ol.instructions li', 'ul.instructions li'
+    ];
+    for (const sel of selectors) {
+        const nodes = doc.querySelectorAll(sel);
+        if (nodes.length < 2) continue;
+        const items = [];
+        nodes.forEach(el => {
+            const text = (el.textContent || '').trim().replace(/\s+/g, ' ');
+            if (text.length > 5 && text.length < 800) items.push(text);
+        });
+        if (items.length >= 2) return items;
+    }
+    const allLists = doc.querySelectorAll('ol, ul');
+    for (const list of allLists) {
+        const prev = list.previousElementSibling?.textContent?.toLowerCase() || '';
+        const prevPrev = list.previousElementSibling?.previousElementSibling?.textContent?.toLowerCase() || '';
+        if (!/הוראות|שלבים|הכנה|instruction|step|method|direction/.test(prev + prevPrev)) continue;
+        const items = [...list.querySelectorAll('li')].map(li => (li.textContent || '').trim().replace(/\s+/g, ' ')).filter(t => t.length > 5 && t.length < 800);
+        if (items.length >= 2) return items;
+    }
+    return [];
+}
+
+/** מחזיר { ingredients, instructions } – מנסה קודם JSON-LD ואז DOM */
+export function extractIngredientsAndInstructions(doc) {
+    const fromJson = extractFromJsonLd(doc);
+    const ingredients = fromJson?.ingredients?.length ? fromJson.ingredients : extractIngredientsFromDom(doc);
+    const instructions = fromJson?.instructions?.length ? fromJson.instructions : extractInstructionsFromDom(doc);
+    return { ingredients, instructions };
+}
+
+/** שליפה מהקישור: מחזיר { name, image, ingredients, instructions } או זורק בשגיאה */
 export async function fetchRecipeMeta(url) {
     const proxyUrl = `/.netlify/functions/fetch-recipe?url=${encodeURIComponent(url)}`;
     const response = await fetch(proxyUrl);
     const html = await response.text();
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, 'text/html');
+    const { ingredients, instructions } = extractIngredientsAndInstructions(doc);
     return {
         name: extractRecipeName(doc, url) || 'מתכון',
-        image: extractRecipeImage(doc, url)
+        image: extractRecipeImage(doc, url),
+        ingredients: ingredients || [],
+        instructions: instructions || []
     };
 }

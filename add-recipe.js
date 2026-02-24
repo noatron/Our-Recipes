@@ -1,6 +1,6 @@
 import { db } from './firebase.js';
 import { collection, addDoc } from 'https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js';
-import { extractRecipeName, extractRecipeImage } from './recipe-import-utils.js';
+import { extractRecipeName, extractRecipeImage, extractIngredientsAndInstructions } from './recipe-import-utils.js';
 
 /** מפרק CSV או טקסט לשורות ומחלץ URLs (שורה = קישור, או CSV עם עמודה שמכילה קישור) */
 function parseUrlsFromCsv(text) {
@@ -33,6 +33,7 @@ async function importOneRecipe(url) {
 
     const name = extractRecipeName(doc, url) || 'מתכון חדש';
     const image = extractRecipeImage(doc, url);
+    const { ingredients, instructions } = extractIngredientsAndInstructions(doc);
 
     const newRecipe = {
         name,
@@ -40,8 +41,8 @@ async function importOneRecipe(url) {
         source: new URL(url).hostname,
         image,
         url,
-        ingredients: [],
-        instructions: []
+        ingredients: ingredients || [],
+        instructions: instructions || []
     };
     await addDoc(collection(db, 'recipes'), newRecipe);
     return { name, url };
@@ -108,6 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const name = extractRecipeName(doc, url) || 'מתכון חדש';
             const image = extractRecipeImage(doc, url);
+            const { ingredients, instructions } = extractIngredientsAndInstructions(doc);
 
             const newRecipe = {
                 name: name,
@@ -115,8 +117,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 source: new URL(url).hostname,
                 image: image,
                 url: url,
-                ingredients: [],
-                instructions: []
+                ingredients: ingredients || [],
+                instructions: instructions || []
             };
 
             await addDoc(collection(db, 'recipes'), newRecipe);
