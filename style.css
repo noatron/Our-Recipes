@@ -280,7 +280,7 @@ button:hover {
 
 header .Logo,
 header .logo {
-    height: 1em;
+    height: 1.65rem;
     width: auto;
     margin-left: 12px;
     object-fit: contain;
@@ -306,7 +306,7 @@ header {
 
 header .Logo,
 header .logo {
-    height: 1em;
+    height: 1.65rem;
     width: auto;
     margin-left: 12px;
     object-fit: contain;
