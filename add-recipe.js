@@ -333,7 +333,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    /** דחיסת תמונה – מקסימום רוחב 1200px, JPEG איכות 0.82 (מתאים לסקרינשוטים). אם נכשל – מחזיר את הקובץ כרגיל. */
+    /** דחיסה אגרסיבית – מפחיתה timeout: רוחב מקס 900px, JPEG 0.72. טקסט באינסטגרם/טיקטוק עדיין קריא. */
     function compressImageFile(file) {
         return new Promise((resolve, reject) => {
             const fallback = () => {
@@ -346,7 +346,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const url = URL.createObjectURL(file);
             img.onload = () => {
                 URL.revokeObjectURL(url);
-                const maxW = 1200;
+                const maxW = 900;
                 let w = img.width, h = img.height;
                 if (w > maxW) {
                     h = Math.round((h * maxW) / w);
@@ -358,7 +358,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, w, h);
                 try {
-                    const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.72);
                     resolve({ data: dataUrl.split(',')[1], mediaType: 'image/jpeg' });
                 } catch (e) {
                     fallback();
@@ -381,11 +381,18 @@ document.addEventListener('DOMContentLoaded', () => {
         for (let i = 0; i < files.length; i++) {
             if (onProgress) onProgress(i + 1, files.length);
             const compressed = await compressImageFile(files[i]);
-            const res = await fetch('/.netlify/functions/extract-image', {
+            let res = await fetch('/.netlify/functions/extract-image', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ images: [compressed] })
             });
+            if (res.status === 502 || res.status === 504) {
+                res = await fetch('/.netlify/functions/extract-image', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ images: [compressed] })
+                });
+            }
             if (res.status === 502 || res.status === 504) {
                 throw new Error('TIMEOUT');
             }
@@ -470,7 +477,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 showImageResultModal(result);
             } catch (err) {
                 console.error(err);
-                const msg = err.message === 'TIMEOUT' ? 'השרת לא הספיק להגיב. נסי שוב בעוד רגע.' : (err.message || 'חיבור ל-AI נכשל. נסי שוב.');
+                const isTimeout = err.message === 'TIMEOUT';
+                const msg = isTimeout
+                    ? (useSequential ? 'השרת לא הספיק להגיב. נסי עם תמונה אחת או שתיים, או שוב בעוד רגע.' : 'השרת לא הספיק להגיב. נסי שוב בעוד רגע.')
+                    : (err.message || 'חיבור ל-AI נכשל. נסי שוב.');
                 setImagesStatus('error', msg);
             }
             extractFromImagesBtn.disabled = false;
