@@ -1,5 +1,5 @@
 import { db } from './firebase.js';
-import { collection, addDoc } from 'https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js';
+import { collection, addDoc, doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js';
 import { extractRecipeName, extractRecipeImage, extractIngredientsAndInstructions } from './recipe-import-utils.js';
 
 /** מפרק CSV או טקסט לשורות ומחלץ URLs (שורה = קישור, או CSV עם עמודה שמכילה קישור) */
@@ -37,7 +37,6 @@ async function importOneRecipe(url) {
 
     const newRecipe = {
         name,
-        category: '',
         source: new URL(url).hostname,
         image,
         url,
@@ -48,7 +47,13 @@ async function importOneRecipe(url) {
     return { name, url };
 }
 
-const ALL_TAGS = ['בשר', 'דגים', 'פסטות', 'טרטים ופשטידות', 'צמחוני', 'סלטים', 'תוספות', 'לחם ומאפים', 'רוטבים וממרחים', 'מרקים', 'עוגות', 'עוגיות', 'קינוחים', 'שוקולד', 'ארוחות בוקר', 'חטיפים', 'שתייה'];
+let ALL_TAGS = ['בשר', 'דגים', 'פסטות', 'טרטים ופשטידות', 'צמחוני', 'סלטים', 'תוספות', 'לחם ומאפים', 'רוטבים וממרחים', 'מרקים', 'עוגות', 'עוגיות', 'קינוחים', 'שוקולד', 'ארוחות בוקר', 'חטיפים', 'שתייה'];
+async function loadTagConfig() {
+    try {
+        const snap = await getDoc(doc(db, 'config', 'tags'));
+        if (snap.exists() && snap.data().allTags?.length) ALL_TAGS = snap.data().allTags;
+    } catch (_) {}
+}
 
 function escapeHtml(str) {
     const div = document.createElement('div');
@@ -57,6 +62,7 @@ function escapeHtml(str) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    loadTagConfig();
     const tabButtons = document.querySelectorAll('.tab-btn');
     const importMode = document.getElementById('import-mode');
     const manualMode = document.getElementById('manual-mode');
@@ -112,7 +118,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const newRecipe = {
                 name: name,
-                category: '',
                 source: new URL(url).hostname,
                 image: image,
                 url: url,
@@ -153,7 +158,7 @@ document.addEventListener('DOMContentLoaded', () => {
             submitBtn.textContent = 'שומר...';
 
             try {
-                const newRecipe = { name, category: '', source, image, ingredients, instructions };
+                const newRecipe = { name, source, image, ingredients, instructions };
                 await addDoc(collection(db, 'recipes'), newRecipe);
                 window.location.href = 'index.html';
             } catch (err) {
@@ -304,7 +309,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 await addDoc(collection(db, 'recipes'), {
                     name,
-                    category: '',
                     source: source || 'מתמונה',
                     image: recipe.image || '',
                     url: reelUrl,

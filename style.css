@@ -134,6 +134,21 @@ header {
     padding-bottom: 90px; /* מרווח מתחת לרשת כדי שכפתור הוספת מתכון לא יגלוש */
 }
 
+.migrate-link-wrap {
+    text-align: center;
+    margin: 20px auto 30px;
+    max-width: 600px;
+}
+.migrate-link {
+    font-size: 0.9rem;
+    color: #698996;
+    text-decoration: none;
+}
+.migrate-link:hover {
+    color: #407076;
+    text-decoration: underline;
+}
+
 main {
     padding-bottom: 120px;
 }
@@ -793,13 +808,13 @@ header .logo {
 .tag-group-select {
     width: 100%;
     max-width: 280px;
-    padding: 10px 14px;
+    padding: 12px 18px;
     font-family: 'Varela Round', sans-serif;
     font-size: 1rem;
     color: #407076;
     background: white;
     border: 2px solid #FFD8BE;
-    border-radius: 12px;
+    border-radius: 25px;
     cursor: pointer;
     outline: none;
     direction: rtl;

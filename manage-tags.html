@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ניהול תגיות – מפה לפה</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .manage-tags-wrap { max-width: 560px; margin: 0 auto; padding: 24px; }
+        .manage-tags-wrap h1 { color: #407076; margin-bottom: 8px; }
+        .manage-tags-wrap .back-link { display: inline-block; margin-bottom: 20px; color: #698996; text-decoration: none; font-size: 0.95rem; }
+        .manage-tags-wrap .back-link:hover { color: #407076; }
+        .tag-group-box { background: #f8fafb; border: 1px solid #e0e8eb; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+        .tag-group-box h3 { margin: 0 0 12px 0; font-size: 1.1rem; color: #407076; }
+        .tag-list { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+        .tag-item { display: inline-flex; align-items: center; gap: 6px; background: #fff; border: 1.5px solid #c5d9dc; border-radius: 20px; padding: 4px 10px 4px 14px; font-size: 0.9rem; }
+        .tag-item button { background: none; border: none; color: #698996; cursor: pointer; padding: 0 2px; font-size: 1rem; line-height: 1; }
+        .tag-item button:hover { color: #c62828; }
+        .add-tag-row { display: flex; gap: 8px; margin-top: 8px; }
+        .add-tag-row input { flex: 1; padding: 8px 12px; border: 2px solid #c5d9dc; border-radius: 8px; font-family: inherit; font-size: 1rem; }
+        .add-tag-row button { padding: 8px 16px; background: #407076; color: white; border: none; border-radius: 8px; font-family: inherit; cursor: pointer; }
+        .add-tag-row button:hover { background: #698996; }
+        .add-quick-row { background: #e8f4f5; border: 1px solid #c5d9dc; border-radius: 12px; padding: 16px; margin-bottom: 20px; }
+        .add-quick-row h3 { margin: 0 0 12px 0; font-size: 1rem; color: #407076; }
+        .add-quick-row .row { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; align-items: center; }
+        .add-quick-row select { padding: 8px 12px; border: 2px solid #c5d9dc; border-radius: 8px; font-family: inherit; font-size: 1rem; min-width: 140px; }
+        .add-quick-row input { padding: 8px 12px; border: 2px solid #c5d9dc; border-radius: 8px; font-family: inherit; font-size: 1rem; min-width: 120px; }
+        .add-quick-row button { padding: 8px 16px; background: #407076; color: white; border: none; border-radius: 8px; font-family: inherit; cursor: pointer; }
+        .add-quick-row button:hover { background: #698996; }
+        .add-group-row { margin-top: 20px; padding-top: 16px; border-top: 1px solid #e0e8eb; }
+        .save-bar { position: sticky; bottom: 0; background: #fff; padding: 16px 0; margin-top: 24px; border-top: 1px solid #e0e8eb; }
+        .save-bar button { padding: 12px 24px; background: #407076; color: white; border: none; border-radius: 8px; font-size: 1rem; font-family: inherit; cursor: pointer; }
+        .save-bar button:disabled { opacity: 0.6; cursor: not-allowed; }
+        .status { margin-top: 12px; font-size: 0.9rem; color: #698996; }
+        .status.ok { color: #2e7d32; }
+        .status.err { color: #c62828; }
+    </style>
+</head>
+<body>
+    <div class="manage-tags-wrap">
+        <a href="index.html" class="back-link">← חזרה לדף הבית</a>
+        <h1>ניהול תגיות</h1>
+        <p style="color:#698996; margin-bottom:20px;">הוספת תגיות כאן תעדכן את האתר: הן יופיעו בסינון ובעריכת מתכונים.</p>
+
+        <div id="authMsg" style="margin-bottom:16px;"></div>
+
+        <div class="add-quick-row">
+            <h3>הוספת תגית ותת-תגית</h3>
+            <div class="row">
+                <label for="quickGroupSelect">תגית (קבוצה):</label>
+                <select id="quickGroupSelect"><option value="">בחרי תגית</option></select>
+                <input type="text" id="quickSubTag" placeholder="תת-תגית">
+                <button type="button" id="addSubTagBtn">הוסף תת-תגית</button>
+            </div>
+            <div class="row" style="margin-top:12px;">
+                <input type="text" id="quickNewGroup" placeholder="תגית חדשה (קבוצה)">
+                <input type="text" id="quickNewSubTag" placeholder="תת-תגית ראשונה (אופציונלי)">
+                <button type="button" id="addGroupWithSubBtn">הוסף תגית (+ תת-תגית)</button>
+            </div>
+        </div>
+
+        <div id="tagGroupsContainer"></div>
+        <div class="add-group-row">
+            <h3 style="margin:0 0 8px 0; font-size:1rem; color:#407076;">קבוצה חדשה</h3>
+            <div class="add-tag-row">
+                <input type="text" id="newGroupName" placeholder="שם הקבוצה">
+                <button type="button" id="addGroupBtn">הוסף קבוצה</button>
+            </div>
+        </div>
+        <div class="save-bar">
+            <button type="button" id="saveBtn">שמור שינויים</button>
+            <span id="status" class="status"></span>
+        </div>
+    </div>
+
+    <script type="module">
+        import { db, auth, onUserChange, signInWithGoogle } from '/firebase.js';
+        import { doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js';
+
+        const CONFIG_PATH = { collection: 'config', id: 'tags' };
+        const DEFAULT_GROUPS = [
+            { label: 'מנות עיקריות', tags: ['בשר', 'דגים', 'פסטות', 'טרטים ופשטידות', 'צמחוני'] },
+            { label: 'סלטים', tags: ['סלטים'] },
+            { label: 'תוספות', tags: ['תוספות'] },
+            { label: 'לחם ומאפים', tags: ['לחם ומאפים'] },
+            { label: 'רוטבים וממרחים', tags: ['רוטבים וממרחים'] },
+            { label: 'מרקים', tags: ['מרקים'] },
+            { label: 'קינוחים', tags: ['עוגות', 'עוגיות', 'קינוחים', 'שוקולד'] },
+            { label: 'ארוחות בוקר', tags: ['ארוחות בוקר'] },
+            { label: 'חטיפים', tags: ['חטיפים'] },
+            { label: 'שתייה', tags: ['שתייה'] }
+        ];
+
+        let tagGroups = [];
+        const container = document.getElementById('tagGroupsContainer');
+        const saveBtn = document.getElementById('saveBtn');
+        const statusEl = document.getElementById('status');
+        const authMsg = document.getElementById('authMsg');
+
+        function flattenTags(groups) {
+            return groups.reduce((arr, g) => arr.concat(g.tags || []), []);
+        }
+
+        function render() {
+            container.innerHTML = tagGroups.map((group, gIdx) => `
+                <div class="tag-group-box" data-group-idx="${gIdx}">
+                    <h3>${escapeHtml(group.label)}</h3>
+                    <div class="tag-list">${(group.tags || []).map((tag, tIdx) => `
+                        <span class="tag-item">
+                            ${escapeHtml(tag)}
+                            <button type="button" data-group-idx="${gIdx}" data-tag-idx="${tIdx}" aria-label="הסר">×</button>
+                        </span>
+                    `).join('')}</div>
+                    <div class="add-tag-row">
+                        <input type="text" data-group-idx="${gIdx}" placeholder="תגית חדשה בקבוצה זו">
+                        <button type="button" data-group-idx="${gIdx}" class="add-tag-btn">הוסף</button>
+                    </div>
+                </div>
+            `).join('');
+
+            container.querySelectorAll('.tag-item button').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const gIdx = parseInt(btn.dataset.groupIdx, 10);
+                    const tIdx = parseInt(btn.dataset.tagIdx, 10);
+                    tagGroups[gIdx].tags.splice(tIdx, 1);
+                    render();
+                });
+            });
+            container.querySelectorAll('.add-tag-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const gIdx = parseInt(btn.dataset.groupIdx, 10);
+                    const input = container.querySelector(`.add-tag-row input[data-group-idx="${gIdx}"]`);
+                    const val = (input.value || '').trim();
+                    if (!val) return;
+                    if (!tagGroups[gIdx].tags) tagGroups[gIdx].tags = [];
+                    if (tagGroups[gIdx].tags.includes(val)) { input.value = ''; return; }
+                    tagGroups[gIdx].tags.push(val);
+                    input.value = '';
+                    render();
+                });
+            });
+            fillQuickGroupSelect();
+        }
+
+        function fillQuickGroupSelect() {
+            const sel = document.getElementById('quickGroupSelect');
+            if (!sel) return;
+            sel.innerHTML = '<option value="">בחרי תגית</option>';
+            tagGroups.forEach((g, i) => sel.appendChild(new Option(g.label, String(i))));
+        }
+
+        function escapeHtml(s) {
+            const d = document.createElement('div');
+            d.textContent = s;
+            return d.innerHTML;
+        }
+
+        async function load() {
+            try {
+                const snap = await getDoc(doc(db, CONFIG_PATH.collection, CONFIG_PATH.id));
+                if (snap.exists() && Array.isArray(snap.data().tagGroups) && snap.data().tagGroups.length) {
+                    tagGroups = snap.data().tagGroups.map(g => ({ label: g.label, tags: [...(g.tags || [])] }));
+                } else {
+                    tagGroups = DEFAULT_GROUPS.map(g => ({ label: g.label, tags: [...g.tags] }));
+                }
+                render();
+            } catch (e) {
+                statusEl.textContent = 'שגיאה בטעינה: ' + (e.message || e);
+                statusEl.className = 'status err';
+                tagGroups = DEFAULT_GROUPS.map(g => ({ label: g.label, tags: [...g.tags] }));
+                render();
+            }
+        }
+
+        saveBtn.addEventListener('click', async () => {
+            if (!auth.currentUser) {
+                statusEl.textContent = 'צריך להתחבר כדי לשמור.';
+                statusEl.className = 'status err';
+                return;
+            }
+            saveBtn.disabled = true;
+            statusEl.textContent = 'שומר...';
+            statusEl.className = 'status';
+            try {
+                const allTags = flattenTags(tagGroups);
+                await setDoc(doc(db, CONFIG_PATH.collection, CONFIG_PATH.id), { tagGroups, allTags });
+                statusEl.textContent = 'נשמר. התגיות מתעדכנות באתר.';
+                statusEl.className = 'status ok';
+            } catch (e) {
+                statusEl.textContent = 'שגיאה: ' + (e.message || e);
+                statusEl.className = 'status err';
+            }
+            saveBtn.disabled = false;
+        });
+
+        document.getElementById('addGroupBtn').addEventListener('click', () => {
+            const input = document.getElementById('newGroupName');
+            const name = (input.value || '').trim();
+            if (!name) return;
+            tagGroups.push({ label: name, tags: [] });
+            input.value = '';
+            render();
+        });
+
+        document.getElementById('addSubTagBtn').addEventListener('click', () => {
+            const sel = document.getElementById('quickGroupSelect');
+            const subInput = document.getElementById('quickSubTag');
+            const gIdx = sel.value === '' ? -1 : parseInt(sel.value, 10);
+            const val = (subInput.value || '').trim();
+            if (gIdx < 0 || !val) return;
+            if (!tagGroups[gIdx].tags) tagGroups[gIdx].tags = [];
+            if (tagGroups[gIdx].tags.includes(val)) { subInput.value = ''; return; }
+            tagGroups[gIdx].tags.push(val);
+            subInput.value = '';
+            render();
+        });
+
+        document.getElementById('addGroupWithSubBtn').addEventListener('click', () => {
+            const groupInput = document.getElementById('quickNewGroup');
+            const subInput = document.getElementById('quickNewSubTag');
+            const groupName = (groupInput.value || '').trim();
+            const subTag = (subInput.value || '').trim();
+            if (!groupName) return;
+            const tags = subTag ? [subTag] : [];
+            tagGroups.push({ label: groupName, tags });
+            groupInput.value = '';
+            subInput.value = '';
+            render();
+        });
+
+        onUserChange((user) => {
+            if (user) {
+                authMsg.innerHTML = '';
+                load();
+            } else {
+                authMsg.innerHTML = 'מחוברת? <button type="button" id="signInTagsBtn" style="padding:6px 12px;background:#407076;color:white;border:none;border-radius:6px;cursor:pointer;">התחברי עם Google</button>';
+                document.getElementById('signInTagsBtn')?.addEventListener('click', () => signInWithGoogle());
+                load();
+            }
+        });
+
+        if (auth.currentUser) load();
+        else onUserChange(auth.currentUser);
+    </script>
+</body>
+</html>

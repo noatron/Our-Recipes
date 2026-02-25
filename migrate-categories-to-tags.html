@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>המרת קטגוריות לתגיות</title>
+    <style>
+        body { font-family: 'Varela Round', sans-serif; padding: 24px; max-width: 560px; margin: 0 auto; }
+        h1 { color: #407076; }
+        p, li { color: #333; line-height: 1.5; }
+        button { padding: 12px 20px; background: #407076; color: white; border: none; border-radius: 8px; font-size: 1rem; cursor: pointer; margin-top: 8px; }
+        button:disabled { opacity: 0.6; cursor: not-allowed; }
+        #log { margin-top: 16px; white-space: pre-wrap; font-size: 0.9rem; color: #698996; }
+        .err { color: #c00; }
+        .ok { color: #0a0; }
+        .steps { background: #f0f7f8; padding: 16px; border-radius: 12px; margin: 16px 0; }
+    </style>
+</head>
+<body>
+    <h1>המרת קטגוריות לתגיות חדשות</h1>
+    <p>הסקריפט עובר על <strong>כל</strong> המתכונים ב-Firebase, לוקח את הקטגוריה הישנה של כל מתכון וממיר אותה לתגית (או תגיות) מהמערכת החדשה. הקטגוריה עצמה מתאפסת.</p>
+
+    <div class="steps" style="margin-bottom: 20px;">
+        <strong>📋 הרשימה החדשה של התגיות (לעריכה ידנית ב-Firebase – העתיקי מכאן)</strong>
+        <p style="margin: 10px 0 6px 0; font-size: 0.95rem;">מנות עיקריות: בשר, דגים, פסטות, טרטים ופשטידות, צמחוני</p>
+        <p style="margin: 0 0 6px 0; font-size: 0.95rem;">סלטים • תוספות • לחם ומאפים • רוטבים וממרחים • מרקים</p>
+        <p style="margin: 0 0 6px 0; font-size: 0.95rem;">קינוחים: עוגות, עוגיות, קינוחים, שוקולד</p>
+        <p style="margin: 0 0 0 0; font-size: 0.95rem;">ארוחות בוקר • חטיפים • שתייה</p>
+    </div>
+
+    <div class="steps">
+        <strong>איך להריץ המרה אוטומטית:</strong>
+        <ol style="margin: 8px 0 0 0; padding-right: 20px;">
+            <li>פתחי את האתר (מהמחשב או מ-Netlify).</li>
+            <li>בשורת הכתובת הוסיפי בסוף: <code>/migrate-categories-to-tags.html</code>.</li>
+            <li>התחברי עם Google (אם עדיין לא מחוברת).</li>
+            <li>לחצי על הכפתור למטה.</li>
+            <li>לאחר הסיום – רענני את דף המתכונים.</li>
+        </ol>
+    </div>
+
+    <p id="authStatus">טוען סקריפט...</p>
+    <button id="runBtn" disabled>המר קטגוריות לתגיות בכל המתכונים</button>
+    <button id="signInBtn" style="display:none; background:#698996; margin-right:8px;">התחברי עם Google</button>
+    <p id="hint" style="margin-top:12px; font-size:0.85rem; color:#698996; display:none;">אם כלום לא קורה: פתחי את המסוף (F12 → Console) ובדקי אם מופיעה שגיאה באדום.</p>
+    <pre id="log"></pre>
+
+    <script type="module">
+        const authStatus = document.getElementById('authStatus');
+        const hint = document.getElementById('hint');
+        try {
+            var firebaseModule = await import('/firebase.js');
+        } catch (err) {
+            authStatus.textContent = 'שגיאה בטעינת Firebase: ' + (err.message || err);
+            hint.style.display = 'block';
+            throw err;
+        }
+        const { db, auth, signInWithGoogle, onUserChange } = firebaseModule;
+        const { collection, getDocs, doc, updateDoc } = await import('https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js');
+
+        authStatus.textContent = 'בודק התחברות...';
+
+        /** מיפוי: קטגוריה ישנה → תגיות חדשות (מהרשימה החדשה) */
+        const CATEGORY_TO_TAGS = {
+            'בשרי': ['בשר'],
+            'דגים': ['דגים'],
+            'צמחוני': ['צמחוני'],
+            'סלטים': ['סלטים'],
+            'מרקים': ['מרקים'],
+            'קינוחים': ['קינוחים'],
+            'תוספות': ['תוספות'],
+            'לחמים': ['לחם ומאפים'],
+            'מאפים': ['לחם ומאפים'],
+            'עוגות': ['עוגות'],
+            'עוגיות': ['עוגיות'],
+            'ממרחים': ['רוטבים וממרחים'],
+            'עיקריות': [],
+            'כללי': [],
+            'חלבי': [],
+            'פרווה': []
+        };
+
+        const logEl = document.getElementById('log');
+        const runBtn = document.getElementById('runBtn');
+        const signInBtn = document.getElementById('signInBtn');
+
+        function log(msg, isErr = false) {
+            logEl.textContent += msg + '\n';
+            logEl.classList.toggle('err', isErr);
+            logEl.classList.toggle('ok', !isErr && msg.includes('✅'));
+        }
+
+        onUserChange((user) => {
+            if (user) {
+                authStatus.textContent = 'מחוברת: ' + (user.displayName || user.email);
+                signInBtn.style.display = 'none';
+                runBtn.disabled = false;
+            } else {
+                authStatus.textContent = 'לא מחוברת – התחברי כדי להריץ.';
+                signInBtn.style.display = 'inline-block';
+                runBtn.disabled = true;
+            }
+        });
+
+        signInBtn.addEventListener('click', async () => {
+            await signInWithGoogle();
+        });
+
+        runBtn.addEventListener('click', async () => {
+            logEl.textContent = '';
+            log('מתחיל...');
+            if (!auth.currentUser) {
+                log('צריך להתחבר קודם.', true);
+                return;
+            }
+            runBtn.disabled = true;
+            log('טוען מתכונים מ-Firebase...');
+            try {
+                const snapshot = await getDocs(collection(db, 'recipes'));
+                log('נמצאו ' + snapshot.size + ' מתכונים. מעדכן...');
+                let updated = 0;
+                let skipped = 0;
+                for (const d of snapshot.docs) {
+                    const data = d.data();
+                    const oldCategory = (data.category || '').trim();
+                    const newTags = CATEGORY_TO_TAGS[oldCategory] !== undefined
+                        ? CATEGORY_TO_TAGS[oldCategory]
+                        : [];
+
+                    await updateDoc(doc(db, 'recipes', d.id), {
+                        tags: newTags,
+                        category: ''
+                    });
+                    const name = data.name || d.id;
+                    if (newTags.length) {
+                        log(name + ' ← ' + oldCategory + ' → ' + newTags.join(', '));
+                        updated++;
+                    } else {
+                        log(name + ' (קטגוריה: ' + (oldCategory || '—') + ', בלי תגית חדשה)');
+                        skipped++;
+                    }
+                }
+                log('✅ סיום: ' + updated + ' מתכונים קיבלו תגיות, ' + skipped + ' בלי תגית.');
+            } catch (e) {
+                log('שגיאה: ' + (e.message || e), true);
+            }
+            runBtn.disabled = false;
+        });
+    </script>
+</body>
+</html>

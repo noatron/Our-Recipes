@@ -20,5 +20,11 @@ service cloud.firestore {
         allow update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
       }
     }
+
+    // config – קריאה לכולם (רשימת תגיות); כתיבה רק למחוברים (ניהול תגיות)
+    match /config/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
   }
 }

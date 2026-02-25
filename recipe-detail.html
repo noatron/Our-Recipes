@@ -92,7 +92,7 @@
                     חזור
                 </button>
             </div>
-            <img id="recipeImage" src="" alt="" class="recipe-detail-image" onerror="this.style.display='none'">
+            <img id="recipeImage" src="" alt="" class="recipe-detail-image" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=400&h=300&fit=crop';">
             
             <div class="title-section">
                 <h1 id="recipeTitle"></h1>
@@ -236,8 +236,8 @@
             }
         }
 
-        const ALL_TAGS = ['בשר', 'דגים', 'פסטות', 'טרטים ופשטידות', 'צמחוני', 'סלטים', 'תוספות', 'לחם ומאפים', 'רוטבים וממרחים', 'מרקים', 'עוגות', 'עוגיות', 'קינוחים', 'שוקולד', 'ארוחות בוקר', 'חטיפים', 'שתייה'];
-        const TAG_GROUPS = [
+        let ALL_TAGS = ['בשר', 'דגים', 'פסטות', 'טרטים ופשטידות', 'צמחוני', 'סלטים', 'תוספות', 'לחם ומאפים', 'רוטבים וממרחים', 'מרקים', 'עוגות', 'עוגיות', 'קינוחים', 'שוקולד', 'ארוחות בוקר', 'חטיפים', 'שתייה'];
+        let TAG_GROUPS = [
             { label: 'מנות עיקריות', tags: ['בשר', 'דגים', 'פסטות', 'טרטים ופשטידות', 'צמחוני'] },
             { label: 'סלטים', tags: ['סלטים'] },
             { label: 'תוספות', tags: ['תוספות'] },
@@ -249,11 +249,27 @@
             { label: 'חטיפים', tags: ['חטיפים'] },
             { label: 'שתייה', tags: ['שתייה'] }
         ];
+        async function loadTagConfig() {
+            try {
+                const snap = await getDoc(doc(db, 'config', 'tags'));
+                if (snap.exists() && snap.data().tagGroups?.length) {
+                    TAG_GROUPS = snap.data().tagGroups;
+                    ALL_TAGS = snap.data().allTags || TAG_GROUPS.reduce((a, g) => a.concat(g.tags || []), []);
+                }
+            } catch (_) {}
+        }
+        function fillTagGroupSelect() {
+            const groupSelect = document.getElementById('addTagGroupSelect');
+            if (!groupSelect) return;
+            groupSelect.innerHTML = '<option value="">בחרי קבוצה</option>';
+            TAG_GROUPS.forEach((g, i) => { groupSelect.appendChild(new Option(g.label, String(i))); });
+        }
 
         function renderRecipe(recipe) {
             const addBlock = document.getElementById('addInstructionsFromImageBlock');
             if (addBlock) addBlock.style.display = 'none';
-            document.getElementById('recipeImage').src = recipe.image || '';
+            const imgSrc = (recipe.image || '').trim().replace(/^http:\/\//i, 'https://');
+            document.getElementById('recipeImage').src = imgSrc || '';
             document.getElementById('recipeImage').alt = recipe.name;
             document.getElementById('recipeTitle').textContent = recipe.name;
 
@@ -628,10 +644,8 @@
             return [...list.querySelectorAll('.edit-tag-chip.active')].map(b => b.dataset.tag);
         }
 
-        (function() {
-            const groupSelect = document.getElementById('addTagGroupSelect');
-            if (groupSelect) TAG_GROUPS.forEach((g, i) => { groupSelect.appendChild(new Option(g.label, String(i))); });
-        })();
+        fillTagGroupSelect();
+        loadTagConfig().then(fillTagGroupSelect);
         document.getElementById('addTagGroupSelect').addEventListener('change', function() {
             const subSelect = document.getElementById('addTagSubSelect');
             const idx = this.value === '' ? -1 : parseInt(this.value, 10);
@@ -676,13 +690,11 @@
         async function saveEdit() {
             if (!recipe) return;
             recipe.name = document.getElementById('editTitle').value;
-            recipe.category = '';
             if (document.querySelector('.edit-tag-chip')) recipe.tags = getSelectedTags();
 
             if (recipe.url) {
                 const imageInput = document.getElementById('editImage');
                 if (imageInput) recipe.image = imageInput.value;
-                recipe.category = '';
             } else {
                 const ingredientInputs = document.querySelectorAll('[data-type="ingredient"]');
                 recipe.ingredients = Array.from(ingredientInputs).map(input => input.value).filter(v => v.trim() !== '');
@@ -691,7 +703,7 @@
             }
 
             try {
-                const { id, ...data } = recipe;
+                const { id, category, ...data } = recipe;
                 await updateDoc(doc(db, 'recipes', id), data);
                 location.reload();
             } catch (err) {

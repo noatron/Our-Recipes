@@ -22,7 +22,6 @@ const defaultRecipes = [
     {
         id: "1",
         name: "שקשוקה",
-        category: "",
         source: "סבתא רחל",
         image: "https://images.unsplash.com/photo-1587217850473-0238d26d4785?w=400&h=300&fit=crop",
         ingredients: ["6 ביצים", "2 עגבניות", "1 בצל", "2 שיני שום", "פלפל אדום", "כמון", "מלח ופלפל"],
@@ -31,7 +30,6 @@ const defaultRecipes = [
     {
         id: "2",
         name: "פסטה בולונז",
-        category: "",
         source: "אתר טעים",
         image: "https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=400&h=300&fit=crop",
         ingredients: ["500 גרם בשר טחון", "פסטה", "רסק עגבניות", "בצל", "שום", "בזיליקום"],
@@ -40,7 +38,6 @@ const defaultRecipes = [
     {
         id: "3",
         name: "עוגת שוקולד",
-        category: "",
         source: "מגזין אוכל",
         image: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=400&h=300&fit=crop",
         ingredients: ["200 גרם שוקולד מריר", "4 ביצים", "כוס סוכר", "חצי כוס קמח", "חצי כוס חמאה"],
@@ -49,7 +46,6 @@ const defaultRecipes = [
     {
         id: "4",
         name: "סלט ירקות",
-        category: "",
         source: "ספר בריאות",
         image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&h=300&fit=crop",
         ingredients: ["חסה", "עגבנייה", "מלפפון", "בצל", "לימון", "שמן זית"],
@@ -58,7 +54,6 @@ const defaultRecipes = [
     {
         id: "5",
         name: "מרק עוף",
-        category: "",
         source: "אמא שלי",
         image: "https://images.unsplash.com/photo-1547592166-23ac45744acd?w=400&h=300&fit=crop",
         ingredients: ["עוף שלם", "גזר", "סלרי", "בצל", "שום", "מלח ופלפל"],
@@ -67,7 +62,6 @@ const defaultRecipes = [
     {
         id: "6",
         name: "פנקייקים",
-        category: "",
         source: "בלוג בישול",
         image: "https://images.unsplash.com/photo-1506084868230-bb9d95c24759?w=400&h=300&fit=crop",
         ingredients: ["2 כוסות קמח", "2 ביצים", "כוס חלב", "סוכר", "אבקת אפייה"],
@@ -76,7 +70,6 @@ const defaultRecipes = [
     {
         id: "7",
         name: "חומוס",
-        category: "",
         source: "דודה מזל",
         image: "https://images.unsplash.com/photo-1571368295935-d9551b53f6f3?w=400&h=300&fit=crop",
         ingredients: ["פחית חומוס מבושל", "טחינה גולמית", "לימון", "שום", "כמון", "מלח"],
@@ -96,6 +89,12 @@ function getHeartSvg(liked) {
     const fill = liked ? '#407076' : 'none';
     const stroke = liked ? '#407076' : '#698996';
     return `<svg class="heart-svg" viewBox="0 0 24 24" width="22" height="22" fill="${fill}" stroke="${stroke}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`;
+}
+
+/** קישור תמונה ל-HTTPS כדי למנוע Mixed Content */
+function ensureHttpsImage(url) {
+    if (!url || !String(url).trim()) return url;
+    return String(url).replace(/^http:\/\//i, 'https://');
 }
 
 /** מקור המתכון – דומיין או טקסט מקור */
@@ -133,7 +132,7 @@ function displayRecipes(recipesToShow) {
         return `
         <div class="recipe-card" data-recipe-id="${recipe.id}" onclick="window.showRecipe('${recipe.id}')">
             <div class="recipe-card-image-wrap">
-                <img src="${recipe.image || 'https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=400&h=200&fit=crop'}" alt="" class="recipe-image" onerror="this.style.display='none'">
+                <img src="${escapeHtml(ensureHttpsImage(recipe.image) || 'https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=400&h=200&fit=crop')}" alt="" class="recipe-image" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=400&h=200&fit=crop';">
                 ${editBtnHtml}
             </div>
             <div class="recipe-content">
@@ -248,12 +247,13 @@ function setupSearch(applyFilters) {
     searchInput.addEventListener('input', () => { if (applyFilters) applyFilters(); });
 }
 
-function setupTagGroupDropdown(applyFilters) {
+function setupTagGroupDropdown(applyFilters, tagGroupsData) {
+    const groups = tagGroupsData || TAG_GROUPS;
     const select = document.getElementById('tag-group-select');
     if (!select) return;
-    select.innerHTML = '<option value="">הכל</option>' + TAG_GROUPS.map(g =>
+    select.innerHTML = '<option value="">הכל</option>' + groups.map(g =>
         '<optgroup label="' + escapeHtml(g.label) + '">' +
-        g.tags.map(t => '<option value="' + escapeHtml(t) + '">' + escapeHtml(t) + '</option>').join('') +
+        (g.tags || []).map(t => '<option value="' + escapeHtml(t) + '">' + escapeHtml(t) + '</option>').join('') +
         '</optgroup>'
     ).join('');
     select.addEventListener('change', () => { if (applyFilters) applyFilters(); });
@@ -285,6 +285,14 @@ function filterRecipes(allRecipes) {
 
 async function initApp() {
     try {
+        let tagGroupsData = TAG_GROUPS;
+        try {
+            const configSnap = await getDoc(doc(db, 'config', 'tags'));
+            if (configSnap.exists() && Array.isArray(configSnap.data().tagGroups) && configSnap.data().tagGroups.length) {
+                tagGroupsData = configSnap.data().tagGroups;
+            }
+        } catch (_) {}
+
         const snapshot = await getDocs(collection(db, 'recipes'));
         let recipes = [];
         
@@ -307,7 +315,7 @@ async function initApp() {
         };
         window.__applyFilters = applyFilters;
 
-        setupTagGroupDropdown(applyFilters);
+        setupTagGroupDropdown(applyFilters, tagGroupsData);
         setupSearch(applyFilters);
 
         const favoritesWrap = document.getElementById('favorites-filter-wrap');
