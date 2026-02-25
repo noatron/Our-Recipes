@@ -259,62 +259,11 @@ function setupTagGroupDropdown(applyFilters) {
     select.addEventListener('change', () => { if (applyFilters) applyFilters(); });
 }
 
-function setupTagFilters(allRecipes, applyFilters) {
-    const wrap = document.querySelector('.tag-filters-wrap');
-    const container = document.getElementById('tag-filters');
-    const toggleBtn = document.getElementById('tagFiltersToggle');
-    if (!container || !wrap) return;
-
-    const tagsInUse = new Set();
-    allRecipes.forEach(r => {
-        if (Array.isArray(r.tags)) r.tags.forEach(t => tagsInUse.add(t));
-    });
-    const tagsToShow = ALL_TAGS.filter(t => tagsInUse.has(t));
-    if (tagsToShow.length === 0) {
-        wrap.style.display = 'none';
-        return;
-    }
-    wrap.style.display = 'block';
-
-    container.innerHTML = tagsToShow.map(tag => `
-        <button type="button" class="tag-chip" data-tag="${escapeHtml(tag)}">${escapeHtml(tag)}</button>
-    `).join('');
-    container.classList.add('tag-filters-collapsed');
-
-    wrap.addEventListener('click', (e) => {
-        const chip = e.target.closest('.tag-chip');
-        if (!chip || !container.contains(chip)) return;
-        chip.classList.toggle('active');
-        updateTagToggleLabel();
-        if (applyFilters) applyFilters();
-    });
-
-    function updateTagToggleLabel() {
-        if (!toggleBtn) return;
-        const n = (document.querySelectorAll('#tag-filters .tag-chip.active') || []).length;
-        const open = !container.classList.contains('tag-filters-collapsed');
-        toggleBtn.textContent = n > 0 ? `תגיות (${n}) ${open ? '▲' : '▾'}` : `תגיות ${open ? '▲' : '▾'}`;
-        toggleBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
-    }
-
-    if (toggleBtn) {
-        toggleBtn.addEventListener('click', () => {
-            container.classList.toggle('tag-filters-collapsed');
-            updateTagToggleLabel();
-        });
-        updateTagToggleLabel();
-    }
-}
-
 function getActiveFilters() {
     const searchTerm = (document.getElementById('searchInput')?.value || '').toLowerCase();
-    const tagFiltersEl = document.getElementById('tag-filters');
-    const chipTags = tagFiltersEl
-        ? [...tagFiltersEl.querySelectorAll('.tag-chip.active')].map(b => (b.dataset.tag || '').trim()).filter(Boolean)
-        : [];
     const groupSelect = document.getElementById('tag-group-select');
     const groupTag = (groupSelect && groupSelect.value && groupSelect.value.trim()) || '';
-    const selectedTags = groupTag ? [...chipTags, groupTag] : chipTags;
+    const selectedTags = groupTag ? [groupTag] : [];
     const favoritesOnly = document.getElementById('favoritesFilterBtn')?.classList.contains('active') || false;
     return { searchTerm, selectedTags, favoritesOnly };
 }
@@ -359,7 +308,6 @@ async function initApp() {
         window.__applyFilters = applyFilters;
 
         setupTagGroupDropdown(applyFilters);
-        setupTagFilters(recipes, applyFilters);
         setupSearch(applyFilters);
 
         const favoritesWrap = document.getElementById('favorites-filter-wrap');
