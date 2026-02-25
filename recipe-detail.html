@@ -139,7 +139,6 @@
             </div>
             
             <div class="recipe-info">
-                <span class="info-item"><span id="recipeCategory"></span></span>
                 <div class="recipe-like-detail">
                     <button type="button" id="detailLikeBtn" class="detail-like-btn" aria-label="הוספי למועדפים">
                         <span class="detail-like-icon"><svg class="heart-svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#698996" stroke-width="1.8"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></span>
@@ -156,8 +155,6 @@
                     <div class="add-tag-row">
                         <select id="addTagGroupSelect" class="add-tag-select" aria-label="קבוצה">
                             <option value="">בחרי קבוצה</option>
-                            <option value="0">עיקרית</option>
-                            <option value="1">מאפים</option>
                         </select>
                         <select id="addTagSubSelect" class="add-tag-select" aria-label="תת-תגית">
                             <option value="">בחרי תת-תגית</option>
@@ -239,10 +236,18 @@
             }
         }
 
-        const ALL_TAGS = ['מהיר', 'בינוני', 'ארוך', 'מנה עיקרית', 'תוספת', 'מרק', 'סלט', 'קינוח', 'לחם ומאפה', 'עוגות ועוגיות', 'רוטב וממרח', 'שתייה', 'בוקר', 'צהריים', 'ערב', 'חטיף', 'צמחוני', 'טבעוני', 'ללא גלוטן', 'ילדים', 'שבת וחגים', 'אירוח', 'כל השבוע', 'עוף', 'בשר', 'דגים', 'מתוקים', 'מלוחים', 'לחמים'];
+        const ALL_TAGS = ['בשר', 'דגים', 'פסטות', 'טרטים ופשטידות', 'צמחוני', 'סלטים', 'תוספות', 'לחם ומאפים', 'רוטבים וממרחים', 'מרקים', 'עוגות', 'עוגיות', 'קינוחים', 'שוקולד', 'ארוחות בוקר', 'חטיפים', 'שתייה'];
         const TAG_GROUPS = [
-            { label: 'עיקרית', tags: ['עוף', 'בשר', 'דגים', 'צמחוני'] },
-            { label: 'מאפים', tags: ['מתוקים', 'מלוחים', 'לחמים'] }
+            { label: 'מנות עיקריות', tags: ['בשר', 'דגים', 'פסטות', 'טרטים ופשטידות', 'צמחוני'] },
+            { label: 'סלטים', tags: ['סלטים'] },
+            { label: 'תוספות', tags: ['תוספות'] },
+            { label: 'לחם ומאפים', tags: ['לחם ומאפים'] },
+            { label: 'רוטבים וממרחים', tags: ['רוטבים וממרחים'] },
+            { label: 'מרקים', tags: ['מרקים'] },
+            { label: 'קינוחים', tags: ['עוגות', 'עוגיות', 'קינוחים', 'שוקולד'] },
+            { label: 'ארוחות בוקר', tags: ['ארוחות בוקר'] },
+            { label: 'חטיפים', tags: ['חטיפים'] },
+            { label: 'שתייה', tags: ['שתייה'] }
         ];
 
         function renderRecipe(recipe) {
@@ -251,7 +256,6 @@
             document.getElementById('recipeImage').src = recipe.image || '';
             document.getElementById('recipeImage').alt = recipe.name;
             document.getElementById('recipeTitle').textContent = recipe.name;
-            document.getElementById('recipeCategory').textContent = recipe.category || '';
 
             const tagsBlock = document.getElementById('recipeTagsBlock');
             const tagsList = document.getElementById('recipeTagsList');
@@ -565,8 +569,6 @@
             document.getElementById('addInstructionsFromImageBlock').style.display = 'none';
             const titleEl = document.getElementById('recipeTitle');
             titleEl.innerHTML = '<input class="edit-title-input" id="editTitle" value="' + escapeHtml(recipe.name) + '">';
-            const categoryEl = document.getElementById('recipeCategory');
-            categoryEl.innerHTML = '<input class="edit-input" id="editCategory" value="' + escapeHtml(recipe.category || '') + '" placeholder="קטגוריה">';
             const img = document.getElementById('recipeImage');
             img.insertAdjacentHTML('afterend', '<input class="edit-input" id="editImage" value="' + escapeHtml(recipe.image || '') + '" placeholder="קישור לתמונה (URL)" style="margin-bottom: 15px;">');
             renderTagsEditor();
@@ -626,6 +628,10 @@
             return [...list.querySelectorAll('.edit-tag-chip.active')].map(b => b.dataset.tag);
         }
 
+        (function() {
+            const groupSelect = document.getElementById('addTagGroupSelect');
+            if (groupSelect) TAG_GROUPS.forEach((g, i) => { groupSelect.appendChild(new Option(g.label, String(i))); });
+        })();
         document.getElementById('addTagGroupSelect').addEventListener('change', function() {
             const subSelect = document.getElementById('addTagSubSelect');
             const idx = this.value === '' ? -1 : parseInt(this.value, 10);
@@ -670,13 +676,13 @@
         async function saveEdit() {
             if (!recipe) return;
             recipe.name = document.getElementById('editTitle').value;
+            recipe.category = '';
             if (document.querySelector('.edit-tag-chip')) recipe.tags = getSelectedTags();
 
             if (recipe.url) {
-                const categoryInput = document.getElementById('editCategory');
                 const imageInput = document.getElementById('editImage');
-                if (categoryInput) recipe.category = categoryInput.value;
                 if (imageInput) recipe.image = imageInput.value;
+                recipe.category = '';
             } else {
                 const ingredientInputs = document.querySelectorAll('[data-type="ingredient"]');
                 recipe.ingredients = Array.from(ingredientInputs).map(input => input.value).filter(v => v.trim() !== '');

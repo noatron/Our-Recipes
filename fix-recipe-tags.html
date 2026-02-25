@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>תיקון תגיות מתכונים</title>
+    <style>
+        body { font-family: 'Varela Round', sans-serif; padding: 24px; max-width: 480px; margin: 0 auto; }
+        h1 { color: #407076; }
+        p { color: #333; }
+        button { padding: 12px 20px; background: #407076; color: white; border: none; border-radius: 8px; font-size: 1rem; cursor: pointer; }
+        button:disabled { opacity: 0.6; cursor: not-allowed; }
+        #log { margin-top: 16px; white-space: pre-wrap; font-size: 0.9rem; color: #698996; }
+        .err { color: #c00; }
+        .ok { color: #0a0; }
+    </style>
+</head>
+<body>
+    <h1>איפוס תגיות וקטגוריות</h1>
+    <p>הסקריפט ימחק מכל המתכונים את התגיות והקטגוריות הישנות (יתאפסו לריק). אחרי ההרצה תוכלי לסמן מתכונים רק עם התגיות החדשה.</p>
+    <p id="authStatus">טוען...</p>
+    <button id="runBtn" disabled>מחק תגיות וקטגוריות מכל המתכונים</button>
+    <button id="signInBtn" style="display:none; background:#698996; margin-right:8px;">התחברי עם Google</button>
+    <pre id="log"></pre>
+
+    <script type="module">
+        import { db, auth, signInWithGoogle, onUserChange } from './firebase.js';
+        import { collection, getDocs, doc, updateDoc } from 'https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js';
+
+        const logEl = document.getElementById('log');
+        const runBtn = document.getElementById('runBtn');
+        const signInBtn = document.getElementById('signInBtn');
+        const authStatus = document.getElementById('authStatus');
+
+        function log(msg, isErr = false) {
+            logEl.textContent += msg + '\n';
+            logEl.classList.toggle('err', isErr);
+            logEl.classList.toggle('ok', !isErr && msg.includes('✅'));
+        }
+
+        onUserChange((user) => {
+            if (user) {
+                authStatus.textContent = 'מחוברת: ' + (user.displayName || user.email);
+                signInBtn.style.display = 'none';
+                runBtn.disabled = false;
+            } else {
+                authStatus.textContent = 'לא מחוברת – התחברי כדי להריץ תיקון.';
+                signInBtn.style.display = 'inline-block';
+                runBtn.disabled = true;
+            }
+        });
+
+        signInBtn.addEventListener('click', async () => {
+            await signInWithGoogle();
+        });
+
+        runBtn.addEventListener('click', async () => {
+            if (!auth.currentUser) {
+                log('צריך להתחבר קודם.', true);
+                return;
+            }
+            logEl.textContent = '';
+            runBtn.disabled = true;
+            try {
+                const snapshot = await getDocs(collection(db, 'recipes'));
+                let count = 0;
+                for (const d of snapshot.docs) {
+                    await updateDoc(doc(db, 'recipes', d.id), { tags: [], category: '' });
+                    log('אופס: ' + (d.data().name || d.id));
+                    count++;
+                }
+                log('✅ סיום: תגיות וקטגוריות נמחקו מ־' + count + ' מתכונים.');
+            } catch (e) {
+                log('שגיאה: ' + (e.message || e), true);
+            }
+            runBtn.disabled = false;
+        });
+    </script>
+</body>
+</html>

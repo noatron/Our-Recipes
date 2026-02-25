@@ -1,20 +1,28 @@
 import { db, auth, onUserChange, signInWithGoogle, signOutUser } from './firebase.js';
 import { collection, getDocs, getDoc, setDoc, updateDoc, deleteDoc, doc, increment, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
-/** קבוצות תגיות לדרופדאון – עיקרית, מאפים */
+/** קבוצות תגיות לדרופדאון */
 const TAG_GROUPS = [
-    { label: 'עיקרית', tags: ['עוף', 'בשר', 'דגים', 'צמחוני'] },
-    { label: 'מאפים', tags: ['מתוקים', 'מלוחים', 'לחמים'] }
+    { label: 'מנות עיקריות', tags: ['בשר', 'דגים', 'פסטות', 'טרטים ופשטידות', 'צמחוני'] },
+    { label: 'סלטים', tags: ['סלטים'] },
+    { label: 'תוספות', tags: ['תוספות'] },
+    { label: 'לחם ומאפים', tags: ['לחם ומאפים'] },
+    { label: 'רוטבים וממרחים', tags: ['רוטבים וממרחים'] },
+    { label: 'מרקים', tags: ['מרקים'] },
+    { label: 'קינוחים', tags: ['עוגות', 'עוגיות', 'קינוחים', 'שוקולד'] },
+    { label: 'ארוחות בוקר', tags: ['ארוחות בוקר'] },
+    { label: 'חטיפים', tags: ['חטיפים'] },
+    { label: 'שתייה', tags: ['שתייה'] }
 ];
 
-/** רשימת התגיות (זהה ל-extract-image + תגיות מקבוצות הדרופדאון) – לסינון ולתצוגה */
-const ALL_TAGS = ['מהיר', 'בינוני', 'ארוך', 'מנה עיקרית', 'תוספת', 'מרק', 'סלט', 'קינוח', 'לחם ומאפה', 'עוגות ועוגיות', 'רוטב וממרח', 'שתייה', 'בוקר', 'צהריים', 'ערב', 'חטיף', 'צמחוני', 'טבעוני', 'ללא גלוטן', 'ילדים', 'שבת וחגים', 'אירוח', 'כל השבוע', 'עוף', 'בשר', 'דגים', 'מתוקים', 'מלוחים', 'לחמים'];
+/** רשימת כל התגיות – לסינון, תצוגה וייבוא מתמונות */
+const ALL_TAGS = ['בשר', 'דגים', 'פסטות', 'טרטים ופשטידות', 'צמחוני', 'סלטים', 'תוספות', 'לחם ומאפים', 'רוטבים וממרחים', 'מרקים', 'עוגות', 'עוגיות', 'קינוחים', 'שוקולד', 'ארוחות בוקר', 'חטיפים', 'שתייה'];
 
 const defaultRecipes = [
     {
         id: "1",
         name: "שקשוקה",
-        category: "כללי",
+        category: "",
         source: "סבתא רחל",
         image: "https://images.unsplash.com/photo-1587217850473-0238d26d4785?w=400&h=300&fit=crop",
         ingredients: ["6 ביצים", "2 עגבניות", "1 בצל", "2 שיני שום", "פלפל אדום", "כמון", "מלח ופלפל"],
@@ -23,7 +31,7 @@ const defaultRecipes = [
     {
         id: "2",
         name: "פסטה בולונז",
-        category: "בשרי",
+        category: "",
         source: "אתר טעים",
         image: "https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=400&h=300&fit=crop",
         ingredients: ["500 גרם בשר טחון", "פסטה", "רסק עגבניות", "בצל", "שום", "בזיליקום"],
@@ -32,7 +40,7 @@ const defaultRecipes = [
     {
         id: "3",
         name: "עוגת שוקולד",
-        category: "קינוחים",
+        category: "",
         source: "מגזין אוכל",
         image: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=400&h=300&fit=crop",
         ingredients: ["200 גרם שוקולד מריר", "4 ביצים", "כוס סוכר", "חצי כוס קמח", "חצי כוס חמאה"],
@@ -41,7 +49,7 @@ const defaultRecipes = [
     {
         id: "4",
         name: "סלט ירקות",
-        category: "סלטים",
+        category: "",
         source: "ספר בריאות",
         image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&h=300&fit=crop",
         ingredients: ["חסה", "עגבנייה", "מלפפון", "בצל", "לימון", "שמן זית"],
@@ -50,7 +58,7 @@ const defaultRecipes = [
     {
         id: "5",
         name: "מרק עוף",
-        category: "מרקים",
+        category: "",
         source: "אמא שלי",
         image: "https://images.unsplash.com/photo-1547592166-23ac45744acd?w=400&h=300&fit=crop",
         ingredients: ["עוף שלם", "גזר", "סלרי", "בצל", "שום", "מלח ופלפל"],
@@ -59,7 +67,7 @@ const defaultRecipes = [
     {
         id: "6",
         name: "פנקייקים",
-        category: "כללי",
+        category: "",
         source: "בלוג בישול",
         image: "https://images.unsplash.com/photo-1506084868230-bb9d95c24759?w=400&h=300&fit=crop",
         ingredients: ["2 כוסות קמח", "2 ביצים", "כוס חלב", "סוכר", "אבקת אפייה"],
@@ -68,7 +76,7 @@ const defaultRecipes = [
     {
         id: "7",
         name: "חומוס",
-        category: "כללי",
+        category: "",
         source: "דודה מזל",
         image: "https://images.unsplash.com/photo-1571368295935-d9551b53f6f3?w=400&h=300&fit=crop",
         ingredients: ["פחית חומוס מבושל", "טחינה גולמית", "לימון", "שום", "כמון", "מלח"],
@@ -132,7 +140,6 @@ function displayRecipes(recipesToShow) {
                 <h2 class="recipe-name">${escapeHtml(getRecipeDisplayName(recipe))}</h2>
                 ${sourceLabel ? (recipe.url ? `<p class="recipe-source"><a href="${escapeHtml(recipe.url)}" target="_blank" rel="noopener noreferrer" class="recipe-source-link">${escapeHtml(sourceLabel)}</a></p>` : `<p class="recipe-source">${escapeHtml(sourceLabel)}</p>`) : ''}
                 <div class="recipe-meta-row">
-                    <span class="recipe-category">${escapeHtml(recipe.category || '')}</span>
                     <button type="button" class="recipe-like-btn ${liked ? 'liked' : ''}" data-recipe-id="${recipe.id}" aria-label="עשי לב">
                         <span class="like-icon">${getHeartSvg(liked)}</span>
                         <span class="like-count">${count}</span>
@@ -244,6 +251,11 @@ function setupSearch(applyFilters) {
 function setupTagGroupDropdown(applyFilters) {
     const select = document.getElementById('tag-group-select');
     if (!select) return;
+    select.innerHTML = '<option value="">הכל</option>' + TAG_GROUPS.map(g =>
+        '<optgroup label="' + escapeHtml(g.label) + '">' +
+        g.tags.map(t => '<option value="' + escapeHtml(t) + '">' + escapeHtml(t) + '</option>').join('') +
+        '</optgroup>'
+    ).join('');
     select.addEventListener('change', () => { if (applyFilters) applyFilters(); });
 }
 

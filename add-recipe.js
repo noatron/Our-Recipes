@@ -37,7 +37,7 @@ async function importOneRecipe(url) {
 
     const newRecipe = {
         name,
-        category: 'עיקריות',
+        category: '',
         source: new URL(url).hostname,
         image,
         url,
@@ -48,8 +48,7 @@ async function importOneRecipe(url) {
     return { name, url };
 }
 
-const EDIT_CATEGORIES = ['עיקריות', 'תוספות', 'סלטים', 'מרקים', 'קינוחים', 'עוגות', 'עוגיות', 'מאפים', 'לחמים', 'כללי', 'ממרחים'];
-const ALL_TAGS = ['מהיר', 'בינוני', 'ארוך', 'מנה עיקרית', 'תוספת', 'מרק', 'סלט', 'קינוח', 'לחם ומאפה', 'עוגות ועוגיות', 'רוטב וממרח', 'שתייה', 'בוקר', 'צהריים', 'ערב', 'חטיף', 'צמחוני', 'טבעוני', 'ללא גלוטן', 'ילדים', 'שבת וחגים', 'אירוח', 'כל השבוע', 'עוף', 'בשר', 'דגים', 'מתוקים', 'מלוחים', 'לחמים'];
+const ALL_TAGS = ['בשר', 'דגים', 'פסטות', 'טרטים ופשטידות', 'צמחוני', 'סלטים', 'תוספות', 'לחם ומאפים', 'רוטבים וממרחים', 'מרקים', 'עוגות', 'עוגיות', 'קינוחים', 'שוקולד', 'ארוחות בוקר', 'חטיפים', 'שתייה'];
 
 function escapeHtml(str) {
     const div = document.createElement('div');
@@ -113,7 +112,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const newRecipe = {
                 name: name,
-                category: 'עיקריות',
+                category: '',
                 source: new URL(url).hostname,
                 image: image,
                 url: url,
@@ -139,7 +138,6 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
 
             const name = document.getElementById('recipeName').value;
-            const category = document.getElementById('recipeCategory').value;
             const source = document.getElementById('recipeSource').value || 'מתכון ביתי';
             const image = document.getElementById('recipeImage').value || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=300&fit=crop';
 
@@ -155,7 +153,7 @@ document.addEventListener('DOMContentLoaded', () => {
             submitBtn.textContent = 'שומר...';
 
             try {
-                const newRecipe = { name, category, source, image, ingredients, instructions };
+                const newRecipe = { name, category: '', source, image, ingredients, instructions };
                 await addDoc(collection(db, 'recipes'), newRecipe);
                 window.location.href = 'index.html';
             } catch (err) {
@@ -264,10 +262,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 <input id="irm-source" placeholder="למשל: @chef_name או שם החשבון" value="${escapeHtml(recipe.source || '')}" style="width:100%;padding:10px 12px;border:2px solid #c5d9dc;border-radius:8px;font-family:inherit;font-size:1rem;box-sizing:border-box;margin-bottom:14px;background:white;">
                 <label style="display:block;margin-bottom:4px;color:#407076;font-size:0.9rem;">קישור לריל</label>
                 <input id="irm-url" type="url" placeholder="https://www.instagram.com/reel/... או קישור לטיקטוק" value="${escapeHtml(recipe.url || '')}" style="width:100%;padding:10px 12px;border:2px solid #c5d9dc;border-radius:8px;font-family:inherit;font-size:1rem;box-sizing:border-box;margin-bottom:14px;background:white;">
-                <label style="display:block;margin-bottom:4px;color:#407076;font-size:0.9rem;">קטגוריה</label>
-                <select id="irm-category" style="width:100%;padding:10px 12px;border:2px solid #c5d9dc;border-radius:8px;font-family:inherit;font-size:1rem;box-sizing:border-box;margin-bottom:14px;background:white;">
-                    ${EDIT_CATEGORIES.map(cat => `<option value="${cat}">${cat}</option>`).join('')}
-                </select>
                 <label style="display:block;margin-bottom:4px;color:#407076;font-size:0.9rem;">מרכיבים</label>
                 <textarea id="irm-ingredients" rows="5" style="width:100%;padding:10px 12px;border:2px solid #c5d9dc;border-radius:8px;font-family:inherit;font-size:0.9rem;box-sizing:border-box;margin-bottom:14px;resize:vertical;">${escapeHtml((recipe.ingredients || []).join('\n'))}</textarea>
                 <label style="display:block;margin-bottom:4px;color:#407076;font-size:0.9rem;">הוראות הכנה</label>
@@ -304,14 +298,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 const name = document.getElementById('irm-name').value.trim() || recipe.name || 'מתכון';
                 const source = document.getElementById('irm-source').value.trim() || '';
                 const reelUrl = document.getElementById('irm-url').value.trim() || '';
-                const category = document.getElementById('irm-category').value;
                 const ingredients = document.getElementById('irm-ingredients').value.split('\n').filter(l => l.trim());
                 const instructions = document.getElementById('irm-instructions').value.split('\n').filter(l => l.trim());
                 const tags = [...modal.querySelectorAll('.irm-tag.active')].map(b => b.dataset.tag);
 
                 await addDoc(collection(db, 'recipes'), {
                     name,
-                    category,
+                    category: '',
                     source: source || 'מתמונה',
                     image: recipe.image || '',
                     url: reelUrl,
