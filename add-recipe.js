@@ -408,10 +408,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (Array.isArray(data.instructions)) data.instructions.forEach(x => allInstructions.push(String(x).trim()));
             if (Array.isArray(data.suggestedTags)) data.suggestedTags.forEach(t => tagSet.add(t));
         }
+        const dedupe = (arr) => [...new Set(arr.filter(Boolean).map(s => s.trim()))];
         return {
             name: name || 'מתכון',
-            ingredients: allIngredients.filter(Boolean),
-            instructions: allInstructions.filter(Boolean),
+            ingredients: dedupe(allIngredients),
+            instructions: dedupe(allInstructions),
             suggestedTags: [...tagSet]
         };
     }
@@ -469,7 +470,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const hasContent = (result.ingredients && result.ingredients.length) || (result.instructions && result.instructions.length);
                 if (!hasContent) {
-                    setImagesStatus('error', 'לא זוהו מרכיבים או הוראות. נסי תמונה ברורה יותר.');
+                    const errDetail = result.error || '';
+                    setImagesStatus('error', 'לא זוהו מרכיבים או הוראות. ' + (errDetail ? errDetail + ' ' : '') + 'נסי תמונה ברורה יותר או תמונה אחת.');
                     extractFromImagesBtn.disabled = false;
                     return;
                 }
