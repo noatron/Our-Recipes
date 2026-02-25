@@ -35,12 +35,20 @@ header {
     justify-self: center;
     grid-column: 2;
 }
+.header-right-col {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+    grid-column: 3;
+}
 .main-header .auth-area {
     display: flex;
     align-items: center;
     gap: 8px;
-    justify-self: end;
-    grid-column: 3;
+}
+.main-header .favorites-filter-wrap {
+    margin: 0;
 }
 .auth-user-name {
     color: #407076;
@@ -269,13 +277,13 @@ button:hover {
 
 header .Logo,
 header .logo {
-    height: 1.75em;
+    height: 1em;
     width: auto;
     margin-left: 12px;
     object-fit: contain;
     flex-shrink: 0;
     background: transparent;
-    padding: 2px;
+    padding: 0;
     vertical-align: middle;
 }
 
@@ -293,13 +301,13 @@ header {
 
 header .Logo,
 header .logo {
-    height: 1.75em;
+    height: 1em;
     width: auto;
     margin-left: 12px;
     object-fit: contain;
     flex-shrink: 0;
     background: transparent;
-    padding: 2px;
+    padding: 0;
     vertical-align: middle;
 }
 
@@ -707,12 +715,12 @@ header .logo {
 .favorites-chip.active { background: #407076; color: white; border-color: #407076; }
 .favorites-chip.active .favorites-heart { fill: white; stroke: white; }
 
-/* Category Filter Chips – שורה אחת עם גלילה */
+/* Category Filter Chips – מיושר לרוחב שורת החיפוש, שורה אחת עם גלילה */
 .category-filters {
     display: flex;
     flex-wrap: nowrap;
     gap: 8px;
-    max-width: 100%;
+    max-width: 600px;
     margin: 0 auto 12px;
     overflow-x: auto;
     padding-bottom: 6px;
