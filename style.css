@@ -289,7 +289,7 @@ button:hover {
 
 header .Logo,
 header .logo {
-    height: 1.65rem;
+    height: 2.25rem;
     width: auto;
     margin-left: 12px;
     object-fit: contain;
@@ -315,7 +315,7 @@ header {
 
 header .Logo,
 header .logo {
-    height: 1.65rem;
+    height: 2.25rem;
     width: auto;
     margin-left: 12px;
     object-fit: contain;
@@ -834,7 +834,7 @@ header .logo {
 /* Tag filters – מיושר לקטגוריות ולחיפוש (600px) */
 .tag-filters-wrap {
     max-width: 600px;
-    margin: 0 auto 16px;
+    margin: 16px auto 16px;
 }
 .tag-filters-toggle {
     background: transparent;
