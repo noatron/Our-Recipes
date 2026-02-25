@@ -7,6 +7,9 @@
     SECRETS_SCAN_OMIT_PATHS = "firebase.js,firebase-v2.js.,הגדרת-מפתחות-צעד-אחר-צעד.md,מחיקת-ה-API-key-מהקוד.md"
 [functions]
   directory = "netlify/functions"
+  # חילוץ מתמונה – עיבוד 3 תמונות ב-AI לוקח זמן; להגדיל timeout (עד 26 שניות ב-Pro)
+  [functions.extract-image]
+  timeout = 26
 
 [[redirects]]
   from = "/*"

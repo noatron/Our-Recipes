@@ -42,25 +42,39 @@ exports.handler = async (event) => {
             }
         }));
 
-        const multiImagePrompt = `אלו ${images.length} תמונות של מתכון אחד (לפי הסדר). ייתכן שמדובר במסמך סרוק, צילומי מסך או תמונות עם טקסט צפוף/קטן – קרא את כל הטקסט בכל תמונה, שורה אחר שורה.
+        const structureRules = `
+מבנה הפלט (חובה):
+- name: שם המתכון בלבד (מחרוזת).
+- ingredients: מערך מחרוזות – כל מרכיב בפריט נפרד. שורה אחת במתכון = פריט אחד במערך. אסור לשלב שני מרכיבים באותו פריט.
+- instructions: מערך מחרוזות – כל שלב הכנה בפריט נפרד. שלב 1, שלב 2 וכו' – כל אחד פריט נפרד. אסור לשלב שני שלבים באותו פריט.
+- suggestedTags: מערך תגיות מהרשימה בלבד.
 
-משימה:
-1. קרא את כל הטקסט מכל תמונה (כולל טקסט קטן או צפוף: כותרות, רשימות מרכיבים, הוראות הכנה).
-2. איחד למתכון אחד: name, רשימת מרכיבים מלאה (ingredients), הוראות הכנה מלאות לפי סדר (instructions).
-3. כל מרכיב – פריט נפרד ב-ingredients. כל שלב – פריט נפרד ב-instructions. גם אם הטקסט נראה כפסקה אחת, פרק לפריטים (לפי שורות או משפטים).
-4. אם לא ברור – העדף להעתיק את מה שכתוב ולא להשאיר רשימות ריקות.
+דוגמה למבנה:
+{"name": "עוגת שוקולד", "ingredients": ["2 ביצים", "1 כוס סוכר", "1 כוס קמח", "3 כפות קקאו"], "instructions": ["לחמם תנור ל-180 מעלות.", "לערבב ביצים וסוכר.", "להוסיף קמח וקקאו ולערבב.", "לאפות 25 דקות."], "suggestedTags": ["קינוח"]}
 
-פלט: רק JSON תקין, בלי הסברים ובלי markdown:
-{"name": "שם המתכון", "ingredients": ["מרכיב 1", "מרכיב 2", "..."], "instructions": ["שלב 1", "שלב 2", "..."], "suggestedTags": ["תגית1"]}
-תגיות – רק מהרשימה: מהיר, בינוני, ארוך, מנה עיקרית, תוספת, מרק, סלט, קינוח, לחם ומאפה, עוגות ועוגיות, רוטב וממרח, שתייה, בוקר, צהריים, ערב, חטיף, צמחוני, טבעוני, ללא גלוטן, ילדים, שבת וחגים, אירוח, כל השבוע`;
+תגיות מותרות: מהיר, בינוני, ארוך, מנה עיקרית, תוספת, מרק, סלט, קינוח, לחם ומאפה, עוגות ועוגיות, רוטב וממרח, שתייה, בוקר, צהריים, ערב, חטיף, צמחוני, טבעוני, ללא גלוטן, ילדים, שבת וחגים, אירוח, כל השבוע.`;
 
-        const singleImagePrompt = `בתמונה מופיע מתכון (מסמך, צילום מסך, פוסט). קרא את כל הטקסט בתמונה – כולל טקסט קטן או צפוף – וחלץ מתכון מלא.
+        const multiImagePrompt = `אלו ${images.length} תמונות של מתכון אחד (לפי הסדר). קרא את כל הטקסט מכל תמונה (כותרות, מרכיבים, הוראות הכנה) – כולל טקסט צפוף או קטן – ואיחד למתכון אחד.
 
-חובה: להחזיר בהכרח מערך ingredients (כל מרכיב בשורה/פריט נפרד) ומערך instructions (כל שלב הכנה בפריט נפרד). גם במסמך סרוק או טקסט צפוף – קרא שורה אחר שורה והעתק את המרכיבים ואת הוראות ההכנה. אם זה פסקה – פרק לפריטים. התעלם מאשטגים ואמוג'ים.
+כללים:
+1. שם המתכון – מחרוזת אחת בשדה name.
+2. מרכיבים – כל מרכיב בשורה נפרדת = כל מרכיב כפריט נפרד במערך ingredients. אם במתכון כתוב "חלב, ביצים, קמח" – החזר 3 פריטים. אם כתוב רשימה עם שורות – כל שורה = פריט.
+3. הוראות הכנה – כל שלב בשורה נפרדת = כל שלב כפריט נפרד במערך instructions. אם כתוב "1. לחמם תנור 2. לערבב" – החזר 2 פריטים. אם יש פסקה ארוכה – פרק לפי משפטים/שלבים לוגיים.
+4. התעלם מאשטגים ואמוג'ים. העדף להעתיק את כל מה שכתוב ולא להשאיר רשימות ריקות.
+${structureRules}
 
-פלט: רק JSON, בלי הסברים:
-{"name": "שם המתכון", "ingredients": ["מרכיב 1", "מרכיב 2"], "instructions": ["שלב 1", "שלב 2"], "suggestedTags": ["תגית1"]}
-תגיות – רק מהרשימה: מהיר, בינוני, ארוך, מנה עיקרית, תוספת, מרק, סלט, קינוח, לחם ומאפה, עוגות ועוגיות, רוטב וממרח, שתייה, בוקר, צהריים, ערב, חטיף, צמחוני, טבעוני, ללא גלוטן, ילדים, שבת וחגים, אירוח, כל השבוע`;
+החזר רק JSON תקין, בלי הסברים ובלי markdown.`;
+
+        const singleImagePrompt = `בתמונה מופיע מתכון. קרא את כל הטקסט (כותרות, מרכיבים, הוראות הכנה) – כולל טקסט צפוף – וחלץ לפי המבנה הקבוע.
+
+כללים:
+1. name – שם המתכון (מחרוזת אחת).
+2. ingredients – מערך: כל מרכיב בפריט נפרד. שורה אחת = פריט אחד. אסור לשלב מרכיבים באותו פריט.
+3. instructions – מערך: כל שלב הכנה בפריט נפרד. שלב אחד = פריט אחד. אסור לשלב שלבים באותו פריט.
+4. התעלם מאשטגים ואמוג'ים.
+${structureRules}
+
+החזר רק JSON תקין, בלי הסברים ובלי markdown.`;
 
         const textBlock = {
             type: 'text',
@@ -82,19 +96,38 @@ exports.handler = async (event) => {
         }
 
         const recipe = JSON.parse(jsonMatch[0]);
-        // Normalize ingredients: always array of strings, split by newlines if single string
-        if (!Array.isArray(recipe.ingredients)) {
-            if (Array.isArray(recipe.ingredient)) recipe.ingredients = recipe.ingredient;
-            else if (recipe.ingredients != null) recipe.ingredients = String(recipe.ingredients).split(/\n+/).map(s => s.trim()).filter(Boolean);
-            else recipe.ingredients = [];
+
+        function toIngredientsArray(val) {
+            if (Array.isArray(val)) return val;
+            if (val == null) return [];
+            const s = String(val).trim();
+            if (!s) return [];
+            const byNewline = s.split(/\n+/).map(x => x.trim()).filter(Boolean);
+            if (byNewline.length > 1) return byNewline;
+            const byComma = s.split(/\s*[,،]\s*/).map(x => x.trim()).filter(Boolean);
+            if (byComma.length > 1) return byComma;
+            return [s];
         }
+        function toInstructionsArray(val) {
+            if (Array.isArray(val)) return val.map(stripStepNumber);
+            if (val == null) return [];
+            const s = String(val).trim();
+            if (!s) return [];
+            const byNumbered = s.split(/\s*\n\s*(?=\d+[.)]\s*)/).map(stripStepNumber).filter(Boolean);
+            if (byNumbered.length > 1) return byNumbered;
+            const byNewline = s.split(/\n+/).map(stripStepNumber).filter(Boolean);
+            if (byNewline.length > 1) return byNewline;
+            const bySentence = s.split(/(?<=[.!?])\s+/).map(stripStepNumber).filter(Boolean);
+            if (bySentence.length > 1) return bySentence;
+            return [s.replace(/^\d+[.)]\s*/, '').trim()];
+        }
+        function stripStepNumber(str) {
+            return String(str).replace(/^\d+[.)]\s*/, '').trim();
+        }
+
+        recipe.ingredients = toIngredientsArray(recipe.ingredients || recipe.ingredient);
         recipe.ingredients = recipe.ingredients.map(i => String(i).trim()).filter(Boolean);
-        // Normalize instructions: always array of strings
-        if (!Array.isArray(recipe.instructions)) {
-            if (Array.isArray(recipe.instruction)) recipe.instructions = recipe.instruction;
-            else if (recipe.instructions != null) recipe.instructions = String(recipe.instructions).split(/\n+|(?<=[.!?])\s+/).map(s => s.trim()).filter(Boolean);
-            else recipe.instructions = [];
-        }
+        recipe.instructions = toInstructionsArray(recipe.instructions || recipe.instruction);
         recipe.instructions = recipe.instructions.map(s => String(s).trim()).filter(Boolean);
         if (!Array.isArray(recipe.suggestedTags)) recipe.suggestedTags = [];
         recipe.name = (recipe.name && String(recipe.name).trim()) || 'מתכון';

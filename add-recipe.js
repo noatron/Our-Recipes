@@ -359,6 +359,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     body: JSON.stringify({ images })
                 });
 
+                if (response.status === 502 || response.status === 504) {
+                    setImagesStatus('error', 'השרת לא הספיק להגיב (timeout) או שגיאה זמנית. נסי עם תמונה אחת או שתיים, או נסי שוב בעוד רגע.');
+                    extractFromImagesBtn.disabled = false;
+                    return;
+                }
+
                 let result;
                 try {
                     result = await response.json();
