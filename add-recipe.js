@@ -333,6 +333,82 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    /** דחיסת תמונה – מקסימום רוחב 1200px, JPEG איכות 0.82 (מתאים לסקרינשוטים). אם נכשל – מחזיר את הקובץ כרגיל. */
+    function compressImageFile(file) {
+        return new Promise((resolve, reject) => {
+            const fallback = () => {
+                const reader = new FileReader();
+                reader.onload = e => resolve({ data: e.target.result.split(',')[1], mediaType: file.type || 'image/jpeg' });
+                reader.onerror = () => reject(new Error('קריאת הקובץ נכשלה'));
+                reader.readAsDataURL(file);
+            };
+            const img = new Image();
+            const url = URL.createObjectURL(file);
+            img.onload = () => {
+                URL.revokeObjectURL(url);
+                const maxW = 1200;
+                let w = img.width, h = img.height;
+                if (w > maxW) {
+                    h = Math.round((h * maxW) / w);
+                    w = maxW;
+                }
+                const canvas = document.createElement('canvas');
+                canvas.width = w;
+                canvas.height = h;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, w, h);
+                try {
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+                    resolve({ data: dataUrl.split(',')[1], mediaType: 'image/jpeg' });
+                } catch (e) {
+                    fallback();
+                }
+            };
+            img.onerror = () => {
+                URL.revokeObjectURL(url);
+                fallback();
+            };
+            img.src = url;
+        });
+    }
+
+    /** שליחה ברצף: תמונה אחת לכל בקשה, then מיזוג תוצאות – מונע timeout בסקרינשוטים מרובי תמונות */
+    async function extractSequentialAndMerge(files, onProgress) {
+        const allIngredients = [];
+        const allInstructions = [];
+        let name = '';
+        const tagSet = new Set();
+        for (let i = 0; i < files.length; i++) {
+            if (onProgress) onProgress(i + 1, files.length);
+            const compressed = await compressImageFile(files[i]);
+            const res = await fetch('/.netlify/functions/extract-image', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ images: [compressed] })
+            });
+            if (res.status === 502 || res.status === 504) {
+                throw new Error('TIMEOUT');
+            }
+            let data;
+            try {
+                data = await res.json();
+            } catch (_) {
+                throw new Error('תשובה לא תקינה מהשרת');
+            }
+            if (data.error) throw new Error(data.error);
+            if (data.name && !name) name = data.name;
+            if (Array.isArray(data.ingredients)) data.ingredients.forEach(x => allIngredients.push(String(x).trim()));
+            if (Array.isArray(data.instructions)) data.instructions.forEach(x => allInstructions.push(String(x).trim()));
+            if (Array.isArray(data.suggestedTags)) data.suggestedTags.forEach(t => tagSet.add(t));
+        }
+        return {
+            name: name || 'מתכון',
+            ingredients: allIngredients.filter(Boolean),
+            instructions: allInstructions.filter(Boolean),
+            suggestedTags: [...tagSet]
+        };
+    }
+
     if (extractFromImagesBtn) {
         extractFromImagesBtn.addEventListener('click', async () => {
             const files = Array.from(recipeImageFiles?.files || []);
@@ -341,49 +417,49 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             extractFromImagesBtn.disabled = true;
-            setImagesStatus('loading', '⏳ שולח תמונות ל-AI...');
+            const useSequential = files.length > 1;
 
             try {
-                const images = await Promise.all(files.map(file => {
-                    return new Promise((resolve, reject) => {
-                        const reader = new FileReader();
-                        reader.onload = e => resolve({ data: e.target.result.split(',')[1], mediaType: file.type || 'image/jpeg' });
-                        reader.onerror = reject;
-                        reader.readAsDataURL(file);
-                    });
-                }));
-
-                const response = await fetch('/.netlify/functions/extract-image', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ images })
-                });
-
-                if (response.status === 502 || response.status === 504) {
-                    setImagesStatus('error', 'השרת לא הספיק להגיב (timeout) או שגיאה זמנית. נסי עם תמונה אחת או שתיים, או נסי שוב בעוד רגע.');
-                    extractFromImagesBtn.disabled = false;
-                    return;
-                }
-
                 let result;
-                try {
-                    result = await response.json();
-                } catch (_) {
-                    setImagesStatus('error', 'שגיאה בתשובת השרת. נסי שוב.');
-                    extractFromImagesBtn.disabled = false;
-                    return;
+                if (useSequential) {
+                    setImagesStatus('loading', `⏳ מעבד תמונה 1 מתוך ${files.length}...`);
+                    result = await extractSequentialAndMerge(files, (current, total) => {
+                        setImagesStatus('loading', `⏳ מעבד תמונה ${current} מתוך ${total}...`);
+                    });
+                } else {
+                    setImagesStatus('loading', '⏳ שולח תמונה ל-AI...');
+                    const compressed = await compressImageFile(files[0]);
+                    const response = await fetch('/.netlify/functions/extract-image', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ images: [compressed] })
+                    });
+                    if (response.status === 502 || response.status === 504) {
+                        setImagesStatus('error', 'השרת לא הספיק להגיב (timeout). נסי שוב בעוד רגע.');
+                        extractFromImagesBtn.disabled = false;
+                        return;
+                    }
+                    let data;
+                    try {
+                        data = await response.json();
+                    } catch (_) {
+                        setImagesStatus('error', 'שגיאה בתשובת השרת. נסי שוב.');
+                        extractFromImagesBtn.disabled = false;
+                        return;
+                    }
+                    if (data.error) {
+                        setImagesStatus('error', data.error);
+                        extractFromImagesBtn.disabled = false;
+                        return;
+                    }
+                    if (!response.ok) {
+                        setImagesStatus('error', 'שגיאה בשרת (' + response.status + '). נסי שוב.');
+                        extractFromImagesBtn.disabled = false;
+                        return;
+                    }
+                    result = data;
                 }
 
-                if (result.error) {
-                    setImagesStatus('error', result.error);
-                    extractFromImagesBtn.disabled = false;
-                    return;
-                }
-                if (!response.ok) {
-                    setImagesStatus('error', 'שגיאה בשרת (' + response.status + '). נסי שוב.');
-                    extractFromImagesBtn.disabled = false;
-                    return;
-                }
                 const hasContent = (result.ingredients && result.ingredients.length) || (result.instructions && result.instructions.length);
                 if (!hasContent) {
                     setImagesStatus('error', 'לא זוהו מרכיבים או הוראות. נסי תמונה ברורה יותר.');
@@ -394,7 +470,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 showImageResultModal(result);
             } catch (err) {
                 console.error(err);
-                setImagesStatus('error', 'שגיאה: ' + (err.message || 'חיבור ל-AI נכשל. נסי שוב.'));
+                const msg = err.message === 'TIMEOUT' ? 'השרת לא הספיק להגיב. נסי שוב בעוד רגע.' : (err.message || 'חיבור ל-AI נכשל. נסי שוב.');
+                setImagesStatus('error', msg);
             }
             extractFromImagesBtn.disabled = false;
         });
