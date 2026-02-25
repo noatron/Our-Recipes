@@ -8,14 +8,15 @@
 </head>
 <body>
     <div id="app">
-        <header>
+        <header class="main-header">
+            <div class="header-spacer"></div>
             <h1>
                 <img src="Logo.svg" alt="מפה לפה" class="Logo">
                 מפה לפה
             </h1>
-            <div id="auth-area" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); display: flex; align-items: center; gap: 10px;">
-                <span id="user-name" style="color: #407076; font-size: 0.85rem; display: none;"></span>
-                <button id="auth-btn" style="background: transparent; border: 2px solid #407076; color: #407076; border-radius: 20px; padding: 6px 16px; font-family: 'Varela Round', sans-serif; font-size: 0.85rem; cursor: pointer;">התחברות</button>
+            <div id="auth-area" class="auth-area">
+                <span id="user-name" class="auth-user-name"></span>
+                <button id="auth-btn" class="auth-btn">התחברות</button>
             </div>
         </header>
 
@@ -28,7 +29,10 @@
         </div>
         <div id="category-filters" class="category-filters"></div>
 
-        <div id="tag-filters" class="tag-filters"></div>
+        <div class="tag-filters-wrap">
+            <button type="button" class="tag-filters-toggle" id="tagFiltersToggle" aria-expanded="false">תגיות ▾</button>
+            <div id="tag-filters" class="tag-filters tag-filters-inner"></div>
+        </div>
 
         <div id="recipes" class="recipes-grid">
             <!-- המתכונים יופיעו כאן -->

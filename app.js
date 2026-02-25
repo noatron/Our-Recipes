@@ -256,34 +256,59 @@ function setupCategoryFilter(allRecipes, applyFilters) {
 }
 
 function setupTagFilters(allRecipes, applyFilters) {
+    const wrap = document.querySelector('.tag-filters-wrap');
     const container = document.getElementById('tag-filters');
-    if (!container) return;
-    
+    const toggleBtn = document.getElementById('tagFiltersToggle');
+    if (!container || !wrap) return;
+
     const tagsInUse = new Set();
     allRecipes.forEach(r => {
         if (Array.isArray(r.tags)) r.tags.forEach(t => tagsInUse.add(t));
     });
     const tagsToShow = ALL_TAGS.filter(t => tagsInUse.has(t));
     if (tagsToShow.length === 0) {
-        container.innerHTML = '';
+        wrap.style.display = 'none';
         return;
     }
-    
-    container.innerHTML = '<span class="tag-filters-label">תגיות:</span>' + tagsToShow.map(tag => `
+    wrap.style.display = 'block';
+
+    container.innerHTML = tagsToShow.map(tag => `
         <button type="button" class="tag-chip" data-tag="${escapeHtml(tag)}">${escapeHtml(tag)}</button>
     `).join('');
-    
-    container.addEventListener('click', (e) => {
-        if (!e.target.classList.contains('tag-chip')) return;
-        e.target.classList.toggle('active');
+    container.classList.add('tag-filters-collapsed');
+
+    wrap.addEventListener('click', (e) => {
+        const chip = e.target.closest('.tag-chip');
+        if (!chip || !container.contains(chip)) return;
+        chip.classList.toggle('active');
+        updateTagToggleLabel();
         if (applyFilters) applyFilters();
     });
+
+    function updateTagToggleLabel() {
+        if (!toggleBtn) return;
+        const n = (document.querySelectorAll('#tag-filters .tag-chip.active') || []).length;
+        const open = !container.classList.contains('tag-filters-collapsed');
+        toggleBtn.textContent = n > 0 ? `תגיות (${n}) ${open ? '▲' : '▾'}` : `תגיות ${open ? '▲' : '▾'}`;
+        toggleBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
+
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', () => {
+            container.classList.toggle('tag-filters-collapsed');
+            updateTagToggleLabel();
+        });
+        updateTagToggleLabel();
+    }
 }
 
 function getActiveFilters() {
     const activeCategory = document.querySelector('#category-filters .category-chip.active')?.dataset.category || 'הכל';
     const searchTerm = (document.getElementById('searchInput')?.value || '').toLowerCase();
-    const selectedTags = [...(document.querySelectorAll('#tag-filters .tag-chip.active') || [])].map(b => b.dataset.tag);
+    const tagFiltersEl = document.getElementById('tag-filters');
+    const selectedTags = tagFiltersEl
+        ? [...tagFiltersEl.querySelectorAll('.tag-chip.active')].map(b => (b.dataset.tag || '').trim()).filter(Boolean)
+        : [];
     const favoritesOnly = document.getElementById('favoritesFilterBtn')?.classList.contains('active') || false;
     return { activeCategory, searchTerm, selectedTags, favoritesOnly };
 }
