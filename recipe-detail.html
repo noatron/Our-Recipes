@@ -62,6 +62,13 @@
         .edit-tag-chip { background: white; color: #698996; border: 1.5px solid #c5d9dc; border-radius: 20px; padding: 6px 14px; font-family: Varela Round,sans-serif; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; }
         .edit-tag-chip:hover { border-color: #407076; color: #407076; }
         .edit-tag-chip.active { background: #407076; color: white; border-color: #407076; }
+        .add-instructions-from-image-block { margin-top: 16px; padding: 16px; background: #F8F7FF; border-radius: 12px; }
+        .add-instructions-label { margin: 0 0 10px 0; font-size: 1rem; color: #407076; }
+        .add-instructions-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+        .add-instructions-row input[type="file"] { font-family: 'Varela Round', sans-serif; }
+        .instructions-image-status { display: block; margin-top: 8px; font-size: 0.9rem; color: #698996; }
+        .instructions-image-status.error { color: #c62828; }
+        .instructions-image-status.success { color: #2e7d32; }
     </style>
 </head>
 <body>
@@ -152,6 +159,14 @@
                 הוראות הכנה
             </h2>
             <ul id="instructionsList" class="instructions-list"></ul>
+            <div id="addInstructionsFromImageBlock" class="add-instructions-from-image-block" style="display: none;">
+                <p class="add-instructions-label">הוסיפי הוראות מתמונה (צילום מסך, סטורי)</p>
+                <div class="add-instructions-row">
+                    <input type="file" id="instructionsImageFile" accept="image/*">
+                    <button type="button" class="refresh-from-link-btn" id="extractInstructionsBtn">חלצי הוראות מתמונה</button>
+                </div>
+                <span id="instructionsImageStatus" class="instructions-image-status"></span>
+            </div>
 
             <h2 id="commentsSection" class="section-title comments-title">תגובות</h2>
             <div id="commentsList" class="comments-list"></div>
@@ -198,6 +213,8 @@
         const ALL_TAGS = ['מהיר', 'בינוני', 'ארוך', 'מנה עיקרית', 'תוספת', 'מרק', 'סלט', 'קינוח', 'לחם ומאפה', 'עוגות ועוגיות', 'רוטב וממרח', 'שתייה', 'בוקר', 'צהריים', 'ערב', 'חטיף', 'צמחוני', 'טבעוני', 'ללא גלוטן', 'ילדים', 'שבת וחגים', 'אירוח', 'כל השבוע'];
 
         function renderRecipe(recipe) {
+            const addBlock = document.getElementById('addInstructionsFromImageBlock');
+            if (addBlock) addBlock.style.display = 'none';
             document.getElementById('recipeImage').src = recipe.image || '';
             document.getElementById('recipeImage').alt = recipe.name;
             document.getElementById('recipeTitle').textContent = recipe.name;
@@ -499,6 +516,7 @@
         }
 
         function editLinkRecipe() {
+            document.getElementById('addInstructionsFromImageBlock').style.display = 'none';
             const titleEl = document.getElementById('recipeTitle');
             titleEl.innerHTML = '<input class="edit-title-input" id="editTitle" value="' + escapeHtml(recipe.name) + '">';
             const categoryEl = document.getElementById('recipeCategory');
@@ -527,6 +545,10 @@
                 li.innerHTML = '<input class="edit-input" data-index="' + index + '" data-type="instruction" value="' + escapeHtml(instruction) + '">';
                 instructionsList.appendChild(li);
             });
+            document.getElementById('addInstructionsFromImageBlock').style.display = 'block';
+            document.getElementById('instructionsImageFile').value = '';
+            document.getElementById('instructionsImageStatus').textContent = '';
+            document.getElementById('instructionsImageStatus').className = 'instructions-image-status';
             renderTagsEditor();
             document.getElementById('saveButton').classList.add('visible');
             document.getElementById('cancelButton').classList.add('visible');
@@ -588,6 +610,99 @@
         function cancelEdit() {
             location.reload();
         }
+
+        function compressImageForExtract(file) {
+            return new Promise((resolve, reject) => {
+                const fallback = () => {
+                    const reader = new FileReader();
+                    reader.onload = e => resolve({ data: e.target.result.split(',')[1], mediaType: file.type || 'image/jpeg' });
+                    reader.onerror = () => reject(new Error('קריאת הקובץ נכשלה'));
+                    reader.readAsDataURL(file);
+                };
+                const img = new Image();
+                const url = URL.createObjectURL(file);
+                img.onload = () => {
+                    URL.revokeObjectURL(url);
+                    const maxW = 900;
+                    let w = img.width, h = img.height;
+                    if (w > maxW) { h = Math.round((h * maxW) / w); w = maxW; }
+                    const canvas = document.createElement('canvas');
+                    canvas.width = w; canvas.height = h;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, w, h);
+                    try {
+                        const dataUrl = canvas.toDataURL('image/jpeg', 0.72);
+                        resolve({ data: dataUrl.split(',')[1], mediaType: 'image/jpeg' });
+                    } catch (e) { fallback(); }
+                };
+                img.onerror = () => { URL.revokeObjectURL(url); fallback(); };
+                img.src = url;
+            });
+        }
+
+        function renderInstructionInputs() {
+            const instructionsList = document.getElementById('instructionsList');
+            if (!instructionsList) return;
+            instructionsList.innerHTML = '';
+            (recipe.instructions || []).forEach((instruction, index) => {
+                const li = document.createElement('li');
+                li.innerHTML = '<input class="edit-input" data-index="' + index + '" data-type="instruction" value="' + escapeHtml(instruction) + '">';
+                instructionsList.appendChild(li);
+            });
+        }
+
+        document.getElementById('extractInstructionsBtn').addEventListener('click', async () => {
+            const fileInput = document.getElementById('instructionsImageFile');
+            const statusEl = document.getElementById('instructionsImageStatus');
+            const btn = document.getElementById('extractInstructionsBtn');
+            const file = fileInput && fileInput.files && fileInput.files[0];
+            if (!file) {
+                statusEl.textContent = 'קודם בחרי תמונה.';
+                statusEl.className = 'instructions-image-status error';
+                return;
+            }
+            btn.disabled = true;
+            statusEl.textContent = 'מעבד תמונה...';
+            statusEl.className = 'instructions-image-status';
+            try {
+                const compressed = await compressImageForExtract(file);
+                const res = await fetch('/.netlify/functions/extract-image', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ images: [compressed] })
+                });
+                if (res.status === 502 || res.status === 504) {
+                    statusEl.textContent = 'השרת לא הספיק להגיב. נסי שוב.';
+                    statusEl.className = 'instructions-image-status error';
+                    btn.disabled = false;
+                    return;
+                }
+                const data = await res.json();
+                if (data.error) {
+                    statusEl.textContent = data.error;
+                    statusEl.className = 'instructions-image-status error';
+                    btn.disabled = false;
+                    return;
+                }
+                const newInstructions = Array.isArray(data.instructions) ? data.instructions.map(s => String(s).trim()).filter(Boolean) : [];
+                if (newInstructions.length === 0) {
+                    statusEl.textContent = 'לא זוהו הוראות בתמונה. נסי תמונה אחרת.';
+                    statusEl.className = 'instructions-image-status error';
+                    btn.disabled = false;
+                    return;
+                }
+                recipe.instructions = (recipe.instructions || []).concat(newInstructions);
+                renderInstructionInputs();
+                statusEl.textContent = 'נוספו ' + newInstructions.length + ' הוראות. בדקי ועדכני ואז שמרי.';
+                statusEl.className = 'instructions-image-status success';
+                fileInput.value = '';
+            } catch (err) {
+                console.error(err);
+                statusEl.textContent = err.message || 'שגיאה. נסי שוב.';
+                statusEl.className = 'instructions-image-status error';
+            }
+            btn.disabled = false;
+        });
 
     </script>
 </body>
