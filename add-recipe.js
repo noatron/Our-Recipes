@@ -49,7 +49,7 @@ async function importOneRecipe(url) {
 }
 
 const EDIT_CATEGORIES = ['עיקריות', 'תוספות', 'סלטים', 'מרקים', 'קינוחים', 'עוגות', 'עוגיות', 'מאפים', 'לחמים', 'כללי', 'ממרחים'];
-const ALL_TAGS = ['מהיר', 'בינוני', 'ארוך', 'מנה עיקרית', 'תוספת', 'מרק', 'סלט', 'קינוח', 'לחם ומאפה', 'עוגות ועוגיות', 'רוטב וממרח', 'שתייה', 'בוקר', 'צהריים', 'ערב', 'חטיף', 'צמחוני', 'טבעוני', 'ללא גלוטן', 'ילדים', 'שבת וחגים', 'אירוח', 'כל השבוע'];
+const ALL_TAGS = ['מהיר', 'בינוני', 'ארוך', 'מנה עיקרית', 'תוספת', 'מרק', 'סלט', 'קינוח', 'לחם ומאפה', 'עוגות ועוגיות', 'רוטב וממרח', 'שתייה', 'בוקר', 'צהריים', 'ערב', 'חטיף', 'צמחוני', 'טבעוני', 'ללא גלוטן', 'ילדים', 'שבת וחגים', 'אירוח', 'כל השבוע', 'עוף', 'בשר', 'דגים', 'מתוקים', 'מלוחים', 'לחמים'];
 
 function escapeHtml(str) {
     const div = document.createElement('div');
@@ -260,6 +260,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 <h3 style="margin:0 0 20px;color:#407076;text-align:center;">בדיקה לפני שמירה</h3>
                 <label style="display:block;margin-bottom:4px;color:#407076;font-size:0.9rem;">שם המתכון</label>
                 <input id="irm-name" value="${escapeHtml(recipe.name || '')}" style="width:100%;padding:10px 12px;border:2px solid #c5d9dc;border-radius:8px;font-family:inherit;font-size:1rem;box-sizing:border-box;margin-bottom:14px;background:white;">
+                <label style="display:block;margin-bottom:4px;color:#407076;font-size:0.9rem;">מקור (שם החשבון באינסטגרם/טיקטוק)</label>
+                <input id="irm-source" placeholder="למשל: @chef_name או שם החשבון" value="${escapeHtml(recipe.source || '')}" style="width:100%;padding:10px 12px;border:2px solid #c5d9dc;border-radius:8px;font-family:inherit;font-size:1rem;box-sizing:border-box;margin-bottom:14px;background:white;">
+                <label style="display:block;margin-bottom:4px;color:#407076;font-size:0.9rem;">קישור לריל</label>
+                <input id="irm-url" type="url" placeholder="https://www.instagram.com/reel/... או קישור לטיקטוק" value="${escapeHtml(recipe.url || '')}" style="width:100%;padding:10px 12px;border:2px solid #c5d9dc;border-radius:8px;font-family:inherit;font-size:1rem;box-sizing:border-box;margin-bottom:14px;background:white;">
                 <label style="display:block;margin-bottom:4px;color:#407076;font-size:0.9rem;">קטגוריה</label>
                 <select id="irm-category" style="width:100%;padding:10px 12px;border:2px solid #c5d9dc;border-radius:8px;font-family:inherit;font-size:1rem;box-sizing:border-box;margin-bottom:14px;background:white;">
                     ${EDIT_CATEGORIES.map(cat => `<option value="${cat}">${cat}</option>`).join('')}
@@ -298,6 +302,8 @@ document.addEventListener('DOMContentLoaded', () => {
             saveBtn.disabled = true;
             try {
                 const name = document.getElementById('irm-name').value.trim() || recipe.name || 'מתכון';
+                const source = document.getElementById('irm-source').value.trim() || '';
+                const reelUrl = document.getElementById('irm-url').value.trim() || '';
                 const category = document.getElementById('irm-category').value;
                 const ingredients = document.getElementById('irm-ingredients').value.split('\n').filter(l => l.trim());
                 const instructions = document.getElementById('irm-instructions').value.split('\n').filter(l => l.trim());
@@ -306,9 +312,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 await addDoc(collection(db, 'recipes'), {
                     name,
                     category,
-                    source: 'מתמונה',
-                    image: '',
-                    url: '',
+                    source: source || 'מתמונה',
+                    image: recipe.image || '',
+                    url: reelUrl,
                     ingredients,
                     instructions,
                     tags

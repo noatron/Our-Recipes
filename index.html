@@ -29,7 +29,25 @@
             <input type="text" id="searchInput" placeholder="חפשי מתכון, מרכיב...">
         </div>
 
-        <div id="category-filters" class="category-filters"></div>
+        <div class="filter-row">
+            <div class="tag-dropdown-wrap">
+                <label for="tag-group-select" class="tag-dropdown-label">סינון לפי סוג</label>
+                <select id="tag-group-select" class="tag-group-select" aria-label="בחרי סוג מתכון">
+                    <option value="">הכל</option>
+                    <optgroup label="עיקרית">
+                        <option value="עוף">עוף</option>
+                        <option value="בשר">בשר</option>
+                        <option value="דגים">דגים</option>
+                        <option value="צמחוני">צמחוני</option>
+                    </optgroup>
+                    <optgroup label="מאפים">
+                        <option value="מתוקים">מתוקים</option>
+                        <option value="מלוחים">מלוחים</option>
+                        <option value="לחמים">לחמים</option>
+                    </optgroup>
+                </select>
+            </div>
+        </div>
 
         <div class="tag-filters-wrap">
             <button type="button" class="tag-filters-toggle" id="tagFiltersToggle" aria-expanded="false">תגיות ▾</button>

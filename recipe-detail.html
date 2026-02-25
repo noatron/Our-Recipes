@@ -70,6 +70,15 @@
         .instructions-image-status { display: block; margin-top: 8px; font-size: 0.9rem; color: #698996; }
         .instructions-image-status.error { color: #c62828; }
         .instructions-image-status.success { color: #2e7d32; }
+        .add-tag-in-recipe-wrap { margin-top: 16px; padding: 14px; background: #F8F7FF; border-radius: 12px; }
+        .add-tag-label { margin: 0 0 10px 0; font-size: 0.95rem; color: #407076; }
+        .add-tag-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 10px; }
+        .add-tag-row:last-of-type { margin-bottom: 0; }
+        .add-tag-select, .add-tag-input { padding: 8px 12px; border: 1.5px solid #c5d9dc; border-radius: 10px; font-family: 'Varela Round', sans-serif; font-size: 0.9rem; color: #407076; background: white; outline: none; direction: rtl; }
+        .add-tag-input { min-width: 140px; }
+        .add-tag-select:focus, .add-tag-input:focus { border-color: #407076; }
+        .add-tag-btn { padding: 8px 16px; background: #407076; color: white; border: none; border-radius: 10px; font-family: 'Varela Round', sans-serif; font-size: 0.9rem; cursor: pointer; }
+        .add-tag-btn:hover { background: #698996; }
     </style>
 </head>
 <body>
@@ -142,6 +151,24 @@
             <div id="recipeTagsBlock" class="recipe-tags-block" style="display: none;">
                 <span class="tags-label">תגיות:</span>
                 <div id="recipeTagsList" class="recipe-tags-list"></div>
+                <div id="addTagInRecipeWrap" class="add-tag-in-recipe-wrap" style="display: none;">
+                    <p class="add-tag-label">הוספת תגית ותת-תגית</p>
+                    <div class="add-tag-row">
+                        <select id="addTagGroupSelect" class="add-tag-select" aria-label="קבוצה">
+                            <option value="">בחרי קבוצה</option>
+                            <option value="0">עיקרית</option>
+                            <option value="1">מאפים</option>
+                        </select>
+                        <select id="addTagSubSelect" class="add-tag-select" aria-label="תת-תגית">
+                            <option value="">בחרי תת-תגית</option>
+                        </select>
+                        <button type="button" class="add-tag-btn" id="addTagFromGroupBtn">הוסף</button>
+                    </div>
+                    <div class="add-tag-row">
+                        <input type="text" id="addTagCustomInput" class="add-tag-input" placeholder="תגית חופשית (להקליד)">
+                        <button type="button" class="add-tag-btn" id="addTagCustomBtn">הוסף תגית</button>
+                    </div>
+                </div>
             </div>
 
             <h2 class="section-title">
@@ -212,7 +239,11 @@
             }
         }
 
-        const ALL_TAGS = ['מהיר', 'בינוני', 'ארוך', 'מנה עיקרית', 'תוספת', 'מרק', 'סלט', 'קינוח', 'לחם ומאפה', 'עוגות ועוגיות', 'רוטב וממרח', 'שתייה', 'בוקר', 'צהריים', 'ערב', 'חטיף', 'צמחוני', 'טבעוני', 'ללא גלוטן', 'ילדים', 'שבת וחגים', 'אירוח', 'כל השבוע'];
+        const ALL_TAGS = ['מהיר', 'בינוני', 'ארוך', 'מנה עיקרית', 'תוספת', 'מרק', 'סלט', 'קינוח', 'לחם ומאפה', 'עוגות ועוגיות', 'רוטב וממרח', 'שתייה', 'בוקר', 'צהריים', 'ערב', 'חטיף', 'צמחוני', 'טבעוני', 'ללא גלוטן', 'ילדים', 'שבת וחגים', 'אירוח', 'כל השבוע', 'עוף', 'בשר', 'דגים', 'מתוקים', 'מלוחים', 'לחמים'];
+        const TAG_GROUPS = [
+            { label: 'עיקרית', tags: ['עוף', 'בשר', 'דגים', 'צמחוני'] },
+            { label: 'מאפים', tags: ['מתוקים', 'מלוחים', 'לחמים'] }
+        ];
 
         function renderRecipe(recipe) {
             const addBlock = document.getElementById('addInstructionsFromImageBlock');
@@ -234,16 +265,28 @@
                 }
             }
 
-            if (recipe.source) {
-                try {
-                    document.getElementById('recipeSource').textContent = recipe.url ? new URL(recipe.url).hostname : recipe.source;
-                } catch (e) {
-                    document.getElementById('recipeSource').textContent = recipe.source || '';
+            const sourceLabel = (recipe.source && String(recipe.source).trim()) ? recipe.source.trim() : (recipe.url ? (() => { try { return new URL(recipe.url).hostname.replace(/^www\./, ''); } catch (e) { return ''; } })() : '');
+            if (sourceLabel || recipe.url) {
+                const sourceEl = document.getElementById('recipeSource');
+                if (recipe.url) {
+                    const link = document.createElement('a');
+                    link.href = recipe.url;
+                    link.target = '_blank';
+                    link.rel = 'noopener noreferrer';
+                    link.className = 'recipe-source-link';
+                    link.textContent = sourceLabel || 'צפי בריל';
+                    sourceEl.innerHTML = '';
+                    sourceEl.appendChild(link);
+                } else {
+                    sourceEl.textContent = sourceLabel;
                 }
                 document.getElementById('recipeSourceContainer').style.display = 'block';
             }
 
-            if (recipe.url) {
+            const isReelUrl = (url) => url && (String(url).includes('instagram.com') || String(url).includes('tiktok.com'));
+            const showReelLinkOnly = recipe.url && isReelUrl(recipe.url);
+
+            if (recipe.url && !showReelLinkOnly) {
                 document.querySelectorAll('.section-title').forEach(el => el.style.display = 'none');
                 document.getElementById('ingredientsList').style.display = 'none';
                 document.getElementById('instructionsList').style.display = 'none';
@@ -306,10 +349,11 @@
             recipe = { id: snap.id, ...snap.data() };
             likesCount = recipe.likesCount != null ? recipe.likesCount : 0;
             renderRecipe(recipe);
+            const isReel = recipe.url && (String(recipe.url).includes('instagram.com') || String(recipe.url).includes('tiktok.com'));
             const refreshBtn = document.getElementById('refreshFromLinkBtn');
-            if (refreshBtn) refreshBtn.style.display = recipe.url ? 'flex' : 'none';
+            if (refreshBtn) refreshBtn.style.display = (recipe.url && !isReel) ? 'flex' : 'none';
             const refreshBlock = document.getElementById('refreshFromLinkBlock');
-            if (refreshBlock) refreshBlock.style.display = recipe.url ? 'block' : 'none';
+            if (refreshBlock) refreshBlock.style.display = (recipe.url && !isReel) ? 'block' : 'none';
             currentUser = auth.currentUser;
             await loadLikeState();
             await loadComments();
@@ -551,6 +595,10 @@
             document.getElementById('instructionsImageFile').value = '';
             document.getElementById('instructionsImageStatus').textContent = '';
             document.getElementById('instructionsImageStatus').className = 'instructions-image-status';
+            document.getElementById('addTagInRecipeWrap').style.display = 'block';
+            document.getElementById('addTagGroupSelect').value = '';
+            document.getElementById('addTagSubSelect').innerHTML = '<option value="">בחרי תת-תגית</option>';
+            document.getElementById('addTagCustomInput').value = '';
             renderTagsEditor();
             document.getElementById('saveButton').classList.add('visible');
             document.getElementById('cancelButton').classList.add('visible');
@@ -562,7 +610,9 @@
             if (!block || !list) return;
             block.style.display = 'block';
             const tags = Array.isArray(recipe.tags) ? recipe.tags : [];
-            list.innerHTML = ALL_TAGS.map(tag => '<button type="button" class="edit-tag-chip ' + (tags.includes(tag) ? 'active' : '') + '" data-tag="' + escapeHtml(tag) + '">' + escapeHtml(tag) + '</button>').join('');
+            const allTagsOrdered = [...ALL_TAGS, ...tags.filter(t => !ALL_TAGS.includes(t))];
+            const uniqueTags = [...new Set(allTagsOrdered)];
+            list.innerHTML = uniqueTags.map(tag => '<button type="button" class="edit-tag-chip ' + (tags.includes(tag) ? 'active' : '') + '" data-tag="' + escapeHtml(tag) + '">' + escapeHtml(tag) + '</button>').join('');
             list.querySelectorAll('.edit-tag-chip').forEach(btn => {
                 btn.addEventListener('click', () => {
                     btn.classList.toggle('active');
@@ -575,6 +625,41 @@
             if (!list) return [];
             return [...list.querySelectorAll('.edit-tag-chip.active')].map(b => b.dataset.tag);
         }
+
+        document.getElementById('addTagGroupSelect').addEventListener('change', function() {
+            const subSelect = document.getElementById('addTagSubSelect');
+            const idx = this.value === '' ? -1 : parseInt(this.value, 10);
+            subSelect.innerHTML = '<option value="">בחרי תת-תגית</option>';
+            if (idx >= 0 && TAG_GROUPS[idx]) {
+                TAG_GROUPS[idx].tags.forEach(t => {
+                    subSelect.innerHTML += '<option value="' + escapeHtml(t) + '">' + escapeHtml(t) + '</option>';
+                });
+            }
+        });
+
+        document.getElementById('addTagFromGroupBtn').addEventListener('click', function() {
+            if (!recipe) return;
+            const subSelect = document.getElementById('addTagSubSelect');
+            const tag = (subSelect.value || '').trim();
+            if (!tag) return;
+            if (!Array.isArray(recipe.tags)) recipe.tags = [];
+            if (recipe.tags.includes(tag)) return;
+            recipe.tags.push(tag);
+            renderTagsEditor();
+            subSelect.value = '';
+        });
+
+        document.getElementById('addTagCustomBtn').addEventListener('click', function() {
+            if (!recipe) return;
+            const input = document.getElementById('addTagCustomInput');
+            const tag = (input.value || '').trim();
+            if (!tag) return;
+            if (!Array.isArray(recipe.tags)) recipe.tags = [];
+            if (recipe.tags.includes(tag)) return;
+            recipe.tags.push(tag);
+            renderTagsEditor();
+            input.value = '';
+        });
 
         function escapeHtml(s) {
             const div = document.createElement('div');

@@ -1,10 +1,14 @@
 import { db, auth, onUserChange, signInWithGoogle, signOutUser } from './firebase.js';
 import { collection, getDocs, getDoc, setDoc, updateDoc, deleteDoc, doc, increment, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
-const CATEGORIES = ['הכל', 'כללי', 'מרקים', 'בשרי', 'חלבי', 'פרווה', 'קינוחים', 'לחמים', 'סלטים', 'תוספות'];
+/** קבוצות תגיות לדרופדאון – עיקרית, מאפים */
+const TAG_GROUPS = [
+    { label: 'עיקרית', tags: ['עוף', 'בשר', 'דגים', 'צמחוני'] },
+    { label: 'מאפים', tags: ['מתוקים', 'מלוחים', 'לחמים'] }
+];
 
-/** רשימת התגיות (זהה ל-extract-image) – לסינון ולתצוגה */
-const ALL_TAGS = ['מהיר', 'בינוני', 'ארוך', 'מנה עיקרית', 'תוספת', 'מרק', 'סלט', 'קינוח', 'לחם ומאפה', 'עוגות ועוגיות', 'רוטב וממרח', 'שתייה', 'בוקר', 'צהריים', 'ערב', 'חטיף', 'צמחוני', 'טבעוני', 'ללא גלוטן', 'ילדים', 'שבת וחגים', 'אירוח', 'כל השבוע'];
+/** רשימת התגיות (זהה ל-extract-image + תגיות מקבוצות הדרופדאון) – לסינון ולתצוגה */
+const ALL_TAGS = ['מהיר', 'בינוני', 'ארוך', 'מנה עיקרית', 'תוספת', 'מרק', 'סלט', 'קינוח', 'לחם ומאפה', 'עוגות ועוגיות', 'רוטב וממרח', 'שתייה', 'בוקר', 'צהריים', 'ערב', 'חטיף', 'צמחוני', 'טבעוני', 'ללא גלוטן', 'ילדים', 'שבת וחגים', 'אירוח', 'כל השבוע', 'עוף', 'בשר', 'דגים', 'מתוקים', 'מלוחים', 'לחמים'];
 
 const defaultRecipes = [
     {
@@ -88,10 +92,11 @@ function getHeartSvg(liked) {
 
 /** מקור המתכון – דומיין או טקסט מקור */
 function getRecipeSourceLabel(recipe) {
+    if (recipe.source && String(recipe.source).trim()) return recipe.source.trim();
     if (recipe.url) {
         try { return new URL(recipe.url).hostname.replace(/^www\./, ''); } catch (e) {}
     }
-    return recipe.source || '';
+    return '';
 }
 
 function displayRecipes(recipesToShow) {
@@ -125,7 +130,7 @@ function displayRecipes(recipesToShow) {
             </div>
             <div class="recipe-content">
                 <h2 class="recipe-name">${escapeHtml(getRecipeDisplayName(recipe))}</h2>
-                ${sourceLabel ? `<p class="recipe-source">${escapeHtml(sourceLabel)}</p>` : ''}
+                ${sourceLabel ? (recipe.url ? `<p class="recipe-source"><a href="${escapeHtml(recipe.url)}" target="_blank" rel="noopener noreferrer" class="recipe-source-link">${escapeHtml(sourceLabel)}</a></p>` : `<p class="recipe-source">${escapeHtml(sourceLabel)}</p>`) : ''}
                 <div class="recipe-meta-row">
                     <span class="recipe-category">${escapeHtml(recipe.category || '')}</span>
                     <button type="button" class="recipe-like-btn ${liked ? 'liked' : ''}" data-recipe-id="${recipe.id}" aria-label="עשי לב">
@@ -236,23 +241,10 @@ function setupSearch(applyFilters) {
     searchInput.addEventListener('input', () => { if (applyFilters) applyFilters(); });
 }
 
-function setupCategoryFilter(allRecipes, applyFilters) {
-    const container = document.getElementById('category-filters');
-    if (!container) return;
-    
-    container.innerHTML = CATEGORIES.map(cat => `
-        <button class="category-chip ${cat === 'הכל' ? 'active' : ''}" data-category="${cat}">
-            ${cat}
-        </button>
-    `).join('');
-    
-    container.addEventListener('click', (e) => {
-        if (!e.target.classList.contains('category-chip')) return;
-        container.querySelectorAll('.category-chip').forEach(btn => btn.classList.remove('active'));
-        e.target.classList.add('active');
-        document.getElementById('searchInput').value = '';
-        if (applyFilters) applyFilters();
-    });
+function setupTagGroupDropdown(applyFilters) {
+    const select = document.getElementById('tag-group-select');
+    if (!select) return;
+    select.addEventListener('change', () => { if (applyFilters) applyFilters(); });
 }
 
 function setupTagFilters(allRecipes, applyFilters) {
@@ -303,21 +295,22 @@ function setupTagFilters(allRecipes, applyFilters) {
 }
 
 function getActiveFilters() {
-    const activeCategory = document.querySelector('#category-filters .category-chip.active')?.dataset.category || 'הכל';
     const searchTerm = (document.getElementById('searchInput')?.value || '').toLowerCase();
     const tagFiltersEl = document.getElementById('tag-filters');
-    const selectedTags = tagFiltersEl
+    const chipTags = tagFiltersEl
         ? [...tagFiltersEl.querySelectorAll('.tag-chip.active')].map(b => (b.dataset.tag || '').trim()).filter(Boolean)
         : [];
+    const groupSelect = document.getElementById('tag-group-select');
+    const groupTag = (groupSelect && groupSelect.value && groupSelect.value.trim()) || '';
+    const selectedTags = groupTag ? [...chipTags, groupTag] : chipTags;
     const favoritesOnly = document.getElementById('favoritesFilterBtn')?.classList.contains('active') || false;
-    return { activeCategory, searchTerm, selectedTags, favoritesOnly };
+    return { searchTerm, selectedTags, favoritesOnly };
 }
 
 function filterRecipes(allRecipes) {
-    const { activeCategory, searchTerm, selectedTags, favoritesOnly } = getActiveFilters();
+    const { searchTerm, selectedTags, favoritesOnly } = getActiveFilters();
     let list = allRecipes;
     if (favoritesOnly) list = list.filter(r => !!r.likedByMe);
-    if (activeCategory !== 'הכל') list = list.filter(r => r.category === activeCategory);
     if (selectedTags.length > 0) list = list.filter(r => Array.isArray(r.tags) && selectedTags.some(t => r.tags.includes(t)));
     if (searchTerm) {
         list = list.filter(recipe => {
@@ -353,7 +346,7 @@ async function initApp() {
         };
         window.__applyFilters = applyFilters;
 
-        setupCategoryFilter(recipes, applyFilters);
+        setupTagGroupDropdown(applyFilters);
         setupTagFilters(recipes, applyFilters);
         setupSearch(applyFilters);
 

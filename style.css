@@ -161,6 +161,15 @@ main {
     margin: 0 0 10px 0;
 }
 
+.recipe-source-link {
+    color: #407076;
+    text-decoration: none;
+    font-weight: 500;
+}
+.recipe-source-link:hover {
+    text-decoration: underline;
+}
+
 .recipe-meta {
     display: flex;
     gap: 15px;
@@ -349,7 +358,15 @@ header .logo {
     font-size: 36px;
     line-height: 1;
     font-weight: 300;
-}/* Add Recipe Form Styles */
+}
+
+/* עמוד הוספת מתכון – כותרת בירוק הפלטה */
+.add-recipe-header h1 {
+    color: #407076;
+    font-weight: 400;
+}
+
+/* Add Recipe Form Styles */
 .add-recipe-form {
     max-width: 700px;
     margin: 0 auto;
@@ -477,6 +494,43 @@ header .logo {
     gap: 8px;
     width: auto;
     align-self: flex-start;
+}
+
+/* ייבוא מתמונות – עיצוב תואם לאפליקציה */
+.images-mode-description {
+    margin-bottom: 20px;
+}
+.images-form-group {
+    margin-bottom: 20px;
+}
+.images-file-label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #407076;
+    font-size: 1rem;
+}
+.images-file-input {
+    width: 100%;
+    padding: 12px 16px;
+    font-family: 'Varela Round', sans-serif;
+    font-size: 1rem;
+    border: 2px solid #FFD8BE;
+    border-radius: 12px;
+    background: white;
+    color: #407076;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+.images-file-input:hover,
+.images-file-input:focus {
+    border-color: #407076;
+    box-shadow: 0 0 0 3px rgba(64, 112, 118, 0.1);
+}
+.images-extract-btn {
+    border-radius: 12px;
+    padding: 12px 24px;
+    font-size: 1rem;
 }
 
 .import-status {
@@ -721,14 +775,38 @@ header .logo {
 .favorites-chip.active { background: #407076; color: white; border-color: #407076; }
 .favorites-chip.active .favorites-heart { fill: white; stroke: white; }
 
-/* Category Filter Chips – 2 שורות, מיושר לרוחב שורת החיפוש */
-.category-filters {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
+/* שורת סינון – דרופדאון קבוצות תגיות */
+.filter-row {
     max-width: 600px;
     margin: 0 auto 12px;
-    justify-content: center;
+}
+.tag-dropdown-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.tag-dropdown-label {
+    font-size: 0.9rem;
+    color: #407076;
+    font-family: 'Varela Round', sans-serif;
+}
+.tag-group-select {
+    width: 100%;
+    max-width: 280px;
+    padding: 10px 14px;
+    font-family: 'Varela Round', sans-serif;
+    font-size: 1rem;
+    color: #407076;
+    background: white;
+    border: 2px solid #FFD8BE;
+    border-radius: 12px;
+    cursor: pointer;
+    outline: none;
+    direction: rtl;
+}
+.tag-group-select:hover,
+.tag-group-select:focus {
+    border-color: #407076;
 }
 
 .category-chip {
