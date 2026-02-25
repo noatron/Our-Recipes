@@ -136,14 +136,14 @@ function displayRecipes(recipesToShow) {
                 ${editBtnHtml}
             </div>
             <div class="recipe-content">
-                <h2 class="recipe-name">${escapeHtml(getRecipeDisplayName(recipe))}</h2>
-                ${sourceLabel ? (recipe.url ? `<p class="recipe-source"><a href="${escapeHtml(recipe.url)}" target="_blank" rel="noopener noreferrer" class="recipe-source-link">${escapeHtml(sourceLabel)}</a></p>` : `<p class="recipe-source">${escapeHtml(sourceLabel)}</p>`) : ''}
-                <div class="recipe-meta-row">
+                <div class="recipe-title-row">
+                    <h2 class="recipe-name">${escapeHtml(getRecipeDisplayName(recipe))}</h2>
                     <button type="button" class="recipe-like-btn ${liked ? 'liked' : ''}" data-recipe-id="${recipe.id}" aria-label="עשי לב">
                         <span class="like-icon">${getHeartSvg(liked)}</span>
                         <span class="like-count">${count}</span>
                     </button>
                 </div>
+                ${sourceLabel ? (recipe.url ? `<p class="recipe-source"><a href="${escapeHtml(recipe.url)}" target="_blank" rel="noopener noreferrer" class="recipe-source-link">${escapeHtml(sourceLabel)}</a></p>` : `<p class="recipe-source">${escapeHtml(sourceLabel)}</p>`) : ''}
                 <div class="recipe-comments-row">${commentsLinkHtml}</div>
                 ${tagsHtml}
             </div>

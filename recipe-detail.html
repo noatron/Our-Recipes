@@ -70,14 +70,14 @@
         .instructions-image-status { display: block; margin-top: 8px; font-size: 0.9rem; color: #698996; }
         .instructions-image-status.error { color: #c62828; }
         .instructions-image-status.success { color: #2e7d32; }
-        .add-tag-in-recipe-wrap { margin-top: 16px; padding: 14px; background: #F8F7FF; border-radius: 12px; }
-        .add-tag-label { margin: 0 0 10px 0; font-size: 0.95rem; color: #407076; }
-        .add-tag-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 10px; }
+        .add-tag-in-recipe-wrap { margin-top: 16px; padding: 16px; background: #FFF5EE; border: 2px solid #FFD8BE; border-radius: 12px; }
+        .add-tag-label { margin: 0 0 12px 0; font-size: 1rem; color: #407076; font-weight: 400; }
+        .add-tag-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 12px; }
         .add-tag-row:last-of-type { margin-bottom: 0; }
-        .add-tag-select, .add-tag-input { padding: 8px 12px; border: 1.5px solid #c5d9dc; border-radius: 10px; font-family: 'Varela Round', sans-serif; font-size: 0.9rem; color: #407076; background: white; outline: none; direction: rtl; }
+        .add-tag-select, .add-tag-input { padding: 12px 18px; border: 2px solid #FFD8BE; border-radius: 25px; font-family: 'Varela Round', sans-serif; font-size: 1rem; color: #407076; background: white; outline: none; direction: rtl; }
         .add-tag-input { min-width: 140px; }
         .add-tag-select:focus, .add-tag-input:focus { border-color: #407076; }
-        .add-tag-btn { padding: 8px 16px; background: #407076; color: white; border: none; border-radius: 10px; font-family: 'Varela Round', sans-serif; font-size: 0.9rem; cursor: pointer; }
+        .add-tag-btn { padding: 10px 18px; background: #407076; color: #FFEEDD; border: none; border-radius: 25px; font-family: 'Varela Round', sans-serif; font-size: 1rem; cursor: pointer; }
         .add-tag-btn:hover { background: #698996; }
     </style>
 </head>
@@ -587,6 +587,11 @@
             titleEl.innerHTML = '<input class="edit-title-input" id="editTitle" value="' + escapeHtml(recipe.name) + '">';
             const img = document.getElementById('recipeImage');
             img.insertAdjacentHTML('afterend', '<input class="edit-input" id="editImage" value="' + escapeHtml(recipe.image || '') + '" placeholder="קישור לתמונה (URL)" style="margin-bottom: 15px;">');
+            document.getElementById('recipeTagsBlock').style.display = 'block';
+            document.getElementById('addTagInRecipeWrap').style.display = 'block';
+            document.getElementById('addTagGroupSelect').value = '';
+            document.getElementById('addTagSubSelect').innerHTML = '<option value="">בחרי תת-תגית</option>';
+            document.getElementById('addTagCustomInput').value = '';
             renderTagsEditor();
             document.getElementById('saveButton').classList.add('visible');
             document.getElementById('cancelButton').classList.add('visible');

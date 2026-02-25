@@ -163,6 +163,19 @@ main {
     padding: 20px;
 }
 
+.recipe-title-row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 4px;
+}
+.recipe-title-row .recipe-name {
+    margin-bottom: 0;
+    flex: 1;
+    min-width: 0;
+}
 .recipe-name {
     font-size: 1.5rem;
     font-weight: 400;
@@ -822,6 +835,9 @@ header .logo {
 .tag-group-select:hover,
 .tag-group-select:focus {
     border-color: #407076;
+}
+.tag-group-select option {
+    font-family: 'Varela Round', sans-serif;
 }
 
 .category-chip {
