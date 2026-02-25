@@ -1,0 +1,8 @@
+{
+  "name": "simple-recipe-app",
+  "private": true,
+  "description": "Recipe app with image extraction",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.32.1"
+  }
+}

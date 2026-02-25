@@ -324,17 +324,24 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    function setImagesStatus(type, text) {
+        if (imagesStatus) {
+            imagesStatus.className = 'import-status ' + (type || '');
+            imagesStatus.textContent = text || '';
+            imagesStatus.style.display = text ? 'block' : 'none';
+            imagesStatus.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    }
+
     if (extractFromImagesBtn) {
         extractFromImagesBtn.addEventListener('click', async () => {
             const files = Array.from(recipeImageFiles?.files || []);
             if (files.length === 0) {
-                imagesStatus.className = 'import-status error';
-                imagesStatus.textContent = '⚠️ נא לבחור לפחות תמונה אחת';
+                setImagesStatus('error', '⚠️ קודם בחרי תמונות בלחצן "בחרי תמונות" למעלה (בטאב ייבוא מתמונות).');
                 return;
             }
             extractFromImagesBtn.disabled = true;
-            imagesStatus.className = 'import-status loading';
-            imagesStatus.textContent = '⏳ שולח תמונות ל-AI...';
+            setImagesStatus('loading', '⏳ שולח תמונות ל-AI...');
 
             try {
                 const images = await Promise.all(files.map(file => {
@@ -351,22 +358,37 @@ document.addEventListener('DOMContentLoaded', () => {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ images })
                 });
-                const result = await response.json();
-                if (result.error) {
-                    imagesStatus.className = 'import-status error';
-                    imagesStatus.textContent = result.error;
+
+                let result;
+                try {
+                    result = await response.json();
+                } catch (_) {
+                    setImagesStatus('error', 'שגיאה בתשובת השרת. נסי שוב.');
                     extractFromImagesBtn.disabled = false;
                     return;
                 }
-                imagesStatus.className = 'import-status success';
-                imagesStatus.textContent = '✅ המתכון חולץ! בדקי ועדכני לפני השמירה.';
+
+                if (result.error) {
+                    setImagesStatus('error', result.error);
+                    extractFromImagesBtn.disabled = false;
+                    return;
+                }
+                if (!response.ok) {
+                    setImagesStatus('error', 'שגיאה בשרת (' + response.status + '). נסי שוב.');
+                    extractFromImagesBtn.disabled = false;
+                    return;
+                }
+                const hasContent = (result.ingredients && result.ingredients.length) || (result.instructions && result.instructions.length);
+                if (!hasContent) {
+                    setImagesStatus('error', 'לא זוהו מרכיבים או הוראות. נסי תמונה ברורה יותר.');
+                    extractFromImagesBtn.disabled = false;
+                    return;
+                }
+                setImagesStatus('success', '✅ המתכון חולץ! בדקי ועדכני לפני השמירה.');
                 showImageResultModal(result);
             } catch (err) {
                 console.error(err);
-                imagesStatus.className = 'import-status error';
-                imagesStatus.textContent = 'שגיאה בחיבור ל-AI. נסי שוב.';
-                extractFromImagesBtn.disabled = false;
-                return;
+                setImagesStatus('error', 'שגיאה: ' + (err.message || 'חיבור ל-AI נכשל. נסי שוב.'));
             }
             extractFromImagesBtn.disabled = false;
         });
