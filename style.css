@@ -34,6 +34,8 @@ header {
     order: 0;
     justify-self: center;
     grid-column: 2;
+    line-height: 1;
+    align-items: center;
 }
 .header-right-col {
     display: flex;
@@ -76,6 +78,7 @@ header {
     font-size: 1.65rem;
     font-weight: 400;
     color: #407076;
+    line-height: 1;
 }
 
 .search-bar {
@@ -281,6 +284,7 @@ header .logo {
     width: auto;
     margin-left: 12px;
     object-fit: contain;
+    object-position: center;
     flex-shrink: 0;
     background: transparent;
     padding: 0;
@@ -291,6 +295,7 @@ header .logo {
     display: flex;
     align-items: center;
     justify-content: center;
+    line-height: 1;
 }
 header {
     text-align: center;
@@ -305,6 +310,7 @@ header .logo {
     width: auto;
     margin-left: 12px;
     object-fit: contain;
+    object-position: center;
     flex-shrink: 0;
     background: transparent;
     padding: 0;
@@ -715,21 +721,15 @@ header .logo {
 .favorites-chip.active { background: #407076; color: white; border-color: #407076; }
 .favorites-chip.active .favorites-heart { fill: white; stroke: white; }
 
-/* Category Filter Chips – מיושר לרוחב שורת החיפוש, שורה אחת עם גלילה */
+/* Category Filter Chips – 2 שורות, מיושר לרוחב שורת החיפוש */
 .category-filters {
     display: flex;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     gap: 8px;
     max-width: 600px;
     margin: 0 auto 12px;
-    overflow-x: auto;
-    padding-bottom: 6px;
-    scrollbar-width: thin;
-    -webkit-overflow-scrolling: touch;
+    justify-content: center;
 }
-.category-filters::-webkit-scrollbar { height: 4px; }
-.category-filters::-webkit-scrollbar-thumb { background: #c5d9dc; border-radius: 4px; }
-.category-filters .category-chip { flex-shrink: 0; }
 
 .category-chip {
     background: white;
@@ -753,9 +753,9 @@ header .logo {
     color: white;
 }
 
-/* Tag filters – מתקפל (תגיות ▾) */
+/* Tag filters – מיושר לקטגוריות ולחיפוש (600px) */
 .tag-filters-wrap {
-    max-width: 800px;
+    max-width: 600px;
     margin: 0 auto 16px;
 }
 .tag-filters-toggle {
