@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "api/extract-image.js": {
+      "maxDuration": 60
+    }
+  }
+}
