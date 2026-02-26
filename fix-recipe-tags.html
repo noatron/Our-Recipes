@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>תיקון תגיות מתכונים</title>
+    <title>תיקון קטגוריות מתכונים</title>
     <style>
         body { font-family: 'Varela Round', sans-serif; padding: 24px; max-width: 480px; margin: 0 auto; }
         h1 { color: #407076; }
@@ -16,10 +16,10 @@
     </style>
 </head>
 <body>
-    <h1>איפוס תגיות וקטגוריות</h1>
-    <p>הסקריפט ימחק מכל המתכונים את התגיות והקטגוריות הישנות (יתאפסו לריק). אחרי ההרצה תוכלי לסמן מתכונים רק עם התגיות החדשה.</p>
+    <h1>איפוס קטגוריות</h1>
+    <p>הסקריפט ימחק מכל המתכונים את הקטגוריות הישנות (יתאפסו לריק). אחרי ההרצה תוכלי לסמן מתכונים רק עם הקטגוריות החדשות.</p>
     <p id="authStatus">טוען...</p>
-    <button id="runBtn" disabled>מחק תגיות וקטגוריות מכל המתכונים</button>
+    <button id="runBtn" disabled>מחק קטגוריות מכל המתכונים</button>
     <button id="signInBtn" style="display:none; background:#698996; margin-right:8px;">התחברי עם Google</button>
     <pre id="log"></pre>
 
@@ -69,7 +69,7 @@
                     log('אופס: ' + (d.data().name || d.id));
                     count++;
                 }
-                log('✅ סיום: תגיות וקטגוריות נמחקו מ־' + count + ' מתכונים.');
+                log('✅ סיום: קטגוריות נמחקו מ־' + count + ' מתכונים.');
             } catch (e) {
                 log('שגיאה: ' + (e.message || e), true);
             }

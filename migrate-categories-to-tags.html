@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>המרת קטגוריות לתגיות</title>
+    <title>המרת קטגוריות ישנות</title>
     <style>
         body { font-family: 'Varela Round', sans-serif; padding: 24px; max-width: 560px; margin: 0 auto; }
         h1 { color: #407076; }
@@ -17,11 +17,11 @@
     </style>
 </head>
 <body>
-    <h1>המרת קטגוריות לתגיות חדשות</h1>
-    <p>הסקריפט עובר על <strong>כל</strong> המתכונים ב-Firebase, לוקח את הקטגוריה הישנה של כל מתכון וממיר אותה לתגית (או תגיות) מהמערכת החדשה. הקטגוריה עצמה מתאפסת.</p>
+    <h1>המרת קטגוריות ישנות לחדשות</h1>
+    <p>הסקריפט עובר על <strong>כל</strong> המתכונים ב-Firebase, לוקח את הקטגוריה הישנה של כל מתכון וממיר אותה לקטגוריה (או קטגוריות) מהמערכת החדשה. הקטגוריה הישנה מתאפסת.</p>
 
     <div class="steps" style="margin-bottom: 20px;">
-        <strong>📋 הרשימה החדשה של התגיות (לעריכה ידנית ב-Firebase – העתיקי מכאן)</strong>
+        <strong>📋 הרשימה החדשה של הקטגוריות (לעריכה ידנית ב-Firebase – העתיקי מכאן)</strong>
         <p style="margin: 10px 0 6px 0; font-size: 0.95rem;">מנות עיקריות: בשר, דגים, פסטות, טרטים ופשטידות, צמחוני</p>
         <p style="margin: 0 0 6px 0; font-size: 0.95rem;">סלטים • תוספות • לחם ומאפים • רוטבים וממרחים • מרקים</p>
         <p style="margin: 0 0 6px 0; font-size: 0.95rem;">קינוחים: עוגות, עוגיות, קינוחים, שוקולד</p>
@@ -40,7 +40,7 @@
     </div>
 
     <p id="authStatus">טוען סקריפט...</p>
-    <button id="runBtn" disabled>המר קטגוריות לתגיות בכל המתכונים</button>
+    <button id="runBtn" disabled>המר קטגוריות ישנות בכל המתכונים</button>
     <button id="signInBtn" style="display:none; background:#698996; margin-right:8px;">התחברי עם Google</button>
     <p id="hint" style="margin-top:12px; font-size:0.85rem; color:#698996; display:none;">אם כלום לא קורה: פתחי את המסוף (F12 → Console) ובדקי אם מופיעה שגיאה באדום.</p>
     <pre id="log"></pre>
@@ -60,7 +60,7 @@
 
         authStatus.textContent = 'בודק התחברות...';
 
-        /** מיפוי: קטגוריה ישנה → תגיות חדשות (מהרשימה החדשה) */
+        /** מיפוי: קטגוריה ישנה → קטגוריות חדשות (מהרשימה החדשה) */
         const CATEGORY_TO_TAGS = {
             'בשרי': ['בשר'],
             'דגים': ['דגים'],
@@ -136,11 +136,11 @@
                         log(name + ' ← ' + oldCategory + ' → ' + newTags.join(', '));
                         updated++;
                     } else {
-                        log(name + ' (קטגוריה: ' + (oldCategory || '—') + ', בלי תגית חדשה)');
+                        log(name + ' (קטגוריה: ' + (oldCategory || '—') + ', בלי קטגוריה חדשה)');
                         skipped++;
                     }
                 }
-                log('✅ סיום: ' + updated + ' מתכונים קיבלו תגיות, ' + skipped + ' בלי תגית.');
+                log('✅ סיום: ' + updated + ' מתכונים קיבלו קטגוריות, ' + skipped + ' בלי קטגוריה.');
             } catch (e) {
                 log('שגיאה: ' + (e.message || e), true);
             }

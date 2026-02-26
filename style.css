@@ -832,7 +832,7 @@ header .logo {
 .favorites-chip.active { background: #407076; color: white; border-color: #407076; }
 .favorites-chip.active .favorites-heart { fill: white; stroke: white; }
 
-/* שורת סינון – דרופדאון קבוצות תגיות */
+/* שורת סינון – דרופדאון קבוצות קטגוריות */
 .filter-row {
     max-width: 600px;
     margin: 0 auto 12px;

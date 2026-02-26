@@ -271,7 +271,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <textarea id="irm-ingredients" rows="5" style="width:100%;padding:10px 12px;border:2px solid #c5d9dc;border-radius:8px;font-family:inherit;font-size:0.9rem;box-sizing:border-box;margin-bottom:14px;resize:vertical;">${escapeHtml((recipe.ingredients || []).join('\n'))}</textarea>
                 <label style="display:block;margin-bottom:4px;color:#407076;font-size:0.9rem;">הוראות הכנה</label>
                 <textarea id="irm-instructions" rows="6" style="width:100%;padding:10px 12px;border:2px solid #c5d9dc;border-radius:8px;font-family:inherit;font-size:0.9rem;box-sizing:border-box;margin-bottom:14px;resize:vertical;">${escapeHtml((recipe.instructions || []).join('\n'))}</textarea>
-                <label style="display:block;margin-bottom:6px;color:#407076;font-size:0.9rem;">תגיות</label>
+                <label style="display:block;margin-bottom:6px;color:#407076;font-size:0.9rem;">קטגוריות</label>
                 <div id="irm-tags" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:20px;">
                     ${ALL_TAGS.map(tag => `<button type="button" class="irm-tag ${tags.includes(tag) ? 'active' : ''}" data-tag="${escapeHtml(tag)}" style="background:${tags.includes(tag) ? '#407076' : 'white'};color:${tags.includes(tag) ? 'white' : '#698996'};border:1.5px solid ${tags.includes(tag) ? '#407076' : '#c5d9dc'};border-radius:20px;padding:4px 12px;font-family:Varela Round,sans-serif;font-size:0.8rem;cursor:pointer;">${escapeHtml(tag)}</button>`).join('')}
                 </div>

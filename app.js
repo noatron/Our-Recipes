@@ -1,7 +1,7 @@
 import { db, auth, onUserChange, signInWithGoogle, signOutUser } from './firebase.js';
 import { collection, getDocs, getDoc, setDoc, updateDoc, deleteDoc, doc, increment, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
-/** קבוצות תגיות לדרופדאון */
+/** קבוצות קטגוריות לדרופדאון */
 const TAG_GROUPS = [
     { label: 'מנות עיקריות', tags: ['בשר', 'דגים', 'פסטות', 'טרטים ופשטידות', 'צמחוני'] },
     { label: 'סלטים', tags: ['סלטים'] },
@@ -15,7 +15,7 @@ const TAG_GROUPS = [
     { label: 'שתייה', tags: ['שתייה'] }
 ];
 
-/** רשימת כל התגיות – לסינון, תצוגה וייבוא מתמונות */
+/** רשימת כל הקטגוריות – לסינון, תצוגה וייבוא מתמונות */
 const ALL_TAGS = ['בשר', 'דגים', 'פסטות', 'טרטים ופשטידות', 'צמחוני', 'סלטים', 'תוספות', 'לחם ומאפים', 'רוטבים וממרחים', 'מרקים', 'עוגות', 'עוגיות', 'קינוחים', 'שוקולד', 'ארוחות בוקר', 'חטיפים', 'שתייה'];
 
 const defaultRecipes = [
