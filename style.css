@@ -134,6 +134,145 @@ header {
     padding-bottom: 90px; /* מרווח מתחת לרשת כדי שכפתור הוספת מתכון לא יגלוש */
 }
 
+/* הפתיעי אותי + יש לי במטבח */
+.surprise-section {
+    max-width: 600px;
+    margin: 0 auto 24px;
+    padding: 16px 0;
+    border-bottom: 1px solid #e8e6f0;
+}
+.surprise-section:last-of-type {
+    border-bottom: none;
+}
+.surprise-heading {
+    font-family: 'Varela Round', sans-serif;
+    font-size: 1.15rem;
+    color: #407076;
+    margin: 0 0 6px 0;
+}
+.surprise-desc {
+    font-size: 0.9rem;
+    color: #698996;
+    margin: 0 0 12px 0;
+}
+.surprise-row {
+    max-width: 600px;
+    margin: 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+}
+.surprise-row-ingredients {
+    gap: 12px;
+}
+.surprise-input {
+    flex: 1;
+    min-width: 180px;
+    padding: 10px 14px;
+    border: 2px solid #FFD8BE;
+    border-radius: 20px;
+    font-family: 'Varela Round', sans-serif;
+    font-size: 0.95rem;
+    color: #407076;
+    background: white;
+    outline: none;
+}
+.surprise-input:focus {
+    border-color: #407076;
+}
+.surprise-input::placeholder {
+    color: #698996;
+}
+.surprise-check-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.9rem;
+    color: #407076;
+    cursor: pointer;
+}
+.surprise-check {
+    width: 18px;
+    height: 18px;
+    accent-color: #407076;
+}
+.surprise-label {
+    font-size: 0.9rem;
+    color: #407076;
+    font-family: 'Varela Round', sans-serif;
+}
+.surprise-select {
+    padding: 10px 14px;
+    border: 2px solid #FFD8BE;
+    border-radius: 20px;
+    font-family: 'Varela Round', sans-serif;
+    font-size: 0.95rem;
+    color: #407076;
+    background: white;
+    min-width: 140px;
+    outline: none;
+}
+.surprise-select:focus {
+    border-color: #407076;
+}
+.surprise-btn {
+    padding: 10px 20px;
+    background: #407076;
+    color: #FFEEDD;
+    border: none;
+    border-radius: 25px;
+    font-family: 'Varela Round', sans-serif;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.surprise-btn:hover {
+    background: #698996;
+}
+.surprise-bar {
+    max-width: 600px;
+    margin: 0 auto 16px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: #FFF5EE;
+    border: 2px solid #FFD8BE;
+    border-radius: 12px;
+}
+.surprise-bar-title {
+    font-family: 'Varela Round', sans-serif;
+    font-size: 1rem;
+    color: #407076;
+    flex: 1;
+}
+.surprise-again-btn,
+.surprise-back-btn {
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-family: 'Varela Round', sans-serif;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+.surprise-again-btn {
+    background: #407076;
+    color: #FFEEDD;
+    border: none;
+}
+.surprise-again-btn:hover {
+    background: #698996;
+}
+.surprise-back-btn {
+    background: transparent;
+    color: #407076;
+    border: 2px solid #407076;
+}
+.surprise-back-btn:hover {
+    background: rgba(64, 112, 118, 0.1);
+}
+
 .pending-approval-banner {
     background: #FFF5EE;
     border: 2px solid #FFD8BE;
@@ -722,6 +861,36 @@ header .logo {
 }
 
 /* Form Actions */
+.manual-tags-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.manual-tag-chip {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-family: 'Varela Round', sans-serif;
+    font-size: 0.9rem;
+    cursor: pointer;
+    border: 1.5px solid #c5d9dc;
+    background: white;
+    color: #698996;
+    transition: all 0.2s;
+}
+.manual-tag-chip:hover {
+    border-color: #407076;
+    color: #407076;
+}
+.manual-tag-chip.suggested {
+    border-color: #FFD8BE;
+    background: #FFF5EE;
+}
+.manual-tag-chip.active {
+    background: #407076;
+    color: #FFEEDD;
+    border-color: #407076;
+}
+
 .form-actions {
     display: flex;
     gap: 12px;

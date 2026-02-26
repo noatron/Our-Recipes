@@ -112,6 +112,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (imagesMode) imagesMode.classList.add('active');
             } else {
                 manualMode.classList.add('active');
+                if (typeof window.__renderManualTags === 'function') window.__renderManualTags();
             }
         });
     });
@@ -166,8 +167,53 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
+    /** הצעת קטגוריות לפי שם מתכון (keyword matching) – כל שורה: [שם קטגוריה, מילות מפתח...] */
+    function suggestTagsFromName(name) {
+        const n = (name || '').toLowerCase();
+        const suggested = new Set();
+        const map = [
+            ['בשר', 'עוף', 'סטייק', 'המבורגר', 'כבש'], ['דגים', 'דג', 'סלמון', 'טונה', 'לברק'],
+            ['פסטות', 'פסטה', 'ספגטי', 'מקרוני', 'פנה'], ['צמחוני', 'צמחוני', 'ירקות', 'טופו'],
+            ['סלטים', 'סלט'], ['תוספות', 'תוספת', 'אורז', 'תפוחי אדמה', 'קוסקוס'],
+            ['לחם ומאפים', 'לחם', 'מאפה', 'פיתה', 'לחמניה'], ['רוטבים וממרחים', 'רוטב', 'ממרח', 'טחינה', 'חומוס'],
+            ['מרקים', 'מרק'], ['עוגות', 'עוגה'], ['עוגיות', 'עוגיות', 'עוגייה'], ['קינוחים', 'קינוח'],
+            ['שוקולד', 'שוקולד'], ['ארוחות בוקר', 'בוקר', 'פנקייק', 'חביתה', 'וופל'],
+            ['חטיפים', 'חטיף', 'נשנוש'], ['שתייה', 'שתייה', 'משקה', 'לימונענה', 'מיץ']
+        ];
+        map.forEach(row => {
+            const tag = row[0];
+            if (row.slice(1).some(kw => n.includes(kw))) suggested.add(tag);
+        });
+        return [...suggested];
+    }
+
+    function renderManualTagsContainer() {
+        const container = document.getElementById('manualTagsContainer');
+        if (!container) return;
+        const previouslySelected = [...container.querySelectorAll('.manual-tag-chip.active')].map(b => b.dataset.tag);
+        const name = (document.getElementById('recipeName') && document.getElementById('recipeName').value) || '';
+        const suggested = suggestTagsFromName(name);
+        const toSelect = [...new Set([...previouslySelected, ...suggested])];
+        container.innerHTML = ALL_TAGS.map(tag => {
+            const isSuggested = suggested.includes(tag);
+            const isActive = toSelect.includes(tag);
+            return `<button type="button" class="manual-tag-chip ${isSuggested ? 'suggested' : ''} ${isActive ? 'active' : ''}" data-tag="${escapeHtml(tag)}">${escapeHtml(tag)}</button>`;
+        }).join('');
+        container.querySelectorAll('.manual-tag-chip').forEach(btn => {
+            btn.addEventListener('click', () => btn.classList.toggle('active'));
+        });
+    }
+
     const recipeForm = document.getElementById('recipeForm');
     if (recipeForm) {
+        const recipeNameInput = document.getElementById('recipeName');
+        if (recipeNameInput) {
+            recipeNameInput.addEventListener('input', () => renderManualTagsContainer());
+            recipeNameInput.addEventListener('change', () => renderManualTagsContainer());
+        }
+        window.__renderManualTags = renderManualTagsContainer;
+        loadTagConfig().then(() => renderManualTagsContainer());
+
         recipeForm.addEventListener('submit', async (e) => {
             e.preventDefault();
 
@@ -181,6 +227,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             const instructionsText = document.getElementById('recipeInstructions').value;
             const instructions = instructionsText.split('\n').filter(line => line.trim() !== '');
 
+            const tagsContainer = document.getElementById('manualTagsContainer');
+            const tags = tagsContainer ? [...tagsContainer.querySelectorAll('.manual-tag-chip.active')].map(b => b.dataset.tag) : [];
+
             const submitBtn = recipeForm.querySelector('button[type="submit"]');
             const originalText = submitBtn.textContent;
             submitBtn.disabled = true;
@@ -188,7 +237,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             try {
                 const addedBy = getAddedByFields();
-                const newRecipe = { name, source, image, ingredients, instructions, addedByUid: addedBy.addedByUid, addedByName: addedBy.addedByName };
+                const newRecipe = { name, source, image, ingredients, instructions, tags, addedByUid: addedBy.addedByUid, addedByName: addedBy.addedByName };
                 await addDoc(collection(db, 'recipes'), newRecipe);
                 window.location.href = 'index.html';
             } catch (err) {

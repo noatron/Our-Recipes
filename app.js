@@ -254,6 +254,107 @@ function setupSearch(applyFilters) {
     searchInput.addEventListener('input', () => { if (applyFilters) applyFilters(); });
 }
 
+/** הפתיעי אותי – הגרלת 3–5 מתכונים; אופציונלי: קטגוריה + רק מועדפים. "יש לי במטבח" – חיפוש לפי מצרכים. */
+function setupSurpriseMe(allRecipes, tagGroupsData, applyFilters) {
+    const surpriseBtn = document.getElementById('surpriseBtn');
+    const surpriseCategory = document.getElementById('surprise-category');
+    const surpriseFavoritesOnly = document.getElementById('surprise-favorites-only');
+    const surpriseBar = document.getElementById('surprise-bar');
+    const surpriseAgainBtn = document.getElementById('surpriseAgainBtn');
+    const surpriseBackBtn = document.getElementById('surpriseBackBtn');
+    const ingredientsSearch = document.getElementById('ingredients-search');
+    const ingredientsSuggestBtn = document.getElementById('ingredientsSuggestBtn');
+    if (!surpriseBtn || !surpriseBar) return;
+
+    const tagGroups = tagGroupsData || TAG_GROUPS;
+    const allTags = tagGroups.reduce((arr, g) => arr.concat(g.tags || []), []);
+    const uniqueTags = [...new Set(allTags)];
+    if (surpriseCategory) {
+        surpriseCategory.innerHTML = '<option value="">כל הקטגוריות</option>' +
+            uniqueTags.map(t => '<option value="' + escapeHtml(t) + '">' + escapeHtml(t) + '</option>').join('');
+    }
+
+    function getPool() {
+        let pool = [...allRecipes];
+        const tag = (surpriseCategory && surpriseCategory.value && surpriseCategory.value.trim()) || '';
+        if (tag) pool = pool.filter(r => Array.isArray(r.tags) && r.tags.includes(tag));
+        if (surpriseFavoritesOnly && surpriseFavoritesOnly.checked) pool = pool.filter(r => !!r.likedByMe);
+        return pool;
+    }
+
+    function shuffle(arr) {
+        const a = [...arr];
+        for (let i = a.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [a[i], a[j]] = [a[j], a[i]];
+        }
+        return a;
+    }
+
+    function drawSurprise() {
+        const pool = getPool();
+        const count = Math.min(5, Math.max(3, pool.length));
+        if (pool.length === 0) {
+            displayRecipes([]);
+            surpriseBar.style.display = 'none';
+            return;
+        }
+        const picked = shuffle(pool).slice(0, count);
+        displayRecipes(picked);
+        surpriseBar.style.display = 'flex';
+    }
+
+    /** חיפוש לפי מצרכים/טקסט – מילים בשם או במרכיבים */
+    function searchByIngredients(text) {
+        const words = (text || '').trim().split(/[\s,]+/).filter(Boolean).map(w => w.toLowerCase());
+        if (words.length === 0) return [];
+        return allRecipes
+            .map(r => {
+                const name = (r.name || '').toLowerCase();
+                const ingText = (Array.isArray(r.ingredients) ? r.ingredients.join(' ') : '').toLowerCase();
+                const tagsText = (Array.isArray(r.tags) ? r.tags.join(' ') : '').toLowerCase();
+                const combined = name + ' ' + ingText + ' ' + tagsText;
+                let score = 0;
+                words.forEach(w => {
+                    if (combined.includes(w)) score++;
+                });
+                return { recipe: r, score };
+            })
+            .filter(x => x.score > 0)
+            .sort((a, b) => b.score - a.score)
+            .slice(0, 15)
+            .map(x => x.recipe);
+    }
+
+    function showIngredientsSuggestions() {
+        const text = ingredientsSearch ? ingredientsSearch.value.trim() : '';
+        const list = searchByIngredients(text);
+        displayRecipes(list);
+        surpriseBar.style.display = 'flex';
+    }
+
+    surpriseBtn.addEventListener('click', drawSurprise);
+    if (surpriseAgainBtn) surpriseAgainBtn.addEventListener('click', drawSurprise);
+    if (surpriseBackBtn) {
+        surpriseBackBtn.addEventListener('click', () => {
+            surpriseBar.style.display = 'none';
+            if (applyFilters) applyFilters();
+        });
+    }
+    if (ingredientsSuggestBtn && ingredientsSearch) {
+        ingredientsSuggestBtn.addEventListener('click', showIngredientsSuggestions);
+        ingredientsSearch.addEventListener('keydown', (e) => { if (e.key === 'Enter') showIngredientsSuggestions(); });
+    }
+
+    if (surpriseFavoritesOnly) {
+        onUserChange((user) => {
+            surpriseFavoritesOnly.style.display = user ? '' : 'none';
+            if (!user) surpriseFavoritesOnly.checked = false;
+        });
+        surpriseFavoritesOnly.style.display = auth.currentUser ? '' : 'none';
+    }
+}
+
 function setupTagGroupDropdown(applyFilters, tagGroupsData) {
     const groups = tagGroupsData || TAG_GROUPS;
     const select = document.getElementById('tag-group-select');
@@ -349,6 +450,7 @@ async function initApp() {
 
         setupTagGroupDropdown(applyFilters, tagGroupsData);
         setupSearch(applyFilters);
+        setupSurpriseMe(recipes, tagGroupsData, applyFilters);
 
         const favoritesWrap = document.getElementById('favorites-filter-wrap');
         const favoritesBtn = document.getElementById('favoritesFilterBtn');
