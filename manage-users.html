@@ -19,6 +19,13 @@
         .pending-item-btn:hover { background: #698996; }
         .no-pending { color: #698996; margin-top: 16px; }
         .forbidden-msg { color: #c62828; margin-top: 20px; padding: 16px; background: #ffebee; border-radius: 12px; }
+        .admin-fix-box { margin-top: 20px; padding: 20px; background: #FFF5EE; border: 2px solid #FFD8BE; border-radius: 12px; color: #407076; }
+        .admin-fix-title { font-weight: 600; margin: 0 0 12px 0; font-size: 1rem; }
+        .admin-fix-steps { margin: 0 0 16px 0; padding-right: 20px; line-height: 1.7; }
+        .admin-fix-steps li { margin-bottom: 6px; }
+        .uid-value { margin: 12px 0; word-break: break-all; }
+        .uid-value code { display: inline-block; background: #f5f5f5; padding: 8px 12px; border-radius: 6px; font-size: 0.85rem; margin-top: 4px; }
+        .copy-uid-btn { margin-top: 8px; }
     </style>
 </head>
 <body>
@@ -62,7 +69,24 @@
                 return;
             }
             if (!admin) {
-                contentArea.innerHTML = '<p class="forbidden-msg">אין לך הרשאה לצפות בדף זה. רק אדמין יכול לאשר משתמשות.</p>';
+                const uid = auth.currentUser.uid;
+                contentArea.innerHTML =
+                    '<p class="forbidden-msg">אין לך הרשאה לצפות בדף זה. רק אדמין יכול לאשר משתמשות.</p>' +
+                    '<div class="admin-fix-box">' +
+                    '<p class="admin-fix-title">את מחוברת – כדי שהמערכת תזהה אותך כאדמין:</p>' +
+                    '<ol class="admin-fix-steps">' +
+                    '<li>לחצי על "העתיקי UID" למטה.</li>' +
+                    '<li>היכנסי ל-Firebase Console → Firestore Database → אוסף <strong>config</strong>.</li>' +
+                    '<li>אם אין מסמך בשם <strong>admins</strong> – צרי מסמך חדש עם ID: <code>admins</code>. אם יש – פתחי אותו.</li>' +
+                    '<li>הוסיפי/ערכי שדה בשם <strong>uids</strong> מסוג <strong>array</strong>. בתוך המערך הכניסי בדיוק את ה-UID שהעתקת (מחרוזת אחת, לא אימייל).</li>' +
+                    '<li>שמרי ורענני את הדף.</li>' +
+                    '</ol>' +
+                    '<p class="uid-value"><strong>ה-UID שלך:</strong><br><code id="myUid">' + escapeHtml(uid) + '</code></p>' +
+                    '<button type="button" id="copyUidBtn" class="pending-item-btn copy-uid-btn">העתיקי UID</button>' +
+                    '</div>';
+                document.getElementById('copyUidBtn')?.addEventListener('click', () => {
+                    navigator.clipboard.writeText(uid).then(() => alert('ה-UID הועתק ללוח')).catch(() => prompt('העתיקי את ה-UID:', uid));
+                });
                 return;
             }
 
