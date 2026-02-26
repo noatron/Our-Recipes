@@ -224,6 +224,20 @@ main {
     padding: 60px 20px;
 }
 
+.recipes-loading {
+    text-align: center;
+    color: #407076;
+    font-size: 1.1rem;
+    padding: 48px 20px;
+    font-family: 'Varela Round', sans-serif;
+    animation: recipes-loading-pulse 0.9s ease-in-out infinite;
+}
+
+@keyframes recipes-loading-pulse {
+    0%, 100% { opacity: 0.7; }
+    50% { opacity: 1; }
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     body {

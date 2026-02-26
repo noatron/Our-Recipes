@@ -284,6 +284,11 @@ function filterRecipes(allRecipes) {
 }
 
 async function initApp() {
+    const container = document.getElementById('recipes');
+    if (container) {
+        container.innerHTML = '<div class="recipes-loading" aria-live="polite">טוען מתכונים...</div>';
+    }
+
     try {
         let tagGroupsData = TAG_GROUPS;
         try {
@@ -334,6 +339,9 @@ async function initApp() {
         });
         updateAuthUI(auth.currentUser);
         if (favoritesWrap) favoritesWrap.style.display = auth.currentUser ? 'block' : 'none';
+
+        // מציגים את הרשימה מיד; הלבבות מתעדכנים ברקע
+        applyFilters();
         enrichRecipesWithLikes(recipes, auth.currentUser).then(applyFilters);
 
     } catch (err) {
