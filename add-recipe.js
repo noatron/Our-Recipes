@@ -346,6 +346,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 <input id="irm-source" placeholder="למשל: @chef_name או שם החשבון" value="${escapeHtml(recipe.source || '')}" style="width:100%;padding:10px 12px;border:2px solid #c5d9dc;border-radius:8px;font-family:inherit;font-size:1rem;box-sizing:border-box;margin-bottom:14px;background:white;">
                 <label style="display:block;margin-bottom:4px;color:#407076;font-size:0.9rem;">קישור לריל</label>
                 <input id="irm-url" type="url" placeholder="https://www.instagram.com/reel/... או קישור לטיקטוק" value="${escapeHtml(recipe.url || '')}" style="width:100%;padding:10px 12px;border:2px solid #c5d9dc;border-radius:8px;font-family:inherit;font-size:1rem;box-sizing:border-box;margin-bottom:14px;background:white;">
+                <label style="display:block;margin-bottom:4px;color:#407076;font-size:0.9rem;">קישור לתמונה (אופציונלי)</label>
+                <input id="irm-image" type="url" placeholder="https://..." value="${escapeHtml(recipe.image || '')}" style="width:100%;padding:10px 12px;border:2px solid #c5d9dc;border-radius:8px;font-family:inherit;font-size:1rem;box-sizing:border-box;margin-bottom:14px;background:white;">
                 <label style="display:block;margin-bottom:4px;color:#407076;font-size:0.9rem;">מרכיבים</label>
                 <textarea id="irm-ingredients" rows="5" style="width:100%;padding:10px 12px;border:2px solid #c5d9dc;border-radius:8px;font-family:inherit;font-size:0.9rem;box-sizing:border-box;margin-bottom:14px;resize:vertical;">${escapeHtml((recipe.ingredients || []).join('\n'))}</textarea>
                 <label style="display:block;margin-bottom:4px;color:#407076;font-size:0.9rem;">הוראות הכנה</label>
@@ -382,6 +384,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const name = document.getElementById('irm-name').value.trim() || recipe.name || 'מתכון';
                 const source = document.getElementById('irm-source').value.trim() || '';
                 const reelUrl = document.getElementById('irm-url').value.trim() || '';
+                const imageUrl = (document.getElementById('irm-image') && document.getElementById('irm-image').value.trim()) || recipe.image || '';
                 const ingredients = document.getElementById('irm-ingredients').value.split('\n').filter(l => l.trim());
                 const instructions = document.getElementById('irm-instructions').value.split('\n').filter(l => l.trim());
                 const tags = [...modal.querySelectorAll('.irm-tag.active')].map(b => b.dataset.tag);
@@ -390,7 +393,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const ref = await addDoc(collection(db, 'recipes'), {
                     name,
                     source: source || 'מתמונה',
-                    image: recipe.image || '',
+                    image: imageUrl,
                     url: reelUrl,
                     ingredients,
                     instructions,

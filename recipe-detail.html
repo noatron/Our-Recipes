@@ -6,6 +6,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>פרטי מתכון</title>
+    <link rel="icon" href="logo.svg" type="image/svg+xml">
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Varela+Round&display=swap" rel="stylesheet">
     <style>
@@ -212,7 +213,7 @@
 
     <script type="module">
         import { db, auth, onUserChange, signInWithGoogle } from './firebase.js';
-        import { getDoc, doc, updateDoc, deleteDoc, setDoc, collection, addDoc, getDocs, query, orderBy, serverTimestamp, increment } from 'https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js';
+        import { getDoc, doc, updateDoc, deleteDoc, setDoc, collection, addDoc, getDocs, query, orderBy, serverTimestamp, increment, arrayUnion } from 'https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js';
         import { fetchRecipeMeta } from './recipe-import-utils.js';
 
         let recipe = null;
@@ -260,6 +261,34 @@
                     ALL_TAGS = snap.data().allTags || TAG_GROUPS.reduce((a, g) => a.concat(g.tags || []), []);
                 }
             } catch (_) {}
+        }
+        /** שומר קטגוריה חדשה ב-config/tags כדי שתהפוך לקבועה בכל האתר */
+        async function persistTagToConfig(tag) {
+            if (!tag || !tag.trim()) return;
+            const t = tag.trim();
+            try {
+                const ref = doc(db, 'config', 'tags');
+                const snap = await getDoc(ref);
+                if (snap.exists()) {
+                    const allTags = snap.data().allTags || [];
+                    if (Array.isArray(allTags) && !allTags.includes(t)) {
+                        await updateDoc(ref, { allTags: arrayUnion(t) });
+                    }
+                } else {
+                    const initialGroups = [
+                        { label: 'מנות עיקריות', tags: ['בשר', 'דגים', 'פסטות', 'טרטים ופשטידות', 'צמחוני'] },
+                        { label: 'סלטים', tags: ['סלטים'] }, { label: 'תוספות', tags: ['תוספות'] },
+                        { label: 'לחם ומאפים', tags: ['לחם ומאפים'] }, { label: 'רוטבים וממרחים', tags: ['רוטבים וממרחים'] },
+                        { label: 'מרקים', tags: ['מרקים'] }, { label: 'קינוחים', tags: ['עוגות', 'עוגיות', 'קינוחים', 'שוקולד'] },
+                        { label: 'ארוחות בוקר', tags: ['ארוחות בוקר'] }, { label: 'חטיפים', tags: ['חטיפים'] }, { label: 'שתייה', tags: ['שתייה'] }
+                    ];
+                    const allTags = initialGroups.reduce((arr, g) => arr.concat(g.tags || []), []);
+                    if (!allTags.includes(t)) allTags.push(t);
+                    await setDoc(ref, { tagGroups: initialGroups, allTags });
+                }
+            } catch (err) {
+                console.warn('שמירת קטגוריה ב-config:', err);
+            }
         }
         function fillTagGroupSelect() {
             const groupSelect = document.getElementById('addTagGroupSelect');
@@ -605,6 +634,10 @@
         function editFullRecipe() {
             const titleEl = document.getElementById('recipeTitle');
             titleEl.innerHTML = '<input class="edit-title-input" id="editTitle" value="' + escapeHtml(recipe.name) + '">';
+            const img = document.getElementById('recipeImage');
+            if (img && !document.getElementById('editImage')) {
+                img.insertAdjacentHTML('afterend', '<input class="edit-input" id="editImage" value="' + escapeHtml(recipe.image || '') + '" placeholder="קישור לתמונה (URL)" style="margin-bottom: 15px;">');
+            }
             const ingredientsList = document.getElementById('ingredientsList');
             ingredientsList.innerHTML = '';
             (recipe.ingredients || []).forEach((ingredient, index) => {
@@ -687,6 +720,7 @@
             if (!Array.isArray(recipe.tags)) recipe.tags = [];
             if (recipe.tags.includes(tag)) return;
             recipe.tags.push(tag);
+            persistTagToConfig(tag);
             renderTagsEditor();
             input.value = '';
         });
@@ -701,10 +735,13 @@
             if (!recipe) return;
             recipe.name = document.getElementById('editTitle').value;
             if (document.querySelector('.edit-tag-chip')) recipe.tags = getSelectedTags();
+            const tagsToPersist = (recipe.tags || []).filter(t => t && t.trim() && !ALL_TAGS.includes(t.trim()));
+            for (const t of tagsToPersist) await persistTagToConfig(t);
 
+            const imageInput = document.getElementById('editImage');
+            if (imageInput) recipe.image = imageInput.value.trim();
             if (recipe.url) {
-                const imageInput = document.getElementById('editImage');
-                if (imageInput) recipe.image = imageInput.value;
+                // link recipe – only image edited above
             } else {
                 const ingredientInputs = document.querySelectorAll('[data-type="ingredient"]');
                 recipe.ingredients = Array.from(ingredientInputs).map(input => input.value).filter(v => v.trim() !== '');
