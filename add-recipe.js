@@ -512,6 +512,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                     return;
                 }
                 setImagesStatus('success', '✅ המתכון חולץ! בדקי ועדכני לפני השמירה.');
+                const reelLinkInput = document.getElementById('imagesReelLink');
+                if (reelLinkInput && reelLinkInput.value.trim()) result.url = reelLinkInput.value.trim();
                 showImageResultModal(result);
             } catch (err) {
                 console.error(err);
