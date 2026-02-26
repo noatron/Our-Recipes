@@ -837,6 +837,7 @@ header .logo {
     width: 100%;
     max-width: 280px;
     padding: 12px 18px;
+    padding-inline-end: 28px; /* ריווח בין החץ למסגרת */
     font-family: 'Varela Round', sans-serif;
     font-size: 1rem;
     color: #407076;
