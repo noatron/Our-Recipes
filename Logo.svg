@@ -1,16 +1,23 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
   <defs>
     <linearGradient id="bubbleBg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#407076"/>
-      <stop offset="100%" style="stop-color:#698996"/>
+      <stop offset="0%" style="stop-color:#427A6D"/>
+      <stop offset="100%" style="stop-color:#3d6b60"/>
     </linearGradient>
   </defs>
-  <!-- בועית דיבור (מעוגלת) -->
-  <path fill="url(#bubbleBg)" d="M8 4h48c2.2 0 4 1.8 4 4v28c0 2.2-1.8 4-4 4H30l-6 6-6-6H8c-2.2 0-4-1.8-4-4V8c0-2.2 1.8-4 4-4z" rx="10" ry="10"/>
-  <!-- זנב בועית (משולש למטה) -->
-  <path fill="url(#bubbleBg)" d="M26 44h12l-4 8h-4l-4-8z"/>
-  <!-- כף: ידית -->
-  <rect x="30" y="14" width="4" height="26" rx="1" fill="#FFEEDD"/>
-  <!-- כף: קערית -->
-  <ellipse cx="32" cy="42" rx="6" ry="7" fill="#FFEEDD"/>
+  <!-- בועית דיבור טורקיז עם זנב משמאל למטה -->
+  <path fill="url(#bubbleBg)" d="M12 6C7.6 6 4 9.6 4 14v22c0 4.4 3.6 8 8 8h14l6 6 6-6h14c4.4 0 8-3.6 8-8V14c0-4.4-3.6-8-8-8H12zm0 2h36c3.3 0 6 2.7 6 6v22c0 3.3-2.7 6-6 6H34l-4 4-4-4H12c-3.3 0-6-2.7-6-6V14c0-3.3 2.7-6 6-6z"/>
+  <path fill="url(#bubbleBg)" d="M14 42L8 52L14 48L14 42z"/>
+  <!-- כף לבנה באלכסון (מעלה־ימין), כף מחוררת -->
+  <g transform="rotate(-32 32 32)" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="0.8">
+    <!-- ידית עם עיגול בקצה -->
+    <rect x="30.5" y="12" width="3" height="28" rx="1.2"/>
+    <circle cx="32" cy="11" r="2.2"/>
+    <!-- קערית אליפטית עם 4 חריצים -->
+    <ellipse cx="32" cy="42" rx="7" ry="8"/>
+    <line x1="28" y1="38" x2="28" y2="46" stroke="#427A6D" stroke-width="1.2"/>
+    <line x1="30.5" y1="37" x2="30.5" y2="47" stroke="#427A6D" stroke-width="1.2"/>
+    <line x1="33.5" y1="37" x2="33.5" y2="47" stroke="#427A6D" stroke-width="1.2"/>
+    <line x1="36" y1="38" x2="36" y2="46" stroke="#427A6D" stroke-width="1.2"/>
+  </g>
 </svg>
