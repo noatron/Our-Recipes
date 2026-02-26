@@ -2,7 +2,7 @@ rules_version = '2';
 // דרוש: ליצור ב-Firebase Console את המסמכים:
 // config/admins  → { "uids": ["ה-UID של נועה מגוגל"] }
 // config/approvedUsers → { "uids": ["אותו UID", "..." ] }
-// כך שרק משתמשות מאושרות יוכלו להוסיף מתכונים, ורק אדמין יוכל לאשר משתמשות.
+// כל משתמש מחובר יכול להוסיף מתכונים; אדמין יכול לאשר משתמשות.
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -16,10 +16,10 @@ service cloud.firestore {
         && request.auth.uid in get(/databases/$(database)/documents/config/admins).data.get('uids', []);
     }
 
-    // מתכונים – כולם קוראים; יצירה רק למשתמשות מאושרות; עריכה/מחיקה למוסיפה או לאדמין
+    // מתכונים – כולם קוראים; יצירה לכל משתמש מחובר; עריכה/מחיקה למוסיפה או לאדמין
     match /recipes/{recipeId} {
       allow read: if true;
-      allow create: if request.auth != null && (isApproved() || !exists(/databases/$(database)/documents/config/approvedUsers));
+      allow create: if request.auth != null;
       allow update, delete: if request.auth != null && (resource.data.addedByUid == request.auth.uid || isAdmin());
 
       match /likes/{userId} {

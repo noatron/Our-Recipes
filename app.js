@@ -486,15 +486,14 @@ async function initApp() {
                     const showBanner = !sessionStorage.getItem('pendingBannerSeen');
                     if (pendingBanner) pendingBanner.style.display = showBanner ? 'block' : 'none';
                     if (showBanner) sessionStorage.setItem('pendingBannerSeen', '1');
-                    if (addBtn) addBtn.style.display = 'none';
                     await addToPendingUsers(user);
                 } else {
                     if (pendingBanner) pendingBanner.style.display = 'none';
-                    if (addBtn) addBtn.style.display = '';
                 }
+                if (addBtn) addBtn.style.display = '';
             } else {
                 if (pendingBanner) pendingBanner.style.display = 'none';
-                if (addBtn) addBtn.style.display = '';
+                if (addBtn) addBtn.style.display = 'none';
             }
             enrichRecipesWithLikes(recipes, user).then(applyFilters);
         });
@@ -508,12 +507,13 @@ async function initApp() {
                 const showBanner = !sessionStorage.getItem('pendingBannerSeen');
                 if (pendingBanner) pendingBanner.style.display = showBanner ? 'block' : 'none';
                 if (showBanner) sessionStorage.setItem('pendingBannerSeen', '1');
-                if (addBtn) addBtn.style.display = 'none';
                 await addToPendingUsers(auth.currentUser);
             } else {
                 if (pendingBanner) pendingBanner.style.display = 'none';
-                if (addBtn) addBtn.style.display = '';
             }
+            if (addBtn) addBtn.style.display = '';
+        } else {
+            if (addBtn) addBtn.style.display = 'none';
         }
 
         // מציגים את הרשימה מיד; הלבבות מתעדכנים ברקע

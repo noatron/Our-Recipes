@@ -19,6 +19,9 @@
         .pending-item-btn:hover { background: #698996; }
         .no-pending { color: #698996; margin-top: 16px; }
         .forbidden-msg { color: #c62828; margin-top: 20px; padding: 16px; background: #ffebee; border-radius: 12px; }
+        .admin-diag { margin-top: 16px; padding: 16px; background: #e3f2fd; border: 1px solid #90caf9; border-radius: 12px; color: #1565c0; font-size: 0.95rem; }
+        .admin-diag ul { margin: 8px 0 0 0; padding-right: 20px; }
+        .admin-diag li { margin-bottom: 4px; }
         .admin-fix-box { margin-top: 20px; padding: 20px; background: #FFF5EE; border: 2px solid #FFD8BE; border-radius: 12px; color: #407076; }
         .admin-fix-title { font-weight: 600; margin: 0 0 12px 0; font-size: 1rem; }
         .admin-fix-steps { margin: 0 0 16px 0; padding-right: 20px; line-height: 1.7; }
@@ -70,15 +73,32 @@
             }
             if (!admin) {
                 const uid = auth.currentUser.uid;
+                let diag = '';
+                try {
+                    const adminsSnap = await getDoc(doc(db, 'config', 'admins'));
+                    const exists = adminsSnap.exists();
+                    const data = exists ? adminsSnap.data() : {};
+                    const uidsArr = data.uids;
+                    const isArray = Array.isArray(uidsArr);
+                    const inList = isArray && uidsArr.includes(uid);
+                    diag = '<div class="admin-diag"><p class="admin-fix-title">בודקים למה את לא מזוהה כאדמין:</p><ul>' +
+                        '<li>מסמך <code>config/admins</code> קיים: <strong>' + (exists ? 'כן' : 'לא – צרי אותו ב-Firestore') + '</strong></li>' +
+                        '<li>שדה <code>uids</code> הוא מערך: <strong>' + (isArray ? 'כן' : 'לא – וודאי שהשדה מסוג array') + '</strong></li>' +
+                        '<li>ה-UID שלך מופיע ברשימה: <strong>' + (inList ? 'כן' : 'לא – הוסיפי את ה-UID למטה ל-uids ב-Firestore') + '</strong></li>' +
+                        '</ul></div>';
+                } catch (e) {
+                    diag = '<p class="admin-diag">שגיאה בבדיקה: ' + escapeHtml(e.message || String(e)) + '</p>';
+                }
                 contentArea.innerHTML =
                     '<p class="forbidden-msg">אין לך הרשאה לצפות בדף זה. רק אדמין יכול לאשר משתמשות.</p>' +
+                    diag +
                     '<div class="admin-fix-box">' +
-                    '<p class="admin-fix-title">את מחוברת – כדי שהמערכת תזהה אותך כאדמין:</p>' +
+                    '<p class="admin-fix-title">כדי להוסיף את עצמך כאדמין:</p>' +
                     '<ol class="admin-fix-steps">' +
                     '<li>לחצי על "העתיקי UID" למטה.</li>' +
                     '<li>היכנסי ל-Firebase Console → Firestore Database → אוסף <strong>config</strong>.</li>' +
-                    '<li>אם אין מסמך בשם <strong>admins</strong> – צרי מסמך חדש עם ID: <code>admins</code>. אם יש – פתחי אותו.</li>' +
-                    '<li>הוסיפי/ערכי שדה בשם <strong>uids</strong> מסוג <strong>array</strong>. בתוך המערך הכניסי בדיוק את ה-UID שהעתקת (מחרוזת אחת, לא אימייל).</li>' +
+                    '<li>צרי/ערכי מסמך עם ID בדיוק: <code>admins</code> (לא Admin או admins1).</li>' +
+                    '<li>הוסיפי שדה בדיוק: <strong>uids</strong>, סוג: <strong>array</strong>. בתוך המערך – הוסיפי פריט אחד: את ה-UID שהעתקת (הדבקה של המחרוזת הארוכה, בלי רווחים או גרשיים).</li>' +
                     '<li>שמרי ורענני את הדף.</li>' +
                     '</ol>' +
                     '<p class="uid-value"><strong>ה-UID שלך:</strong><br><code id="myUid">' + escapeHtml(uid) + '</code></p>' +

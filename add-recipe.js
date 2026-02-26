@@ -75,19 +75,15 @@ function escapeHtml(str) {
 
 document.addEventListener('DOMContentLoaded', async () => {
     const user = auth.currentUser;
-    if (user) {
-        try {
-            const snap = await getDoc(doc(db, 'config', 'approvedUsers'));
-            const uids = (snap.exists() && Array.isArray(snap.data().uids)) ? snap.data().uids : [];
-            if (!uids.includes(user.uid)) {
-                const block = document.getElementById('pending-approval-block');
-                const content = document.getElementById('add-recipe-content');
-                if (block) block.style.display = 'block';
-                if (content) content.style.display = 'none';
-                return;
-            }
-        } catch (_) {}
+    const loginRequiredBlock = document.getElementById('login-required-block');
+    const addRecipeContent = document.getElementById('add-recipe-content');
+    if (!user) {
+        if (loginRequiredBlock) loginRequiredBlock.style.display = 'block';
+        if (addRecipeContent) addRecipeContent.style.display = 'none';
+        return;
     }
+    if (loginRequiredBlock) loginRequiredBlock.style.display = 'none';
+    if (addRecipeContent) addRecipeContent.style.display = '';
     loadTagConfig();
     const tabButtons = document.querySelectorAll('.tab-btn');
     const importMode = document.getElementById('import-mode');
@@ -155,10 +151,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                 addedByName: addedBy.addedByName
             };
 
-            await addDoc(collection(db, 'recipes'), newRecipe);
+            const ref = await addDoc(collection(db, 'recipes'), newRecipe);
             importStatus.className = 'import-status success';
-            importStatus.textContent = '✅ המתכון נשמר ב-Firebase! מעבירה...';
-            setTimeout(() => { window.location.href = 'index.html'; }, 800);
+            importStatus.textContent = '✅ המתכון נשמר! מעבירה לעריכה...';
+            setTimeout(() => { window.location.href = 'recipe-detail.html?id=' + ref.id + '&edit=1'; }, 800);
 
         } catch (err) {
             console.error(err);
@@ -239,8 +235,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             try {
                 const addedBy = getAddedByFields();
                 const newRecipe = { name, source, image, url, ingredients, instructions, tags, addedByUid: addedBy.addedByUid, addedByName: addedBy.addedByName };
-                await addDoc(collection(db, 'recipes'), newRecipe);
-                window.location.href = 'index.html';
+                const ref = await addDoc(collection(db, 'recipes'), newRecipe);
+                window.location.href = 'recipe-detail.html?id=' + ref.id + '&edit=1';
             } catch (err) {
                 console.error(err);
                 submitBtn.disabled = false;
@@ -388,7 +384,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const tags = [...modal.querySelectorAll('.irm-tag.active')].map(b => b.dataset.tag);
 
                 const addedBy = getAddedByFields();
-                await addDoc(collection(db, 'recipes'), {
+                const ref = await addDoc(collection(db, 'recipes'), {
                     name,
                     source: source || 'מתמונה',
                     image: recipe.image || '',
@@ -400,7 +396,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     addedByName: addedBy.addedByName
                 });
                 modal.remove();
-                window.location.href = 'index.html';
+                window.location.href = 'recipe-detail.html?id=' + ref.id + '&edit=1';
             } catch (err) {
                 console.error(err);
                 saveBtn.textContent = 'שמור מתכון';

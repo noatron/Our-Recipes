@@ -358,7 +358,8 @@
         }
 
         async function loadRecipe() {
-            const recipeId = localStorage.getItem('selectedRecipeId');
+            const urlParams = new URLSearchParams(window.location.search);
+            const recipeId = urlParams.get('id') || localStorage.getItem('selectedRecipeId');
             if (!recipeId) {
                 document.querySelector('.recipe-detail').innerHTML = '<p class="no-recipes">לא נבחר מתכון. <a href="index.html">בחזור</a></p>';
                 return;
@@ -389,7 +390,6 @@
                     document.getElementById('commentsSection')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }, 300);
             }
-            const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('edit') === '1') {
                 editRecipe();
                 history.replaceState(null, '', 'recipe-detail.html' + (window.location.hash || ''));
