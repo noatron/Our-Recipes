@@ -1,5 +1,5 @@
 import { db, auth, onUserChange } from './firebase.js';
-import { collection, addDoc, doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js';
+import { collection, addDoc, doc, getDoc, getDocs, query, where, limit } from 'https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js';
 import { extractRecipeName, extractRecipeImage, extractIngredientsAndInstructions } from './recipe-import-utils.js';
 
 /** מפרק CSV או טקסט לשורות ומחלץ URLs (שורה = קישור, או CSV עם עמודה שמכילה קישור) */
@@ -23,6 +23,19 @@ function parseUrlsFromCsv(text) {
     return [...new Set(urls)];
 }
 
+/** בודק אם כבר קיים מתכון עם אותו קישור (מונע כפילויות) */
+async function recipeExistsByUrl(url) {
+    const u = (url || '').trim();
+    if (!u) return false;
+    try {
+        const q = query(collection(db, 'recipes'), where('url', '==', u), limit(1));
+        const snap = await getDocs(q);
+        return !snap.empty;
+    } catch (_) {
+        return false;
+    }
+}
+
 /** מחזיר שדות "הוסיף ע"י" מהמשתמש המחובר */
 function getAddedByFields() {
     const user = auth.currentUser;
@@ -44,6 +57,7 @@ async function importOneRecipe(url) {
     const image = extractRecipeImage(doc, url);
     const { ingredients, instructions } = extractIngredientsAndInstructions(doc);
 
+    if (await recipeExistsByUrl(url)) throw new Error('DUPLICATE_URL');
     const addedBy = getAddedByFields();
     const newRecipe = {
         name,
@@ -154,12 +168,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 addedByName: addedBy.addedByName
             };
 
+            const exists = await recipeExistsByUrl(url);
+            if (exists) {
+                importStatus.className = 'import-status error';
+                importStatus.textContent = '⚠️ מתכון עם הקישור הזה כבר קיים במערכת.';
+                return;
+            }
             const ref = await addDoc(collection(db, 'recipes'), newRecipe);
             importStatus.className = 'import-status success';
             importStatus.textContent = '✅ המתכון נשמר! מעבירה לעריכה...';
             setTimeout(() => { window.location.href = 'recipe-detail.html?id=' + ref.id + '&edit=1'; }, 800);
 
         } catch (err) {
+            if (err.message === 'DUPLICATE_URL') {
+                importStatus.className = 'import-status error';
+                importStatus.textContent = '⚠️ מתכון עם הקישור הזה כבר קיים במערכת.';
+                return;
+            }
             console.error(err);
             importStatus.className = 'import-status error';
             importStatus.textContent = '⚠️ לא הצלחנו לייבא או לשמור. נסי שוב או השתמשי בהזנה ידנית';
@@ -236,6 +261,12 @@ document.addEventListener('DOMContentLoaded', () => {
             submitBtn.textContent = 'שומר...';
 
             try {
+                if (url && (await recipeExistsByUrl(url))) {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = originalText;
+                    alert('מתכון עם הקישור הזה כבר קיים במערכת. נא להזין קישור אחר או להשאיר ריק.');
+                    return;
+                }
                 const addedBy = getAddedByFields();
                 const newRecipe = { name, source, image, url, ingredients, instructions, tags, addedByUid: addedBy.addedByUid, addedByName: addedBy.addedByName };
                 const ref = await addDoc(collection(db, 'recipes'), newRecipe);
@@ -275,6 +306,7 @@ document.addEventListener('DOMContentLoaded', () => {
         csvImportBtn.disabled = true;
         let done = 0;
         let failed = 0;
+        let skipped = 0; /* כפילויות */
         const total = urls.length;
         const delayMs = 1200;
 
@@ -291,16 +323,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 done++;
                 setStatus(`⏳ מייבא ${done} מתוך ${total}...`);
             } catch (err) {
-                console.warn('ייבוא נכשל:', urls[i], err);
-                failed++;
-                setStatus(`⏳ מייבא ${done} מתוך ${total} (${failed} נכשלו)...`);
+                if (err.message === 'DUPLICATE_URL') {
+                    skipped++;
+                    setStatus(`⏳ מייבא ${done} מתוך ${total} (${skipped} כפולים דולגו)...`);
+                } else {
+                    console.warn('ייבוא נכשל:', urls[i], err);
+                    failed++;
+                    setStatus(`⏳ מייבא ${done} מתוך ${total} (${failed} נכשלו)...`);
+                }
             }
             if (i < urls.length - 1) await new Promise(r => setTimeout(r, delayMs));
         }
 
         csvImportBtn.disabled = false;
         csvStatus.className = 'import-status success csv-bulk-status';
-        csvStatus.textContent = `✅ סיום: ${done} מתכונים יובאו ל-Firebase${failed ? `, ${failed} נכשלו.` : '.'}`;
+        const parts = [`✅ סיום: ${done} מתכונים יובאו`];
+        if (skipped) parts.push(`${skipped} כפולים דולגו`);
+        if (failed) parts.push(`${failed} נכשלו`);
+        csvStatus.textContent = parts.join(', ') + '.';
         csvFile.value = '';
         csvPaste.value = '';
     }
@@ -389,6 +429,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 const instructions = document.getElementById('irm-instructions').value.split('\n').filter(l => l.trim());
                 const tags = [...modal.querySelectorAll('.irm-tag.active')].map(b => b.dataset.tag);
 
+                if (reelUrl && (await recipeExistsByUrl(reelUrl))) {
+                    saveBtn.textContent = 'שמור מתכון';
+                    saveBtn.disabled = false;
+                    alert('מתכון עם הקישור הזה כבר קיים במערכת. נא להזין קישור אחר או להשאיר ריק.');
+                    return;
+                }
                 const addedBy = getAddedByFields();
                 const ref = await addDoc(collection(db, 'recipes'), {
                     name,
