@@ -39,9 +39,10 @@ header {
 }
 .header-right-col {
     display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 8px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
     grid-column: 3;
 }
 .main-header .auth-area {
@@ -49,14 +50,11 @@ header {
     align-items: center;
     gap: 8px;
 }
-.main-header .favorites-filter-wrap {
-    margin: 0;
-}
 .auth-user-name {
     color: #407076;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     display: none;
-    max-width: 80px;
+    max-width: 72px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -65,14 +63,17 @@ header {
     background: transparent;
     border: 1.5px solid #407076;
     color: #407076;
-    border-radius: 18px;
-    padding: 4px 10px;
+    border-radius: 16px;
+    padding: 4px 8px;
     font-family: 'Varela Round', sans-serif;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     cursor: pointer;
     white-space: nowrap;
 }
 .auth-btn:hover { background: #f0f7f8; }
+@media (max-width: 480px) {
+    .auth-user-name { display: none !important; }
+}
 
 .main-header h1 {
     font-size: 1.65rem;
@@ -1037,6 +1038,9 @@ header .logo {
     gap: 10px;
     max-width: 600px;
     margin: 0 auto 12px;
+}
+.favorites-filter-wrap.below-search {
+    margin-bottom: 8px;
 }
 .favorites-chip {
     background: white;
