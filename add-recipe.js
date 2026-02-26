@@ -220,6 +220,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const name = document.getElementById('recipeName').value;
             const source = document.getElementById('recipeSource').value || 'מתכון ביתי';
             const image = document.getElementById('recipeImage').value || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=300&fit=crop';
+            const url = (document.getElementById('recipeUrl') && document.getElementById('recipeUrl').value.trim()) || '';
 
             const ingredientsText = document.getElementById('recipeIngredients').value;
             const ingredients = ingredientsText.split('\n').filter(line => line.trim() !== '');
@@ -237,7 +238,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             try {
                 const addedBy = getAddedByFields();
-                const newRecipe = { name, source, image, ingredients, instructions, tags, addedByUid: addedBy.addedByUid, addedByName: addedBy.addedByName };
+                const newRecipe = { name, source, image, url, ingredients, instructions, tags, addedByUid: addedBy.addedByUid, addedByName: addedBy.addedByName };
                 await addDoc(collection(db, 'recipes'), newRecipe);
                 window.location.href = 'index.html';
             } catch (err) {

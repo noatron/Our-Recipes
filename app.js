@@ -150,7 +150,7 @@ function displayRecipes(recipesToShow) {
                     </button>
                 </div>
                 ${sourceLabel ? (recipe.url ? `<p class="recipe-source"><a href="${escapeHtml(recipe.url)}" target="_blank" rel="noopener noreferrer" class="recipe-source-link">${escapeHtml(sourceLabel)}</a></p>` : `<p class="recipe-source">${escapeHtml(sourceLabel)}</p>`) : ''}
-                <p class="recipe-added-by">הוסיף ע"י ${escapeHtml(addedByName)}</p>
+                <p class="recipe-added-by">מאת ${escapeHtml(addedByName)}</p>
                 <div class="recipe-comments-row">${commentsLinkHtml}</div>
                 ${tagsHtml}
             </div>
@@ -274,6 +274,9 @@ function setupSurpriseMe(allRecipes, tagGroupsData, applyFilters) {
             uniqueTags.map(t => '<option value="' + escapeHtml(t) + '">' + escapeHtml(t) + '</option>').join('');
     }
 
+    /** מתכונים שכבר הוצגו בהגרלה הנוכחית – "עוד אחת" יציע מתכונים אחרים */
+    let surpriseAlreadyShownIds = new Set();
+
     function getPool() {
         let pool = [...allRecipes];
         const tag = (surpriseCategory && surpriseCategory.value && surpriseCategory.value.trim()) || '';
@@ -292,7 +295,12 @@ function setupSurpriseMe(allRecipes, tagGroupsData, applyFilters) {
     }
 
     function drawSurprise() {
-        const pool = getPool();
+        let pool = getPool();
+        pool = pool.filter(r => !surpriseAlreadyShownIds.has(r.id));
+        if (pool.length < 3) {
+            surpriseAlreadyShownIds.clear();
+            pool = getPool();
+        }
         const count = Math.min(5, Math.max(3, pool.length));
         if (pool.length === 0) {
             displayRecipes([]);
@@ -300,6 +308,7 @@ function setupSurpriseMe(allRecipes, tagGroupsData, applyFilters) {
             return;
         }
         const picked = shuffle(pool).slice(0, count);
+        picked.forEach(r => surpriseAlreadyShownIds.add(r.id));
         displayRecipes(picked);
         surpriseBar.style.display = 'flex';
     }
@@ -333,11 +342,15 @@ function setupSurpriseMe(allRecipes, tagGroupsData, applyFilters) {
         surpriseBar.style.display = 'flex';
     }
 
-    surpriseBtn.addEventListener('click', drawSurprise);
+    surpriseBtn.addEventListener('click', () => {
+        surpriseAlreadyShownIds.clear();
+        drawSurprise();
+    });
     if (surpriseAgainBtn) surpriseAgainBtn.addEventListener('click', drawSurprise);
     if (surpriseBackBtn) {
         surpriseBackBtn.addEventListener('click', () => {
             surpriseBar.style.display = 'none';
+            surpriseAlreadyShownIds.clear();
             if (applyFilters) applyFilters();
         });
     }
