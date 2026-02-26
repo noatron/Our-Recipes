@@ -45,6 +45,9 @@ header {
     gap: 10px;
     grid-column: 3;
 }
+.main-header .favorites-filter-wrap {
+    margin: 0;
+}
 .main-header .auth-area {
     display: flex;
     align-items: center;
@@ -1038,9 +1041,6 @@ header .logo {
     gap: 10px;
     max-width: 600px;
     margin: 0 auto 12px;
-}
-.favorites-filter-wrap.below-search {
-    margin-bottom: 8px;
 }
 .favorites-chip {
     background: white;
