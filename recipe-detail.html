@@ -107,7 +107,7 @@
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/>
                         </svg>
-                        רענן מהקישור
+                        עדכני שם ותמונה
                     </button>
                     <button type="button" id="editRecipeBtn">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -151,7 +151,7 @@
                 <span class="tags-label">תגיות:</span>
                 <div id="recipeTagsList" class="recipe-tags-list"></div>
                 <div id="addTagInRecipeWrap" class="add-tag-in-recipe-wrap" style="display: none;">
-                    <p class="add-tag-label">הוספת תגית ותת-תגית</p>
+                    <p class="add-tag-label">הוספת תגית</p>
                     <div class="add-tag-row">
                         <select id="addTagGroupSelect" class="add-tag-select" aria-label="קבוצה">
                             <option value="">בחרי קבוצה</option>
@@ -159,11 +159,11 @@
                         <select id="addTagSubSelect" class="add-tag-select" aria-label="תת-תגית">
                             <option value="">בחרי תת-תגית</option>
                         </select>
-                        <button type="button" class="add-tag-btn" id="addTagFromGroupBtn">הוסף</button>
+                        <button type="button" class="add-tag-btn" id="addTagFromGroupBtn">הוסיפי</button>
                     </div>
                     <div class="add-tag-row">
                         <input type="text" id="addTagCustomInput" class="add-tag-input" placeholder="תגית חופשית (להקליד)">
-                        <button type="button" class="add-tag-btn" id="addTagCustomBtn">הוסף תגית</button>
+                        <button type="button" class="add-tag-btn" id="addTagCustomBtn">הוסיפי</button>
                     </div>
                 </div>
             </div>
@@ -194,15 +194,15 @@
                 <span id="instructionsImageStatus" class="instructions-image-status"></span>
             </div>
 
-            <h2 id="commentsSection" class="section-title comments-title">תגובות</h2>
+            <h2 id="commentsSection" class="section-title comments-title">הערות וטיפים</h2>
             <div id="commentsList" class="comments-list"></div>
             <div id="commentFormWrap" class="comment-form-wrap" style="display: none;">
-                <textarea id="commentText" class="comment-text" rows="3" placeholder="כתבי תגובה..."></textarea>
+                <textarea id="commentText" class="comment-text" rows="3" placeholder="ניסיתי, הוספתי, שיניתי..."></textarea>
                 <button type="button" id="submitCommentBtn" class="btn-primary">שלחי תגובה</button>
             </div>
             <p id="commentLoginHint" class="comment-login-hint" style="display: none;">התחברי כדי לכתוב תגובה.</p>
 
-            <button type="button" class="save-button" id="saveButton">✓ שמור שינויים</button>
+            <button type="button" class="save-button" id="saveButton">שמור שינויים</button>
             <button type="button" class="cancel-button" id="cancelButton">ביטול</button>
         </div>
     </div>
@@ -317,14 +317,14 @@
                 const fallbackBox = document.createElement('div');
                 fallbackBox.className = 'iframe-fallback-box';
                 fallbackBox.style.cssText = 'background:#FFF5EE; border:2px solid #FFD8BE; border-radius:12px; padding:16px 20px; margin-bottom:16px; font-family:Varela Round,sans-serif;';
-                fallbackBox.innerHTML = '<p style="margin:0 0 12px 0; color:#407076; font-size:1rem;">אם מופיע <strong>„refused to connect”</strong> או מסך ריק – האתר חוסם תצוגה כאן.</p>';
+                fallbackBox.innerHTML = '<p style="margin:0 0 12px 0; color:#407076; font-size:1rem;">אם מופיע הודעה על חיבור או מסך ריק – האתר חוסם תצוגה כאן.</p>';
                 const openLink = document.createElement('a');
                 openLink.href = recipe.url;
                 openLink.target = '_blank';
                 openLink.rel = 'noopener noreferrer';
                 openLink.className = 'iframe-fallback-link';
                 openLink.style.cssText = 'display:inline-flex; align-items:center; gap:8px; padding:12px 20px; background:#407076; color:#FFEEDD; border-radius:10px; font-family:Varela Round,sans-serif; font-size:1.05rem; text-decoration:none; font-weight:400;';
-                openLink.innerHTML = 'פתחי את המתכון באתר המקורי (חלון חדש) <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>';
+                openLink.innerHTML = 'אם האתר לא נטען — לחצי כאן לפתיחה <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>';
                 fallbackBox.appendChild(openLink);
                 iframeWrap.appendChild(fallbackBox);
                 const iframe = document.createElement('iframe');
@@ -355,14 +355,14 @@
         async function loadRecipe() {
             const recipeId = localStorage.getItem('selectedRecipeId');
             if (!recipeId) {
-                document.querySelector('.recipe-detail').innerHTML = '<p class="no-recipes">לא נבחר מתכון. <a href="index.html">חזרה לרשימה</a></p>';
+                document.querySelector('.recipe-detail').innerHTML = '<p class="no-recipes">לא נבחר מתכון. <a href="index.html">בחזור</a></p>';
                 return;
             }
 
             const recipeRef = doc(db, 'recipes', String(recipeId));
             const snap = await getDoc(recipeRef);
             if (!snap.exists()) {
-                document.querySelector('.recipe-detail').innerHTML = '<p class="no-recipes">המתכון לא נמצא. <a href="index.html">חזרה לרשימה</a></p>';
+                document.querySelector('.recipe-detail').innerHTML = '<p class="no-recipes">המתכון לא נמצא. <a href="index.html">בחזור</a></p>';
                 return;
             }
 
@@ -438,7 +438,7 @@
             const loginHint = document.getElementById('commentLoginHint');
             if (!list) return;
             list.innerHTML = comments.length === 0
-                ? '<p class="no-comments">אין עדיין תגובות. תהני להיות הראשונה!</p>'
+                ? '<p class="no-comments">אין עדיין תגובות. תהני להיות הראשונה</p>'
                 : comments.map(c => {
                     const date = c.createdAt?.toDate ? c.createdAt.toDate().toLocaleDateString('he-IL') : '';
                     return `<div class="comment-item"><strong class="comment-author">${escapeHtml(c.userName || 'משתמש')}</strong> <span class="comment-date">${escapeHtml(date)}</span><p class="comment-text-p">${escapeHtml(c.text || '')}</p></div>`;
@@ -482,7 +482,7 @@
             const text = (textEl && textEl.value || '').trim();
             if (!text) return;
             const btn = document.getElementById('submitCommentBtn');
-            if (btn) { btn.disabled = true; btn.textContent = 'שולח...'; }
+            if (btn) { btn.disabled = true; btn.textContent = 'שלחי'; }
             try {
                 await addDoc(collection(db, 'recipes', recipe.id, 'comments'), {
                     userId: user.uid,
@@ -534,7 +534,7 @@
             menu.classList.remove('show');
             const btn = document.getElementById('refreshFromLinkBtnVisible') || document.getElementById('refreshFromLinkBtn');
             const restoreHtml = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg> רענן שם ותמונה מהקישור';
-            if (btn) { btn.disabled = true; btn.innerHTML = 'מרענן...'; }
+            if (btn) { btn.disabled = true; btn.innerHTML = 'שמירה'; }
             try {
                 const { name, image, ingredients, instructions } = await fetchRecipeMeta(recipe.url);
                 recipe.name = name;

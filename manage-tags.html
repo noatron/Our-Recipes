@@ -54,12 +54,12 @@
                 <label for="quickGroupSelect">תגית (קבוצה):</label>
                 <select id="quickGroupSelect"><option value="">בחרי תגית</option></select>
                 <input type="text" id="quickSubTag" placeholder="תת-תגית">
-                <button type="button" id="addSubTagBtn">הוסף תת-תגית</button>
+                <button type="button" id="addSubTagBtn">הוסיפי תת-תגית</button>
             </div>
             <div class="row" style="margin-top:12px;">
                 <input type="text" id="quickNewGroup" placeholder="תגית חדשה (קבוצה)">
                 <input type="text" id="quickNewSubTag" placeholder="תת-תגית ראשונה (אופציונלי)">
-                <button type="button" id="addGroupWithSubBtn">הוסף תגית (+ תת-תגית)</button>
+                <button type="button" id="addGroupWithSubBtn">הוסיפי תגית (+ תת-תגית)</button>
             </div>
         </div>
 
@@ -68,7 +68,7 @@
             <h3 style="margin:0 0 8px 0; font-size:1rem; color:#407076;">קבוצה חדשה</h3>
             <div class="add-tag-row">
                 <input type="text" id="newGroupName" placeholder="שם הקבוצה">
-                <button type="button" id="addGroupBtn">הוסף קבוצה</button>
+                <button type="button" id="addGroupBtn">הוסיפי קבוצה</button>
             </div>
         </div>
         <div class="save-bar">
@@ -117,7 +117,7 @@
                     `).join('')}</div>
                     <div class="add-tag-row">
                         <input type="text" data-group-idx="${gIdx}" placeholder="תגית חדשה בקבוצה זו">
-                        <button type="button" data-group-idx="${gIdx}" class="add-tag-btn">הוסף</button>
+                        <button type="button" data-group-idx="${gIdx}" class="add-tag-btn">הוסיפי</button>
                     </div>
                 </div>
             `).join('');
