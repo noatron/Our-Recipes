@@ -106,6 +106,11 @@ function getRecipeSourceLabel(recipe) {
     return '';
 }
 
+/** שם המוסיפה – לתצוגת "הוסיף ע"י" (מתכונים ישנים: נועה) */
+function getAddedByName(recipe) {
+    return (recipe.addedByName && String(recipe.addedByName).trim()) ? recipe.addedByName.trim() : 'נועה';
+}
+
 function displayRecipes(recipesToShow) {
     const recipesContainer = document.getElementById('recipes');
     if (!recipesContainer) return;
@@ -119,6 +124,7 @@ function displayRecipes(recipesToShow) {
     const commentsCount = (r) => (r.commentsCount != null ? r.commentsCount : 0);
     recipesContainer.innerHTML = recipesToShow.map(recipe => {
         const sourceLabel = getRecipeSourceLabel(recipe);
+        const addedByName = getAddedByName(recipe);
         const tags = Array.isArray(recipe.tags) ? recipe.tags : [];
         const tagsHtml = tags.length
             ? `<div class="recipe-tags">${tags.map(t => `<span class="recipe-tag">${escapeHtml(t)}</span>`).join('')}</div>`
@@ -144,6 +150,7 @@ function displayRecipes(recipesToShow) {
                     </button>
                 </div>
                 ${sourceLabel ? (recipe.url ? `<p class="recipe-source"><a href="${escapeHtml(recipe.url)}" target="_blank" rel="noopener noreferrer" class="recipe-source-link">${escapeHtml(sourceLabel)}</a></p>` : `<p class="recipe-source">${escapeHtml(sourceLabel)}</p>`) : ''}
+                <p class="recipe-added-by">הוסיף ע"י ${escapeHtml(addedByName)}</p>
                 <div class="recipe-comments-row">${commentsLinkHtml}</div>
                 ${tagsHtml}
             </div>
@@ -259,6 +266,26 @@ function setupTagGroupDropdown(applyFilters, tagGroupsData) {
     select.addEventListener('change', () => { if (applyFilters) applyFilters(); });
 }
 
+/** מחזיר רשימת UID של משתמשות מאושרות */
+async function getApprovedUids() {
+    try {
+        const snap = await getDoc(doc(db, 'config', 'approvedUsers'));
+        if (snap.exists() && Array.isArray(snap.data().uids)) return snap.data().uids;
+    } catch (_) {}
+    return [];
+}
+
+/** רושם משתמשת ברשימת הממתינות (לאדמין) */
+async function addToPendingUsers(user) {
+    try {
+        await setDoc(doc(db, 'pendingUsers', user.uid), {
+            displayName: user.displayName || '',
+            email: user.email || '',
+            createdAt: serverTimestamp()
+        }, { merge: true });
+    } catch (_) {}
+}
+
 function getActiveFilters() {
     const searchTerm = (document.getElementById('searchInput')?.value || '').toLowerCase();
     const groupSelect = document.getElementById('tag-group-select');
@@ -331,14 +358,44 @@ async function initApp() {
                 applyFilters();
             });
         }
-        onUserChange((user) => {
+        onUserChange(async (user) => {
             updateAuthUI(user);
             if (favoritesWrap) favoritesWrap.style.display = user ? 'block' : 'none';
             if (!user && favoritesBtn?.classList.contains('active')) favoritesBtn.classList.remove('active');
+            const pendingBanner = document.getElementById('pending-approval-banner');
+            const addBtn = document.getElementById('add-recipe-btn');
+            if (user) {
+                const approved = await getApprovedUids();
+                const isApproved = approved.includes(user.uid);
+                if (!isApproved) {
+                    if (pendingBanner) pendingBanner.style.display = 'block';
+                    if (addBtn) addBtn.style.display = 'none';
+                    await addToPendingUsers(user);
+                } else {
+                    if (pendingBanner) pendingBanner.style.display = 'none';
+                    if (addBtn) addBtn.style.display = '';
+                }
+            } else {
+                if (pendingBanner) pendingBanner.style.display = 'none';
+                if (addBtn) addBtn.style.display = '';
+            }
             enrichRecipesWithLikes(recipes, user).then(applyFilters);
         });
         updateAuthUI(auth.currentUser);
         if (favoritesWrap) favoritesWrap.style.display = auth.currentUser ? 'block' : 'none';
+        const pendingBanner = document.getElementById('pending-approval-banner');
+        const addBtn = document.getElementById('add-recipe-btn');
+        if (auth.currentUser) {
+            const approved = await getApprovedUids();
+            if (!approved.includes(auth.currentUser.uid)) {
+                if (pendingBanner) pendingBanner.style.display = 'block';
+                if (addBtn) addBtn.style.display = 'none';
+                await addToPendingUsers(auth.currentUser);
+            } else {
+                if (pendingBanner) pendingBanner.style.display = 'none';
+                if (addBtn) addBtn.style.display = '';
+            }
+        }
 
         // מציגים את הרשימה מיד; הלבבות מתעדכנים ברקע
         applyFilters();

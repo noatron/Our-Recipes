@@ -26,7 +26,8 @@
         .dropdown-menu button:last-child:hover { background: #ffebee; }
         .dropdown-menu button svg { flex-shrink: 0; }
         .recipe-detail h1 { color: #407076; font-weight: 400; font-size: 2.5rem; margin-bottom: 20px; font-family: 'Varela Round', sans-serif; }
-        .recipe-source-meta { color: #698996; font-size: 1rem; margin-top: 8px; margin-bottom: 20px; }
+        .recipe-source-meta { color: #698996; font-size: 1rem; margin-top: 8px; margin-bottom: 8px; }
+        .recipe-added-by-meta { color: #698996; font-size: 0.95rem; margin-top: 0; margin-bottom: 20px; }
         .recipe-detail h2 { color: #407076; font-weight: 400; font-size: 1.8rem; margin-top: 30px; margin-bottom: 15px; font-family: 'Varela Round', sans-serif; }
         .recipe-detail p, .recipe-detail li { color: #407076; line-height: 1.6; }
         .recipe-detail-image { width: 100%; height: 400px; object-fit: cover; border-radius: 15px; margin-bottom: 20px; }
@@ -130,6 +131,7 @@
             <p class="recipe-source-meta" id="recipeSourceContainer" style="display: none;">
                 <span id="recipeSource"></span>
             </p>
+            <p class="recipe-added-by-meta" id="recipeAddedByContainer">הוסיף ע"י <span id="recipeAddedByName"></span></p>
             <div id="refreshFromLinkBlock" class="refresh-from-link-block" style="display: none;">
                 <button type="button" class="refresh-from-link-btn" id="refreshFromLinkBtnVisible">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -303,6 +305,8 @@
                 }
                 document.getElementById('recipeSourceContainer').style.display = 'block';
             }
+            const addedByName = (recipe.addedByName && String(recipe.addedByName).trim()) ? recipe.addedByName.trim() : 'נועה';
+            document.getElementById('recipeAddedByName').textContent = addedByName;
 
             const isReelUrl = (url) => url && (String(url).includes('instagram.com') || String(url).includes('tiktok.com'));
             const showReelLinkOnly = recipe.url && isReelUrl(recipe.url);

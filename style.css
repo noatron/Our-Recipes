@@ -134,6 +134,32 @@ header {
     padding-bottom: 90px; /* מרווח מתחת לרשת כדי שכפתור הוספת מתכון לא יגלוש */
 }
 
+.pending-approval-banner {
+    background: #FFF5EE;
+    border: 2px solid #FFD8BE;
+    border-radius: 12px;
+    color: #407076;
+    font-family: 'Varela Round', sans-serif;
+    font-size: 0.95rem;
+    padding: 12px 20px;
+    margin: 0 auto 16px;
+    max-width: 600px;
+    text-align: center;
+}
+
+.pending-approval-block {
+    max-width: 500px;
+    margin: 40px auto;
+    padding: 24px;
+    text-align: center;
+    background: #FFF5EE;
+    border: 2px solid #FFD8BE;
+    border-radius: 12px;
+}
+.pending-approval-block .pending-approval-title { color: #407076; font-size: 1.1rem; margin: 0 0 8px 0; }
+.pending-approval-block .pending-approval-text { color: #698996; margin: 0 0 16px 0; }
+.pending-approval-block .back-link { color: #407076; }
+
 .migrate-link-wrap {
     text-align: center;
     margin: 20px auto 30px;
@@ -196,6 +222,12 @@ main {
 }
 .recipe-source-link:hover {
     text-decoration: underline;
+}
+
+.recipe-added-by {
+    font-size: 0.85rem;
+    color: #698996;
+    margin: 0 0 8px 0;
 }
 
 .recipe-meta {

@@ -1,4 +1,4 @@
-import { db } from './firebase.js';
+import { db, auth } from './firebase.js';
 import { collection, addDoc, doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js';
 import { extractRecipeName, extractRecipeImage, extractIngredientsAndInstructions } from './recipe-import-utils.js';
 
@@ -23,6 +23,15 @@ function parseUrlsFromCsv(text) {
     return [...new Set(urls)];
 }
 
+/** מחזיר שדות "הוסיף ע"י" מהמשתמש המחובר */
+function getAddedByFields() {
+    const user = auth.currentUser;
+    return {
+        addedByUid: user ? user.uid : null,
+        addedByName: user ? (user.displayName || user.email || 'משתמשת') : 'נועה'
+    };
+}
+
 /** מייבא מתכון בודד מקישור (אותה לוגיקה כמו כפתור הייבוא) */
 async function importOneRecipe(url) {
     const proxyUrl = `/.netlify/functions/fetch-recipe?url=${encodeURIComponent(url)}`;
@@ -35,13 +44,16 @@ async function importOneRecipe(url) {
     const image = extractRecipeImage(doc, url);
     const { ingredients, instructions } = extractIngredientsAndInstructions(doc);
 
+    const addedBy = getAddedByFields();
     const newRecipe = {
         name,
         source: new URL(url).hostname,
         image,
         url,
         ingredients: ingredients || [],
-        instructions: instructions || []
+        instructions: instructions || [],
+        addedByUid: addedBy.addedByUid,
+        addedByName: addedBy.addedByName
     };
     await addDoc(collection(db, 'recipes'), newRecipe);
     return { name, url };
@@ -61,7 +73,21 @@ function escapeHtml(str) {
     return div.innerHTML;
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    const user = auth.currentUser;
+    if (user) {
+        try {
+            const snap = await getDoc(doc(db, 'config', 'approvedUsers'));
+            const uids = (snap.exists() && Array.isArray(snap.data().uids)) ? snap.data().uids : [];
+            if (!uids.includes(user.uid)) {
+                const block = document.getElementById('pending-approval-block');
+                const content = document.getElementById('add-recipe-content');
+                if (block) block.style.display = 'block';
+                if (content) content.style.display = 'none';
+                return;
+            }
+        } catch (_) {}
+    }
     loadTagConfig();
     const tabButtons = document.querySelectorAll('.tab-btn');
     const importMode = document.getElementById('import-mode');
@@ -116,13 +142,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const image = extractRecipeImage(doc, url);
             const { ingredients, instructions } = extractIngredientsAndInstructions(doc);
 
+            const addedBy = getAddedByFields();
             const newRecipe = {
                 name: name,
                 source: new URL(url).hostname,
                 image: image,
                 url: url,
                 ingredients: ingredients || [],
-                instructions: instructions || []
+                instructions: instructions || [],
+                addedByUid: addedBy.addedByUid,
+                addedByName: addedBy.addedByName
             };
 
             await addDoc(collection(db, 'recipes'), newRecipe);
@@ -158,7 +187,8 @@ document.addEventListener('DOMContentLoaded', () => {
             submitBtn.textContent = 'שומר...';
 
             try {
-                const newRecipe = { name, source, image, ingredients, instructions };
+                const addedBy = getAddedByFields();
+                const newRecipe = { name, source, image, ingredients, instructions, addedByUid: addedBy.addedByUid, addedByName: addedBy.addedByName };
                 await addDoc(collection(db, 'recipes'), newRecipe);
                 window.location.href = 'index.html';
             } catch (err) {
@@ -307,6 +337,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const instructions = document.getElementById('irm-instructions').value.split('\n').filter(l => l.trim());
                 const tags = [...modal.querySelectorAll('.irm-tag.active')].map(b => b.dataset.tag);
 
+                const addedBy = getAddedByFields();
                 await addDoc(collection(db, 'recipes'), {
                     name,
                     source: source || 'מתמונה',
@@ -314,7 +345,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     url: reelUrl,
                     ingredients,
                     instructions,
-                    tags
+                    tags,
+                    addedByUid: addedBy.addedByUid,
+                    addedByName: addedBy.addedByName
                 });
                 modal.remove();
                 window.location.href = 'index.html';

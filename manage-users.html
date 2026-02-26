@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ניהול משתמשות – מפה לפה</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .manage-users-wrap { max-width: 560px; margin: 0 auto; padding: 24px; }
+        .manage-users-wrap h1 { color: #407076; margin-bottom: 8px; }
+        .manage-users-wrap .back-link { display: inline-block; margin-bottom: 20px; color: #698996; text-decoration: none; font-size: 0.95rem; }
+        .manage-users-wrap .back-link:hover { color: #407076; }
+        .pending-list { margin-top: 20px; }
+        .pending-item { background: #FFF5EE; border: 2px solid #FFD8BE; border-radius: 12px; padding: 14px 18px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+        .pending-item-info { flex: 1; min-width: 0; }
+        .pending-item-name { font-weight: 500; color: #407076; }
+        .pending-item-email { font-size: 0.9rem; color: #698996; }
+        .pending-item-btn { padding: 8px 16px; background: #407076; color: #FFEEDD; border: none; border-radius: 20px; font-family: 'Varela Round', sans-serif; cursor: pointer; }
+        .pending-item-btn:hover { background: #698996; }
+        .no-pending { color: #698996; margin-top: 16px; }
+        .forbidden-msg { color: #c62828; margin-top: 20px; padding: 16px; background: #ffebee; border-radius: 12px; }
+    </style>
+</head>
+<body>
+    <div class="manage-users-wrap">
+        <a href="index.html" class="back-link">← חזרה לדף הבית</a>
+        <h1>ניהול משתמשות</h1>
+        <p style="color:#698996; margin-bottom:20px;">אישור משתמשות שממתינות – אחרי האישור הן יוכלו להוסיף מתכונים.</p>
+
+        <div id="authMsg" style="margin-bottom:16px;"></div>
+        <div id="contentArea"></div>
+    </div>
+
+    <script type="module">
+        import { db, auth, onUserChange, signInWithGoogle } from './firebase.js';
+        import { collection, getDocs, getDoc, doc, setDoc, updateDoc, deleteDoc } from 'https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js';
+        import { arrayUnion } from 'https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js';
+
+        const contentArea = document.getElementById('contentArea');
+        const authMsg = document.getElementById('authMsg');
+
+        async function isAdmin() {
+            const user = auth.currentUser;
+            if (!user) return false;
+            try {
+                const snap = await getDoc(doc(db, 'config', 'admins'));
+                if (!snap.exists() || !Array.isArray(snap.data().uids)) return false;
+                return snap.data().uids.includes(user.uid);
+            } catch (_) { return false; }
+        }
+
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str || '';
+            return div.innerHTML;
+        }
+
+        async function loadPendingAndRender() {
+            const admin = await isAdmin();
+            if (!auth.currentUser) {
+                contentArea.innerHTML = '<p class="no-pending">התחברי כדי לראות את הדף.</p>';
+                return;
+            }
+            if (!admin) {
+                contentArea.innerHTML = '<p class="forbidden-msg">אין לך הרשאה לצפות בדף זה. רק אדמין יכול לאשר משתמשות.</p>';
+                return;
+            }
+
+            const snap = await getDocs(collection(db, 'pendingUsers'));
+            const list = [];
+            snap.forEach(d => list.push({ id: d.id, ...d.data() }));
+
+            if (list.length === 0) {
+                contentArea.innerHTML = '<p class="no-pending">אין משתמשות ממתינות לאישור.</p>';
+                return;
+            }
+
+            contentArea.innerHTML = `
+                <div class="pending-list">
+                    ${list.map(p => `
+                        <div class="pending-item" data-uid="${escapeHtml(p.id)}">
+                            <div class="pending-item-info">
+                                <div class="pending-item-name">${escapeHtml(p.displayName || 'ללא שם')}</div>
+                                <div class="pending-item-email">${escapeHtml(p.email || p.id)}</div>
+                            </div>
+                            <button type="button" class="pending-item-btn" data-uid="${escapeHtml(p.id)}">אשר</button>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+
+            contentArea.querySelectorAll('.pending-item-btn').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const uid = btn.dataset.uid;
+                    btn.disabled = true;
+                    btn.textContent = 'מאשר...';
+                    try {
+                        const approvedRef = doc(db, 'config', 'approvedUsers');
+                        const approvedSnap = await getDoc(approvedRef);
+                        const uids = (approvedSnap.exists() && Array.isArray(approvedSnap.data().uids)) ? approvedSnap.data().uids : [];
+                        if (!uids.includes(uid)) {
+                            if (approvedSnap.exists()) {
+                                await updateDoc(approvedRef, { uids: arrayUnion(uid) });
+                            } else {
+                                await setDoc(approvedRef, { uids: [uid] });
+                            }
+                        }
+                        await deleteDoc(doc(db, 'pendingUsers', uid));
+                        loadPendingAndRender();
+                    } catch (err) {
+                        console.error(err);
+                        btn.disabled = false;
+                        btn.textContent = 'אשר';
+                        alert('שגיאה באישור. נסי שוב.');
+                    }
+                });
+            });
+        }
+
+        onUserChange((user) => {
+            if (!user) {
+                authMsg.innerHTML = '<a href="#" id="signInLink" style="color:#407076;">התחברי עם גוגל</a> כדי לגשת לדף.';
+                document.getElementById('signInLink')?.addEventListener('click', (e) => { e.preventDefault(); signInWithGoogle(); });
+                contentArea.innerHTML = '';
+            } else {
+                authMsg.textContent = 'מחוברת: ' + (user.displayName || user.email);
+                loadPendingAndRender();
+            }
+        });
+
+        if (auth.currentUser) {
+            authMsg.textContent = 'מחוברת: ' + (auth.currentUser.displayName || auth.currentUser.email);
+            loadPendingAndRender();
+        } else {
+            authMsg.innerHTML = '<a href="#" id="signInLink" style="color:#407076;">התחברי עם גוגל</a> כדי לגשת לדף.';
+            document.getElementById('signInLink')?.addEventListener('click', (e) => { e.preventDefault(); signInWithGoogle(); });
+        }
+    </script>
+</body>
+</html>
