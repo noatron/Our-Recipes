@@ -470,7 +470,9 @@ async function initApp() {
                 const approved = await getApprovedUids();
                 const isApproved = approved.includes(user.uid);
                 if (!isApproved) {
-                    if (pendingBanner) pendingBanner.style.display = 'block';
+                    const showBanner = !sessionStorage.getItem('pendingBannerSeen');
+                    if (pendingBanner) pendingBanner.style.display = showBanner ? 'block' : 'none';
+                    if (showBanner) sessionStorage.setItem('pendingBannerSeen', '1');
                     if (addBtn) addBtn.style.display = 'none';
                     await addToPendingUsers(user);
                 } else {
@@ -490,7 +492,9 @@ async function initApp() {
         if (auth.currentUser) {
             const approved = await getApprovedUids();
             if (!approved.includes(auth.currentUser.uid)) {
-                if (pendingBanner) pendingBanner.style.display = 'block';
+                const showBanner = !sessionStorage.getItem('pendingBannerSeen');
+                if (pendingBanner) pendingBanner.style.display = showBanner ? 'block' : 'none';
+                if (showBanner) sessionStorage.setItem('pendingBannerSeen', '1');
                 if (addBtn) addBtn.style.display = 'none';
                 await addToPendingUsers(auth.currentUser);
             } else {
