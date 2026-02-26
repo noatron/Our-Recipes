@@ -3,11 +3,11 @@ import { collection, getDocs, getDoc, setDoc, updateDoc, deleteDoc, doc, increme
 
 /** קבוצות קטגוריות לדרופדאון */
 const TAG_GROUPS = [
-    { label: 'מנות עיקריות', tags: ['בשר', 'דגים', 'פסטות', 'טרטים ופשטידות', 'צמחוני'] },
+    { label: 'מנות עיקריות', tags: ['בשר', 'דגים', 'פסטות', 'קישים ופשטידות', 'צמחוני'] },
     { label: 'סלטים', tags: ['סלטים'] },
     { label: 'תוספות', tags: ['תוספות'] },
     { label: 'לחם ומאפים', tags: ['לחם ומאפים'] },
-    { label: 'רוטבים וממרחים', tags: ['רוטבים וממרחים'] },
+    { label: 'רטבים וממרחים', tags: ['רטבים וממרחים'] },
     { label: 'מרקים', tags: ['מרקים'] },
     { label: 'קינוחים', tags: ['עוגות', 'עוגיות', 'קינוחים', 'שוקולד'] },
     { label: 'ארוחות בוקר', tags: ['ארוחות בוקר'] },
@@ -16,7 +16,7 @@ const TAG_GROUPS = [
 ];
 
 /** רשימת כל הקטגוריות – לסינון, תצוגה וייבוא מתמונות */
-const ALL_TAGS = ['בשר', 'דגים', 'פסטות', 'טרטים ופשטידות', 'צמחוני', 'סלטים', 'תוספות', 'לחם ומאפים', 'רוטבים וממרחים', 'מרקים', 'עוגות', 'עוגיות', 'קינוחים', 'שוקולד', 'ארוחות בוקר', 'חטיפים', 'שתייה'];
+const ALL_TAGS = ['בשר', 'דגים', 'פסטות', 'קישים ופשטידות', 'צמחוני', 'סלטים', 'תוספות', 'לחם ומאפים', 'רטבים וממרחים', 'מרקים', 'עוגות', 'עוגיות', 'קינוחים', 'שוקולד', 'ארוחות בוקר', 'חטיפים', 'שתייה'];
 
 const defaultRecipes = [
     {
@@ -424,11 +424,29 @@ function filterRecipes(allRecipes) {
     return list;
 }
 
+const RECIPES_CACHE_KEY = 'app_recipes_cache';
+const RECIPES_CACHE_TTL_MS = 5 * 60 * 1000; // 5 דקות
+
+function getRecipesFromCache() {
+    try {
+        const raw = sessionStorage.getItem(RECIPES_CACHE_KEY);
+        if (!raw) return null;
+        const { timestamp, recipes } = JSON.parse(raw);
+        if (!Array.isArray(recipes) || Date.now() - (timestamp || 0) > RECIPES_CACHE_TTL_MS) return null;
+        return recipes;
+    } catch (_) {
+        return null;
+    }
+}
+
+function setRecipesCache(recipes) {
+    try {
+        sessionStorage.setItem(RECIPES_CACHE_KEY, JSON.stringify({ timestamp: Date.now(), recipes }));
+    } catch (_) {}
+}
+
 async function initApp() {
     const container = document.getElementById('recipes');
-    if (container) {
-        container.innerHTML = '<div class="recipes-loading" aria-live="polite">טוען מתכונים...</div>';
-    }
 
     try {
         let tagGroupsData = TAG_GROUPS;
@@ -439,24 +457,35 @@ async function initApp() {
             }
         } catch (_) {}
 
-        const snapshot = await getDocs(collection(db, 'recipes'));
+        const cached = getRecipesFromCache();
         let recipes = [];
-        
-        if (snapshot.empty) {
-            // אין מתכונים ב-Firebase - נעלה את ברירות המחדל
-            for (const recipe of defaultRecipes) {
-                await setDoc(doc(db, 'recipes', recipe.id), recipe);
-            }
-            recipes = defaultRecipes;
-        } else {
-            snapshot.forEach(d => recipes.push({ id: d.id, ...d.data() }));
+        let fromCache = false;
+
+        if (cached && cached.length > 0) {
+            recipes = cached;
+            fromCache = true;
+            console.log('🍽️ טעינה מהירה מהמטמון:', recipes.length, 'מתכונים');
         }
 
-        console.log('🍽️ נטענו מ-Firebase:', recipes.length, 'מתכונים');
+        if (!fromCache) {
+            if (container) container.innerHTML = '<div class="recipes-loading" aria-live="polite">טוען מתכונים...</div>';
+            const snapshot = await getDocs(collection(db, 'recipes'));
+            if (snapshot.empty) {
+                for (const recipe of defaultRecipes) {
+                    await setDoc(doc(db, 'recipes', recipe.id), recipe);
+                }
+                recipes = defaultRecipes;
+            } else {
+                snapshot.forEach(d => recipes.push({ id: d.id, ...d.data() }));
+            }
+            console.log('🍽️ נטענו מ-Firebase:', recipes.length, 'מתכונים');
+            setRecipesCache(recipes);
+        }
 
         window.__allRecipes = recipes;
         const applyFilters = () => {
-            const filtered = filterRecipes(recipes);
+            const list = window.__allRecipes || recipes;
+            const filtered = filterRecipes(list);
             displayRecipes(filtered);
         };
         window.__applyFilters = applyFilters;
@@ -520,6 +549,20 @@ async function initApp() {
         applyFilters();
         enrichRecipesWithLikes(recipes, auth.currentUser).then(applyFilters);
 
+        // אם טענו מהמטמון – מרעננים ברקע ומעדכנים
+        if (fromCache) {
+            getDocs(collection(db, 'recipes')).then(snapshot => {
+                if (snapshot.empty) return;
+                const fresh = [];
+                snapshot.forEach(d => fresh.push({ id: d.id, ...d.data() }));
+                window.__allRecipes = fresh;
+                setRecipesCache(fresh);
+                if (window.__applyFilters) window.__applyFilters();
+                enrichRecipesWithLikes(fresh, auth.currentUser).then(() => {
+                    if (window.__applyFilters) window.__applyFilters();
+                });
+            }).catch(() => {});
+        }
     } catch (err) {
         console.error('שגיאה בטעינת מתכונים:', err);
         const msg = err && (err.message || String(err)) || 'שגיאה לא ידועה';
