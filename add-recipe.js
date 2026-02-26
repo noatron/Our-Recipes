@@ -1,4 +1,4 @@
-import { db, auth } from './firebase.js';
+import { db, auth, onUserChange } from './firebase.js';
 import { collection, addDoc, doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js';
 import { extractRecipeName, extractRecipeImage, extractIngredientsAndInstructions } from './recipe-import-utils.js';
 
@@ -73,19 +73,22 @@ function escapeHtml(str) {
     return div.innerHTML;
 }
 
-document.addEventListener('DOMContentLoaded', async () => {
-    const user = auth.currentUser;
+document.addEventListener('DOMContentLoaded', () => {
     const loginRequiredBlock = document.getElementById('login-required-block');
     const addRecipeContent = document.getElementById('add-recipe-content');
-    if (!user) {
-        if (loginRequiredBlock) loginRequiredBlock.style.display = 'block';
-        if (addRecipeContent) addRecipeContent.style.display = 'none';
-        return;
+
+    function setBlocksVisibility(user) {
+        if (loginRequiredBlock) loginRequiredBlock.style.display = user ? 'none' : 'block';
+        if (addRecipeContent) addRecipeContent.style.display = user ? '' : 'none';
+        return !!user;
     }
-    if (loginRequiredBlock) loginRequiredBlock.style.display = 'none';
-    if (addRecipeContent) addRecipeContent.style.display = '';
-    loadTagConfig();
-    const tabButtons = document.querySelectorAll('.tab-btn');
+
+    let formInitialized = false;
+    function initFormWhenReady(user) {
+        if (!user || formInitialized) return;
+        formInitialized = true;
+        loadTagConfig();
+        const tabButtons = document.querySelectorAll('.tab-btn');
     const importMode = document.getElementById('import-mode');
     const manualMode = document.getElementById('manual-mode');
     const csvMode = document.getElementById('csv-mode');
@@ -573,5 +576,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
+    }; // end initFormWhenReady
+
+    onUserChange((user) => {
+        setBlocksVisibility(user);
+        initFormWhenReady(user);
+    });
     console.log('✅ add-recipe.js loaded (Firebase)');
 });
