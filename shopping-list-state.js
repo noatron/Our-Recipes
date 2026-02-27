@@ -35,6 +35,32 @@
         return false;
     }
 
+    /** מפשט מרכיב לפירוט מינימלי – רק שם המרכיב בלי הכנה (שעועית ולא שעועית מושרית חצי יום) */
+    function simplifyIngredient(text) {
+        if (!text || typeof text !== 'string') return '';
+        var s = text.trim().replace(/\s+/g, ' ');
+        var remove = [
+            /\s*מושר[ייה]?\s*(חצי\s*יום|לילה|יומיים?|\d+\s*שעות?)?/gi,
+            /\s*חצי\s*יום\s*מושר[ייה]?/gi,
+            /\s*חתוך\s*(לקוביות|טבעות|פרוסות|דק|גס)?/gi,
+            /\s*קצוץ\s*(דק|גס)?/gi,
+            /\s*מבושל\s*(מראש)?/gi,
+            /\s*קפוא\s*/gi,
+            /\s*טרי\s*/gi,
+            /\s*טחון\s*/gi,
+            /\s*מקולף\s*/gi,
+            /\s*לריבועים?\s*/gi,
+            /\s*לפרוסות\s*/gi,
+            /\s*לקוביות\s*/gi,
+            /\s*למחית\s*/gi,
+            /\s*חצי\s*יום\s*/g,
+            /\s*לילה\s*/g
+        ];
+        for (var i = 0; i < remove.length; i++) s = s.replace(remove[i], ' ');
+        s = s.replace(/\s+/g, ' ').trim();
+        return s || text.trim();
+    }
+
     function getRaw() {
         try {
             const raw = localStorage.getItem(CURRENT_KEY);
@@ -62,8 +88,10 @@
             return s && !isPantryItem(s);
         });
         toAdd.forEach(function (text) {
+            var raw = String(text).trim();
+            var simplified = simplifyIngredient(raw);
             list.push({
-                text: String(text).trim(),
+                text: simplified || raw,
                 recipeId: recipeId || null,
                 recipeName: recipeName || null
             });

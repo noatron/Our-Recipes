@@ -349,6 +349,48 @@ header {
     text-decoration: underline;
 }
 
+/* ניווט רשימת קניות – בולט מתחת לכותרת */
+.shopping-list-nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 12px 16px;
+    margin: 0 auto 16px;
+    background: linear-gradient(135deg, #FFF5EE 0%, #FFEEDD 100%);
+    border: 2px solid #FFD8BE;
+    border-radius: 12px;
+    max-width: 600px;
+}
+.shopping-list-nav-link {
+    font-family: 'Varela Round', sans-serif;
+    font-size: 1.05rem;
+    color: #407076;
+    text-decoration: none;
+    font-weight: 400;
+}
+.shopping-list-nav-link:hover {
+    color: #698996;
+    text-decoration: underline;
+}
+.shopping-list-nav-dot {
+    color: #c5d9dc;
+    font-weight: bold;
+}
+.shopping-list-nav-btn {
+    font-family: 'Varela Round', sans-serif;
+    font-size: 0.95rem;
+    color: #407076;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    text-decoration: underline;
+}
+.shopping-list-nav-btn:hover {
+    color: #698996;
+}
+
 /* כפתורי רשימת קניות (מודל + דף רשימה) */
 .sl-btn { padding: 12px 20px; border-radius: 10px; font-family: inherit; font-size: 1rem; cursor: pointer; border: none; display: inline-flex; align-items: center; gap: 8px; }
 .sl-btn-primary { background: #407076; color: #FFEEDD; }
