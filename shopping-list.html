@@ -16,6 +16,8 @@
         .sl-list { list-style: none; padding: 0; margin: 0 0 24px; background: #FFEEDD; border-radius: 12px; padding: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
         .sl-list li { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-bottom: 1px solid #FFD8BE; color: #407076; font-size: 1.05rem; }
         .sl-list li:last-child { border-bottom: none; }
+        .sl-list li.sl-category-header { font-weight: 700; color: #2d5a5f; border-bottom: 2px solid #FFD8BE; justify-content: flex-start; background: rgba(255,255,255,0.5); }
+        .sl-list li.sl-category-header .sl-remove { display: none; }
         .sl-list li .sl-remove { background: transparent; border: none; color: #698996; cursor: pointer; padding: 4px 8px; font-size: 0.9rem; }
         .sl-list li .sl-remove:hover { color: #d32f2f; }
         .sl-count { color: #698996; font-size: 0.9rem; margin-right: 8px; }
@@ -91,20 +93,31 @@
         }
 
         function render() {
-            const agg = window.ShoppingList.getAggregated();
-            if (agg.length === 0) {
+            const grouped = window.ShoppingList.getAggregatedGroupedByCategory();
+            const order = window.ShoppingList.CATEGORY_ORDER || [];
+            var totalItems = 0;
+            var parts = [];
+            order.forEach(function (cat) {
+                var items = grouped[cat];
+                if (!items || items.length === 0) return;
+                totalItems += items.length;
+                parts.push('<li class="sl-category-header"><span>' + escapeHtml(cat) + '</span><button type="button" class="sl-remove" aria-label="הסרי">✕</button></li>');
+                items.forEach(function (item) {
+                    var alreadyMerged = /^\d|^חצי\s|^רבע\s/.test(item.displayText || '');
+                    var countLabel = (!alreadyMerged && item.count > 1) ? ' <span class="sl-count">x' + item.count + '</span>' : '';
+                    parts.push('<li data-key="' + escapeAttr(item.key) + '">' +
+                        '<span>' + escapeHtml(item.displayText) + countLabel + '</span>' +
+                        '<button type="button" class="sl-remove" aria-label="הסרי">✕</button></li>');
+                });
+            });
+            if (totalItems === 0) {
                 slEmpty.style.display = 'block';
                 slContent.style.display = 'none';
             } else {
                 slEmpty.style.display = 'none';
                 slContent.style.display = 'block';
-                slList.innerHTML = agg.map(function (item) {
-                    const countLabel = item.count > 1 ? ' <span class="sl-count">x' + item.count + '</span>' : '';
-                    return '<li data-key="' + escapeAttr(item.key) + '">' +
-                        '<span>' + escapeHtml(item.displayText) + countLabel + '</span>' +
-                        '<button type="button" class="sl-remove" aria-label="הסרי">✕</button></li>';
-                }).join('');
-                slList.querySelectorAll('.sl-remove').forEach(function (btn) {
+                slList.innerHTML = parts.join('');
+                slList.querySelectorAll('li[data-key] .sl-remove').forEach(function (btn) {
                     btn.addEventListener('click', function () {
                         const key = this.closest('li').dataset.key;
                         window.ShoppingList.removeByKey(key);
