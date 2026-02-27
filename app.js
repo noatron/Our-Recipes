@@ -457,7 +457,8 @@ async function initApp() {
             }
         } catch (_) {}
 
-        const cached = getRecipesFromCache();
+        const scrollToIdOnLoad = new URLSearchParams(window.location.search).get('scrollTo');
+        const cached = scrollToIdOnLoad ? null : getRecipesFromCache();
         let recipes = [];
         let fromCache = false;
 
@@ -548,6 +549,18 @@ async function initApp() {
         // מציגים את הרשימה מיד; הלבבות מתעדכנים ברקע
         applyFilters();
         enrichRecipesWithLikes(recipes, auth.currentUser).then(applyFilters);
+
+        // גלילה למתכון שחזרנו אליו (אחרי שמירה / כפתור חזרה)
+        if (scrollToIdOnLoad) {
+            const scrollAfterRender = () => {
+                const card = document.querySelector('.recipe-card[data-recipe-id="' + scrollToIdOnLoad + '"]');
+                if (card) {
+                    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    if (window.history.replaceState) window.history.replaceState(null, '', 'index.html');
+                }
+            };
+            setTimeout(scrollAfterRender, 100);
+        }
 
         // אם טענו מהמטמון – מרעננים ברקע ומעדכנים
         if (fromCache) {
