@@ -335,6 +335,51 @@ header {
     color: #407076;
     text-decoration: underline;
 }
+.migrate-link-btn {
+    font-size: 0.9rem;
+    color: #698996;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    padding: 0;
+}
+.migrate-link-btn:hover {
+    color: #407076;
+    text-decoration: underline;
+}
+
+/* כפתורי רשימת קניות (מודל + דף רשימה) */
+.sl-btn { padding: 12px 20px; border-radius: 10px; font-family: inherit; font-size: 1rem; cursor: pointer; border: none; display: inline-flex; align-items: center; gap: 8px; }
+.sl-btn-primary { background: #407076; color: #FFEEDD; }
+.sl-btn-primary:hover { background: #698996; }
+.sl-btn-secondary { background: #FFF5EE; color: #407076; border: 2px solid #FFD8BE; }
+.sl-btn-secondary:hover { background: #FFEEDD; }
+
+/* מודל צור רשימת קניות (index) */
+.create-sl-modal .create-sl-recipe {
+    display: block;
+    padding: 10px 12px;
+    margin-bottom: 6px;
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #FFD8BE;
+    cursor: pointer;
+    color: #407076;
+}
+.create-sl-modal .create-sl-recipe:hover { border-color: #407076; }
+.create-sl-modal .create-sl-check { margin-left: 8px; }
+
+/* מודל הוספה לרשימת קניות (recipe-detail) */
+.shopping-list-modal-overlay .sl-check-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    color: #407076;
+    font-size: 1rem;
+}
+.shopping-list-modal-overlay .sl-check-label input { flex-shrink: 0; }
 
 main {
     padding-bottom: 120px;

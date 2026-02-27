@@ -344,19 +344,33 @@ function setupSurpriseMe(allRecipes, tagGroupsData, applyFilters) {
         surpriseBar.style.display = 'flex';
     }
 
-    /** חיפוש לפי מצרכים/טקסט – מילים בשם או במרכיבים */
+    /** נורמליזציה לחיפוש: יחיד/רבים וסמיכות (תפוחים→תפוח, תפוחי→תפוח) – stemming קל בעברית */
+    function normalizeForSearch(str) {
+        if (!str || typeof str !== 'string') return '';
+        let s = str.trim().toLowerCase();
+        // הסרת סיומות רווחות: רבים (ים), סמיכות (י) – כדי שיחיד ורבים יתאימו
+        s = s.replace(/ים\s/g, ' ').replace(/ים$/g, '');  // תפוחים → תפוח
+        s = s.replace(/י\s/g, ' ').replace(/י$/g, '');     // תפוחי אדמה → תפוח אדמה
+        return s;
+    }
+
+    /** חיפוש לפי מצרכים/טקסט – מילים חייבות להופיע באותו מרכיב (או בשם) – phrase/same-segment matching; יחיד/רבים מנורמלים */
     function searchByIngredients(text) {
-        const words = (text || '').trim().split(/[\s,]+/).filter(Boolean).map(w => w.toLowerCase());
+        const rawWords = (text || '').trim().split(/[\s,]+/).filter(Boolean);
+        if (rawWords.length === 0) return [];
+        const words = rawWords.map(w => normalizeForSearch(w)).filter(Boolean);
         if (words.length === 0) return [];
         return allRecipes
             .map(r => {
-                const name = (r.name || '').toLowerCase();
-                const ingText = (Array.isArray(r.ingredients) ? r.ingredients.join(' ') : '').toLowerCase();
-                const tagsText = (Array.isArray(r.tags) ? r.tags.join(' ') : '').toLowerCase();
-                const combined = name + ' ' + ingText + ' ' + tagsText;
+                const name = (r.name || '').trim();
+                const ingredients = Array.isArray(r.ingredients) ? r.ingredients : [];
+                const tags = Array.isArray(r.tags) ? r.tags : [];
+                const units = [name, ...ingredients, ...tags].map(u => (u && String(u).trim()) || '').filter(Boolean);
                 let score = 0;
-                words.forEach(w => {
-                    if (combined.includes(w)) score++;
+                units.forEach(unit => {
+                    const normalizedUnit = normalizeForSearch(unit);
+                    const allWordsInUnit = words.every(w => normalizedUnit.includes(w));
+                    if (allWordsInUnit) score += words.length;
                 });
                 return { recipe: r, score };
             })
@@ -397,6 +411,57 @@ function setupSurpriseMe(allRecipes, tagGroupsData, applyFilters) {
         });
         surpriseFavoritesOnly.style.display = auth.currentUser ? '' : 'none';
     }
+}
+
+/** כפתור "צור לי רשימת קניות" – מודל לבחירת מתכונים, איגום מרכיבים (ללא תבלינים/שמן), מעבר לרשימה עם שיתוף */
+function setupCreateShoppingListModal(allRecipes) {
+    const btn = document.getElementById('createShoppingListBtn');
+    if (!btn || typeof window.ShoppingList === 'undefined') return;
+    btn.addEventListener('click', () => {
+        const recipes = (window.__allRecipes || allRecipes || []).filter(r => Array.isArray(r.ingredients) && r.ingredients.length > 0);
+        if (recipes.length === 0) {
+            alert('אין מתכונים עם מרכיבים. הוסיפי מתכונים קודם.');
+            return;
+        }
+        const overlay = document.createElement('div');
+        overlay.className = 'create-sl-overlay';
+        overlay.style.cssText = 'position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;padding:16px;';
+        const box = document.createElement('div');
+        box.className = 'create-sl-modal';
+        box.style.cssText = 'background:#F8F7FF;border-radius:16px;padding:24px;max-width:480px;width:100%;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;font-family:Varela Round,sans-serif;direction:rtl;box-shadow:0 8px 32px rgba(0,0,0,0.2);';
+        const listHtml = recipes.map(r =>
+            '<label class="create-sl-recipe"><input type="checkbox" class="create-sl-check" data-recipe-id="' + escapeHtml(r.id) + '" data-recipe-name="' + escapeHtml(r.name || '') + '"> ' + escapeHtml(r.name || 'מתכון') + '</label>'
+        ).join('');
+        box.innerHTML =
+            '<h3 style="margin:0 0 8px;color:#407076;font-size:1.25rem;">צור לי רשימת קניות</h3>' +
+            '<p style="margin:0 0 16px;color:#698996;font-size:0.9rem;">בחרי מתכונים – המרכיבים יתאחדו לרשימה אחת (תבלינים ושמן לא ייכללו).</p>' +
+            '<div class="create-sl-list" style="overflow-y:auto;flex:1;min-height:0;margin-bottom:20px;">' + listHtml + '</div>' +
+            '<div style="display:flex;gap:10px;flex-wrap:wrap;">' +
+            '<button type="button" class="sl-btn sl-btn-primary" id="createSlConfirm">צור רשימה</button>' +
+            '<button type="button" class="sl-btn sl-btn-secondary" id="createSlCancel">ביטול</button>' +
+            '</div>';
+        overlay.appendChild(box);
+        overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+        document.body.appendChild(overlay);
+
+        document.getElementById('createSlCancel').onclick = () => overlay.remove();
+        document.getElementById('createSlConfirm').onclick = () => {
+            const checked = box.querySelectorAll('.create-sl-check:checked');
+            if (checked.length === 0) {
+                alert('בחרי לפחות מתכון אחד.');
+                return;
+            }
+            window.ShoppingList.clear();
+            checked.forEach(cb => {
+                const recipe = recipes.find(r => r.id === cb.dataset.recipeId);
+                if (recipe && recipe.ingredients && recipe.ingredients.length) {
+                    window.ShoppingList.addItems(recipe.id, recipe.name, recipe.ingredients);
+                }
+            });
+            overlay.remove();
+            window.location.href = 'shopping-list.html?fromCreate=1';
+        };
+    });
 }
 
 function setupTagGroupDropdown(applyFilters, tagGroupsData) {
@@ -525,6 +590,7 @@ async function initApp() {
         setupTagGroupDropdown(applyFilters, tagGroupsData);
         setupSearch(applyFilters);
         setupSurpriseMe(recipes, tagGroupsData, applyFilters);
+        setupCreateShoppingListModal(recipes);
 
         const favoritesWrap = document.getElementById('favorites-filter-wrap');
         const favoritesBtn = document.getElementById('favoritesFilterBtn');

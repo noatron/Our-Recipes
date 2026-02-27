@@ -8,6 +8,7 @@
     <title>פרטי מתכון</title>
     <link rel="icon" href="logo.svg" type="image/svg+xml">
     <link rel="stylesheet" href="style.css">
+    <script src="shopping-list-state.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Varela+Round&display=swap" rel="stylesheet">
     <style>
         .recipe-detail { max-width: 800px; margin: 0 auto; background: #FFEEDD; border-radius: 20px; padding: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
@@ -86,7 +87,8 @@
 <body>
     <div id="app">
         <div class="recipe-detail">
-            <div class="recipe-detail-top-bar">
+            <div class="recipe-detail-top-bar" style="display: flex; justify-content: space-between; align-items: center;">
+                <a href="shopping-list.html" class="back-button" style="text-decoration: none;">🛒 רשימת קניות</a>
                 <button type="button" class="back-button" id="backBtn">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="m9 18 6-6-6-6"/>
@@ -108,6 +110,10 @@
                     <button type="button" id="shareRecipeBtn">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
                         שתפי קישור
+                    </button>
+                    <button type="button" id="addToShoppingListBtn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+                        הוסיפי לרשימת קניות
                     </button>
                     <button type="button" id="editRecipeBtn">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -534,6 +540,7 @@
         document.getElementById('backBtn').addEventListener('click', goBack);
         document.getElementById('menuToggleBtn').addEventListener('click', toggleMenu);
         document.getElementById('shareRecipeBtn').addEventListener('click', shareRecipe);
+        document.getElementById('addToShoppingListBtn').addEventListener('click', openAddToShoppingListModal);
         document.getElementById('editRecipeBtn').addEventListener('click', editRecipe);
         document.getElementById('deleteRecipeBtn').addEventListener('click', deleteRecipe);
         document.getElementById('saveButton').addEventListener('click', saveEdit);
@@ -564,6 +571,39 @@
             if (!recipe || !recipe.id) return '';
             const base = window.location.origin + window.location.pathname;
             return base + (base.includes('?') ? '&' : '?') + 'id=' + encodeURIComponent(recipe.id);
+        }
+
+        function openAddToShoppingListModal() {
+            const menu = document.getElementById('dropdownMenu');
+            if (menu) menu.classList.remove('show');
+            if (!recipe) return;
+            const ingredients = Array.isArray(recipe.ingredients) ? recipe.ingredients : [];
+            const modal = document.createElement('div');
+            modal.className = 'shopping-list-modal-overlay';
+            modal.style.cssText = 'position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;padding:16px;';
+            if (ingredients.length === 0) {
+                modal.innerHTML = '<div style="background:#F8F7FF;border-radius:16px;padding:28px;max-width:360px;font-family:Varela Round,sans-serif;direction:rtl;text-align:center;"><p style="color:#407076;margin:0 0 20px;">אין מרכיבים במתכון הזה (מתכון מקישור).</p><button type="button" class="refresh-from-link-btn" id="slModalClose">סגור</button></div>';
+                modal.querySelector('#slModalClose').onclick = () => modal.remove();
+            } else {
+                const listHtml = ingredients.map((ing, i) => '<label class="sl-check-label"><input type="checkbox" class="sl-ing-check" data-ing="' + escapeHtml(ing) + '" checked> ' + escapeHtml(ing) + '</label>').join('');
+                modal.innerHTML = '<div class="shopping-list-modal" style="background:#F8F7FF;border-radius:16px;padding:24px;max-width:420px;width:100%;max-height:80vh;overflow-y:auto;font-family:Varela Round,sans-serif;direction:rtl;"><h3 style="margin:0 0 16px;color:#407076;font-size:1.2rem;">הוסיפי לרשימת קניות</h3><p style="margin:0 0 12px;color:#698996;font-size:0.9rem;">בחרי את המרכיבים להוספה (מתאחדים עם רשימה ממתכונים אחרים)</p><div class="sl-check-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;">' + listHtml + '</div><div style="display:flex;gap:10px;flex-wrap:wrap;"><button type="button" class="refresh-from-link-btn" id="slAddAll">הוסיפי הכל</button><button type="button" class="refresh-from-link-btn" id="slAddSelected">הוסיפי נבחרים</button><button type="button" style="background:transparent;color:#698996;border:2px solid #698996;" class="refresh-from-link-btn" id="slModalCancel">ביטול</button></div></div>';
+                modal.querySelector('#slModalCancel').onclick = () => modal.remove();
+                modal.querySelector('#slAddAll').onclick = () => {
+                    if (window.ShoppingList) window.ShoppingList.addItems(recipe.id, recipe.name, ingredients);
+                    modal.remove();
+                    alert('נוספו לרשימת הקניות. אפשר להמשיך להוסיף ממתכונים אחרים או לצפות ברשימה מהקישור „רשימת קניות“.');
+                };
+                modal.querySelector('#slAddSelected').onclick = () => {
+                    const checked = modal.querySelectorAll('.sl-ing-check:checked');
+                    const selected = [...checked].map(cb => cb.dataset.ing);
+                    if (selected.length === 0) { alert('בחרי לפחות מרכיב אחד'); return; }
+                    if (window.ShoppingList) window.ShoppingList.addItems(recipe.id, recipe.name, selected);
+                    modal.remove();
+                    alert('נוספו לרשימת הקניות. אפשר להמשיך להוסיף ממתכונים אחרים או לצפות ברשימה מהקישור „רשימת קניות“.');
+                };
+            }
+            modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+            document.body.appendChild(modal);
         }
 
         async function shareRecipe() {
