@@ -467,13 +467,35 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    /** המרת ArrayBuffer ל-base64 (למקרים ש-readAsDataURL נכשל, למשל ב-Safari/HEIC) */
+    function arrayBufferToBase64(ab) {
+        const bytes = new Uint8Array(ab);
+        let binary = '';
+        for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
+        return typeof btoa !== 'undefined' ? btoa(binary) : '';
+    }
+
     /** דחיסה אגרסיבית – מפחיתה timeout: רוחב מקס 900px, JPEG 0.72. טקסט באינסטגרם/טיקטוק עדיין קריא. */
     function compressImageFile(file) {
         return new Promise((resolve, reject) => {
-            const fallback = () => {
+            const mediaType = (file.type || 'image/jpeg').toLowerCase();
+            const isHeic = mediaType.includes('heic') || mediaType.includes('heif');
+            if (isHeic) {
+                reject(new Error('תמונות HEIC (אייפון) לא נתמכות. נסי להמיר ל-JPG בהגדרות המצלמה או לבחור תמונה אחרת.'));
+                return;
+            }
+            const rejectWithHint = () => {
+                reject(new Error('לא ניתן לקרוא את הקובץ. נסי תמונה בפורמט JPEG או PNG, או תמונה קטנה יותר.'));
+            };
+            const fallbackDataURL = () => {
                 const reader = new FileReader();
                 reader.onload = e => resolve({ data: e.target.result.split(',')[1], mediaType: file.type || 'image/jpeg' });
-                reader.onerror = () => reject(new Error('קריאת הקובץ נכשלה'));
+                reader.onerror = () => {
+                    const reader2 = new FileReader();
+                    reader2.onload = ev => resolve({ data: arrayBufferToBase64(ev.target.result), mediaType: file.type || 'image/jpeg' });
+                    reader2.onerror = rejectWithHint;
+                    reader2.readAsArrayBuffer(file);
+                };
                 reader.readAsDataURL(file);
             };
             const img = new Image();
@@ -495,12 +517,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     const dataUrl = canvas.toDataURL('image/jpeg', 0.72);
                     resolve({ data: dataUrl.split(',')[1], mediaType: 'image/jpeg' });
                 } catch (e) {
-                    fallback();
+                    fallbackDataURL();
                 }
             };
             img.onerror = () => {
                 URL.revokeObjectURL(url);
-                fallback();
+                fallbackDataURL();
             };
             img.src = url;
         });
@@ -556,6 +578,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const files = Array.from(recipeImageFiles?.files || []);
             if (files.length === 0) {
                 setImagesStatus('error', '⚠️ קודם בחרי תמונות בלחצן "בחרי תמונות" למעלה (בטאב ייבוא מתמונות).');
+                return;
+            }
+            const first = files[0];
+            if (!first.size || first.size === 0) {
+                setImagesStatus('error', 'הקובץ ריק או לא נגיש. נסי לבחור תמונה אחרת.');
+                return;
+            }
+            const type = (first.type || '').toLowerCase();
+            if (!type.startsWith('image/')) {
+                setImagesStatus('error', 'נא לבחור קובץ תמונה (JPEG או PNG).');
                 return;
             }
             extractFromImagesBtn.disabled = true;
