@@ -56,5 +56,10 @@ service cloud.firestore {
       allow read, delete: if request.auth != null && isAdmin();
       allow update: if false;
     }
+
+    // רשימות קניות שמורות – כל משתמש רק לנתונים של עצמו
+    match /users/{userId}/savedShoppingLists/{listId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
   }
 }

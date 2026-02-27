@@ -365,9 +365,16 @@
     function loadSavedList(id) {
         const saved = getSavedLists().find(l => l.id === id);
         if (!saved || !Array.isArray(saved.items)) return;
+        loadSavedListFromData(saved);
+    }
+
+    /** טוען רשימה שמורה מאובייקט (למשל מפיירבייס) – items: [{ displayText, count }] */
+    function loadSavedListFromData(list) {
+        if (!list || !Array.isArray(list.items)) return;
         const raw = getRaw();
-        saved.items.forEach(({ displayText, count }) => {
-            for (let i = 0; i < count; i++) {
+        list.items.forEach(({ displayText, count }) => {
+            var n = typeof count === 'number' ? count : 1;
+            for (var i = 0; i < n; i++) {
                 raw.push({ text: displayText, recipeId: null, recipeName: null });
             }
         });
@@ -411,6 +418,7 @@
         saveNamedList,
         getSavedLists,
         loadSavedList,
+        loadSavedListFromData,
         getShareText,
         shareToWhatsApp,
         normalizeKey,

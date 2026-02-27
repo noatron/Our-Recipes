@@ -66,7 +66,11 @@
         </div>
 
         <div id="slSavedSection" class="sl-saved-section" style="display: none;">
-            <h2>רשימות שמורות</h2>
+            <h2>האיזור שלי</h2>
+            <p id="slSavedHint" class="sl-saved-hint" style="color:#698996;font-size:0.9rem;margin:0 0 12px;"></p>
+            <div id="slAuthBtnWrap" style="display: none; margin-bottom: 12px;">
+                <button type="button" id="slAuthBtn" class="sl-btn sl-btn-secondary">התחברי עם Google</button>
+            </div>
             <div id="slSavedLists"></div>
         </div>
     </div>
@@ -77,7 +81,15 @@
         const slContent = document.getElementById('slContent');
         const slList = document.getElementById('slList');
         const slSavedSection = document.getElementById('slSavedSection');
+        const slSavedHint = document.getElementById('slSavedHint');
         const slSavedLists = document.getElementById('slSavedLists');
+
+        /** מפה id → אובייקט רשימה (עינה בלחיצה) */
+        var slSavedListsMap = {};
+        /** כשמחוברים – רשימות מפיירבייס; אחרת null (שימוש ב-localStorage) */
+        var slSavedListsOverride = null;
+        var slIsLoggedIn = false;
+        var slAuthBtnWrap = document.getElementById('slAuthBtnWrap');
 
         var fromCreate = (function () {
             var p = new URLSearchParams(window.location.search);
@@ -125,24 +137,35 @@
                     });
                 });
             }
-            const saved = window.ShoppingList.getSavedLists();
-            if (saved.length > 0) {
-                slSavedSection.style.display = 'block';
-                slSavedLists.innerHTML = saved.map(function (list) {
-                    return '<div class="sl-saved-list">' +
-                        '<span>' + escapeHtml(list.name) + '</span>' +
-                        '<div><button type="button" class="sl-btn sl-btn-secondary" data-load="' + escapeAttr(list.id) + '">טען לרשימה</button></div>' +
-                        '</div>';
-                }).join('');
-                slSavedLists.querySelectorAll('[data-load]').forEach(function (btn) {
-                    btn.addEventListener('click', function () {
-                        window.ShoppingList.loadSavedList(this.dataset.load);
-                        render();
-                    });
-                });
-            } else {
-                slSavedSection.style.display = 'none';
+            var saved = (slSavedListsOverride && Array.isArray(slSavedListsOverride))
+                ? slSavedListsOverride
+                : window.ShoppingList.getSavedLists();
+            slSavedListsMap = {};
+            saved.forEach(function (list) { slSavedListsMap[list.id] = list; });
+            slSavedSection.style.display = 'block';
+            if (slSavedHint) {
+                slSavedHint.textContent = slIsLoggedIn
+                    ? 'הרשימות נשמרות בחשבון שלך ונגישות מכל מכשיר.'
+                    : (saved.length > 0
+                        ? 'הרשימות נשמרות בדפדפן במכשיר הזה. התחברי כדי לשמור בענן ולגשת מכל מכשיר.'
+                        : 'התחברי כדי לשמור רשימות בחשבון ולגשת אליהן מכל מכשיר.');
             }
+            if (slAuthBtnWrap) slAuthBtnWrap.style.display = slIsLoggedIn ? 'none' : 'block';
+            slSavedLists.innerHTML = saved.length === 0
+                ? '<p class="sl-no-saved" style="color:#698996;font-size:0.95rem;">אין עדיין רשימות שמורות.</p>'
+                : saved.map(function (list) {
+                        return '<div class="sl-saved-list">' +
+                            '<span>' + escapeHtml(list.name) + '</span>' +
+                            '<div><button type="button" class="sl-btn sl-btn-secondary" data-load="' + escapeAttr(list.id) + '">טען לרשימה</button></div>' +
+                            '</div>';
+                    }).join('');
+            slSavedLists.querySelectorAll('[data-load]').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    var list = slSavedListsMap[btn.dataset.load];
+                    if (list) window.ShoppingList.loadSavedListFromData(list);
+                    render();
+                });
+            });
         }
 
         function escapeHtml(s) {
@@ -166,12 +189,24 @@
         document.getElementById('slSave').addEventListener('click', function () {
             var name = prompt('שם לרשימה:', 'רשימת קניות ' + new Date().toLocaleDateString('he-IL'));
             if (name === null) return;
-            var id = window.ShoppingList.saveNamedList(name);
-            if (id) {
-                alert('הרשימה נשמרה.');
-                render();
-            } else {
+            var agg = window.ShoppingList.getAggregated();
+            if (agg.length === 0) {
                 alert('הרשימה ריקה – אין מה לשמור.');
+                return;
+            }
+            if (slIsLoggedIn && typeof window.slSaveToCloud === 'function') {
+                window.slSaveToCloud(name, agg).then(function () {
+                    alert('הרשימה נשמרה בחשבון שלך.');
+                    if (typeof window.slRender === 'function') window.slRender();
+                }).catch(function () {
+                    alert('שגיאה בשמירה. נסי שוב.');
+                });
+            } else {
+                var id = window.ShoppingList.saveNamedList(name);
+                if (id) {
+                    alert('הרשימה נשמרה בדפדפן.');
+                    render();
+                }
             }
         });
 
@@ -181,7 +216,108 @@
             render();
         });
 
+        window.slRender = render;
         render();
+    </script>
+    <script>
+        (function () {
+            var auth = null;
+            var db = null;
+            var signInWithGoogle = null;
+            var collection = null, doc = null, setDoc = null, getDocs = null, query = null, orderBy = null, serverTimestamp = null;
+
+            function runRender() {
+                if (typeof window.slRender === 'function') window.slRender();
+            }
+
+            function fetchSavedLists(uid) {
+                if (!db || !uid) return Promise.resolve([]);
+                var colRef = collection(db, 'users', uid, 'savedShoppingLists');
+                var q = query(colRef, orderBy('createdAt', 'desc'));
+                return getDocs(q).then(function (snap) {
+                    return snap.docs.map(function (d) {
+                        var data = d.data();
+                        return {
+                            id: d.id,
+                            name: data.name || 'רשימת קניות',
+                            items: Array.isArray(data.items) ? data.items : [],
+                            createdAt: data.createdAt && data.createdAt.toMillis ? data.createdAt.toMillis() : 0
+                        };
+                    });
+                }).catch(function () { return []; });
+            }
+
+            function initFirebase() {
+                Promise.all([
+                    import('./firebase.js'),
+                    import('https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js')
+                ]).then(function (imports) {
+                    var fb = imports[0];
+                    var firestore = imports[1];
+                    auth = fb.auth;
+                    db = fb.db;
+                    signInWithGoogle = fb.signInWithGoogle;
+                    collection = firestore.collection;
+                    doc = firestore.doc;
+                    setDoc = firestore.setDoc;
+                    getDocs = firestore.getDocs;
+                    query = firestore.query;
+                    orderBy = firestore.orderBy;
+                    serverTimestamp = firestore.serverTimestamp;
+
+                    fb.onUserChange(function (user) {
+                        slIsLoggedIn = !!user;
+                        if (user) {
+                            fetchSavedLists(user.uid).then(function (list) {
+                                slSavedListsOverride = list;
+                                runRender();
+                            });
+                        } else {
+                            slSavedListsOverride = null;
+                            runRender();
+                        }
+                    });
+
+                    window.slSaveToCloud = function (name, items) {
+                        var user = auth.currentUser;
+                        if (!user || !db) return Promise.reject(new Error('לא מחוברת'));
+                        var id = 'sl_' + Date.now();
+                        var ref = doc(db, 'users', user.uid, 'savedShoppingLists', id);
+                        return setDoc(ref, {
+                            name: (name || 'רשימת קניות').trim() || 'רשימת קניות',
+                            items: items,
+                            createdAt: serverTimestamp()
+                        }).then(function () {
+                            return fetchSavedLists(user.uid).then(function (list) {
+                                slSavedListsOverride = list;
+                                runRender();
+                            });
+                        });
+                    };
+
+                    var btn = document.getElementById('slAuthBtn');
+                    if (btn) btn.addEventListener('click', function () {
+                        signInWithGoogle && signInWithGoogle();
+                    });
+
+                    if (auth.currentUser) {
+                        slIsLoggedIn = true;
+                        fetchSavedLists(auth.currentUser.uid).then(function (list) {
+                            slSavedListsOverride = list;
+                            runRender();
+                        });
+                    } else {
+                        slSavedListsOverride = null;
+                        slIsLoggedIn = false;
+                        runRender();
+                    }
+                }).catch(function (err) {
+                    console.warn('רשימת קניות: Firebase לא נטען', err);
+                });
+            }
+            if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initFirebase);
+            else initFirebase();
+        })();
     </script>
 </body>
 </html>
