@@ -135,10 +135,12 @@ function displayRecipes(recipesToShow) {
         const commentsLabel = numComments === 0 ? 'הערות' : (numComments === 1 ? 'הערה' : 'הערות');
         const commentsLinkHtml = `<a href="recipe-detail.html#comments" class="recipe-comments-link" data-recipe-id="${recipe.id}" onclick="event.preventDefault(); event.stopPropagation(); window.showRecipeToComments('${recipe.id}')">${numComments} ${commentsLabel}</a>`;
         const editBtnHtml = `<button type="button" class="recipe-card-edit" data-recipe-id="${recipe.id}" aria-label="ערוך מתכון" onclick="event.preventDefault(); event.stopPropagation(); window.showRecipeEdit('${recipe.id}')" title="ערוך מתכון"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></button>`;
+        const shareBtnHtml = `<button type="button" class="recipe-card-share" data-recipe-id="${recipe.id}" aria-label="שתפי קישור" onclick="event.preventDefault(); event.stopPropagation(); window.shareRecipe('${recipe.id}')" title="שתפי קישור"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>`;
         return `
         <div class="recipe-card" data-recipe-id="${recipe.id}" onclick="window.showRecipe('${recipe.id}')">
             <div class="recipe-card-image-wrap">
                 <img src="${escapeHtml(ensureHttpsImage(recipe.image) || 'https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=400&h=200&fit=crop')}" alt="" class="recipe-image" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=400&h=200&fit=crop';">
+                ${shareBtnHtml}
                 ${editBtnHtml}
             </div>
             <div class="recipe-content">
@@ -181,6 +183,35 @@ window.showRecipeEdit = function(id) {
     localStorage.setItem('selectedRecipeId', id);
     window.location.href = 'recipe-detail.html?edit=1';
 }
+
+/** קישור לשיתוף מתכון (מהכרטיס או מדף המתכון) */
+function getRecipeShareUrl(recipeId) {
+    if (!recipeId) return '';
+    return new URL('recipe-detail.html?id=' + encodeURIComponent(recipeId), window.location.href).href;
+}
+
+window.shareRecipe = async function(recipeId) {
+    const url = getRecipeShareUrl(recipeId);
+    if (!url) return;
+    const recipes = window.__allRecipes || [];
+    const r = recipes.find(x => x.id === recipeId);
+    const title = (r && r.name ? r.name : 'מתכון') + ' – מפה לפה';
+    try {
+        if (typeof navigator.share === 'function') {
+            await navigator.share({ title, url, text: title });
+            alert('הקישור שותף ✓');
+            return;
+        }
+    } catch (e) {
+        if (e.name === 'AbortError') return;
+    }
+    try {
+        await navigator.clipboard.writeText(url);
+        alert('הקישור הועתק ללוח ✓');
+    } catch (_) {
+        prompt('העתיקי את הקישור לשיתוף:', url);
+    }
+};
 
 /** מעשיר את רשימת המתכונים ב-likedByMe לפי המשתמש המחובר */
 async function enrichRecipesWithLikes(recipes, user) {

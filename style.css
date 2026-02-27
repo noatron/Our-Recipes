@@ -623,8 +623,7 @@ header .logo {
         padding-right: 100px; /* מרווח לכפתור חזרה כדי שהכותרת לא תכסה */
     }
     .add-recipe-header h1 {
-        font-size: 1.5rem;
-        word-break: break-word;
+        font-size: 1.15rem;
     }
 }
 
@@ -1267,6 +1266,41 @@ header .logo {
     transform: scale(0.96);
 }
 .recipe-card-edit svg {
+    flex-shrink: 0;
+}
+
+.recipe-card-share {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    min-height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255, 255, 255, 0.95);
+    color: #407076;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    transition: background 0.2s, transform 0.2s;
+    z-index: 2;
+    flex-shrink: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+.recipe-card-share:hover {
+    background: #fff;
+    transform: scale(1.08);
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.15);
+}
+.recipe-card-share:active {
+    transform: scale(0.96);
+}
+.recipe-card-share svg {
     flex-shrink: 0;
 }
 

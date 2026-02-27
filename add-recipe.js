@@ -177,6 +177,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const ref = await addDoc(collection(db, 'recipes'), newRecipe);
             importStatus.className = 'import-status success';
             importStatus.textContent = '✅ המתכון נשמר! מעבירה לעריכה...';
+            localStorage.setItem('selectedRecipeId', ref.id);
             setTimeout(() => { window.location.href = 'recipe-detail.html?id=' + ref.id + '&edit=1'; }, 800);
 
         } catch (err) {
@@ -270,6 +271,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const addedBy = getAddedByFields();
                 const newRecipe = { name, source, image, url, ingredients, instructions, tags, addedByUid: addedBy.addedByUid, addedByName: addedBy.addedByName };
                 const ref = await addDoc(collection(db, 'recipes'), newRecipe);
+                localStorage.setItem('selectedRecipeId', ref.id);
                 window.location.href = 'recipe-detail.html?id=' + ref.id + '&edit=1';
             } catch (err) {
                 console.error(err);
@@ -448,6 +450,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     addedByName: addedBy.addedByName
                 });
                 modal.remove();
+                localStorage.setItem('selectedRecipeId', ref.id);
                 window.location.href = 'recipe-detail.html?id=' + ref.id + '&edit=1';
             } catch (err) {
                 console.error(err);
@@ -552,11 +555,14 @@ document.addEventListener('DOMContentLoaded', () => {
             if (res.status === 502 || res.status === 504) {
                 throw new Error('TIMEOUT');
             }
+            if (res.status === 404) {
+                throw new Error('חילוץ מתמונה זמין רק כשהאתר פועל ב-Netlify (או עם \'netlify dev\' מקומית).');
+            }
             let data;
             try {
                 data = await res.json();
             } catch (_) {
-                throw new Error('תשובה לא תקינה מהשרת');
+                throw new Error(res.ok ? 'תשובה לא תקינה מהשרת' : 'חילוץ מתמונה זמין רק כשהאתר פועל ב-Netlify.');
             }
             if (data.error) throw new Error(data.error);
             if (data.name && !name) name = data.name;
@@ -613,11 +619,16 @@ document.addEventListener('DOMContentLoaded', () => {
                         extractFromImagesBtn.disabled = false;
                         return;
                     }
+                    if (response.status === 404) {
+                        setImagesStatus('error', 'חילוץ מתמונה זמין רק כשהאתר פועל ב-Netlify (או עם \'netlify dev\' מקומית).');
+                        extractFromImagesBtn.disabled = false;
+                        return;
+                    }
                     let data;
                     try {
                         data = await response.json();
                     } catch (_) {
-                        setImagesStatus('error', 'שגיאה בתשובת השרת. נסי שוב.');
+                        setImagesStatus('error', response.ok ? 'שגיאה בתשובת השרת. נסי שוב.' : 'שגיאה בשרת (' + response.status + '). חילוץ מתמונה זמין רק כשהאתר פועל ב-Netlify.');
                         extractFromImagesBtn.disabled = false;
                         return;
                     }
@@ -648,9 +659,12 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch (err) {
                 console.error(err);
                 const isTimeout = err.message === 'TIMEOUT';
-                const msg = isTimeout
+                let msg = isTimeout
                     ? (useSequential ? 'השרת לא הספיק להגיב. נסי עם תמונה אחת או שתיים, או שוב בעוד רגע.' : 'השרת לא הספיק להגיב. נסי שוב בעוד רגע.')
                     : (err.message || 'חיבור ל-AI נכשל. נסי שוב.');
+                if (err.message === 'Failed to fetch' || err.name === 'TypeError') {
+                    msg = 'לא ניתן להתחבר לשרת. חילוץ מתמונה זמין כשהאתר פועל ב-Netlify (או עם \'netlify dev\' מקומית).';
+                }
                 setImagesStatus('error', msg);
             }
             extractFromImagesBtn.disabled = false;
@@ -663,5 +677,11 @@ document.addEventListener('DOMContentLoaded', () => {
         setBlocksVisibility(user);
         initFormWhenReady(user);
     });
+    // אתחול מידי אם המשתמש כבר מחובר (לפני ש־onAuthStateChanged יורה)
+    const currentUser = auth.currentUser;
+    if (currentUser) {
+        setBlocksVisibility(currentUser);
+        initFormWhenReady(currentUser);
+    }
     console.log('✅ add-recipe.js loaded (Firebase)');
 });
