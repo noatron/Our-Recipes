@@ -108,6 +108,7 @@
             /\s*לילה\s*/g
         ];
         for (var i = 0; i < remove.length; i++) s = s.replace(remove[i], ' ');
+        s = s.replace(/גר[''\u2019\u2018]/g, 'גרם');
         s = s.replace(/\s+/g, ' ').trim();
         return s || text.trim();
     }
@@ -171,9 +172,9 @@
                 break;
             }
         }
-        if (!unitKey && /^גר['']?\s+/.test(s)) {
+        if (!unitKey && /^גר.\s+/.test(s)) {
             unitKey = 'גרם';
-            name = s.replace(/^גר['']?\s+/, '').trim();
+            name = s.replace(/^גר.\s+/, '').trim();
         }
         if (!unitKey) {
             for (var j = 0; j < UNIT_PAIRS.length; j++) {
@@ -294,9 +295,10 @@
             var key;
             var displayText;
             if (parsed && parsed.unitKey && parsed.name) {
-                key = 'u:' + parsed.unitKey + ':' + normalizeKey(parsed.name);
+                var nameKey = normalizeKey(parsed.name.trim());
+                key = 'u:' + parsed.unitKey + ':' + nameKey;
                 if (!byKey[key]) {
-                    byKey[key] = { key: key, qty: 0, unitKey: parsed.unitKey, name: parsed.name, displayText: '' };
+                    byKey[key] = { key: key, qty: 0, unitKey: parsed.unitKey, name: (nameKey || parsed.name.trim()), displayText: '' };
                 }
                 byKey[key].qty += parsed.qty;
             } else {
