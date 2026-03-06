@@ -187,6 +187,7 @@
                 }
             }
         }
+        if (numMatch && !unitKey && s) name = s;
         if (!name) name = text.trim();
         return { qty: qty, unitKey: unitKey, name: name };
     }
@@ -301,6 +302,14 @@
                     byKey[key] = { key: key, qty: 0, unitKey: parsed.unitKey, name: (nameKey || parsed.name.trim()), displayText: '' };
                 }
                 byKey[key].qty += parsed.qty;
+            } else if (parsed && parsed.name && !parsed.unitKey) {
+                var nameKeyN = normalizeKey(parsed.name.trim());
+                key = 'n:' + nameKeyN;
+                var addQty = (parsed.qty && parsed.qty > 0) ? parsed.qty : 1;
+                if (!byKey[key]) {
+                    byKey[key] = { key: key, qty: 0, unitKey: '', name: parsed.name.trim(), displayText: '', countOnly: false };
+                }
+                byKey[key].qty += addQty;
             } else {
                 key = normalizeKey(text) || text.trim().toLowerCase() || '_';
                 if (!byKey[key]) {
@@ -314,7 +323,7 @@
         var result = [];
         Object.keys(byKey).forEach(function (k) {
             var o = byKey[k];
-            var displayText = o.countOnly ? o.displayText : formatMerged(o.qty, o.unitKey, o.name);
+            var displayText = o.countOnly ? o.displayText : (k.indexOf('n:') === 0 && o.name ? o.qty + ' ' + o.name : formatMerged(o.qty, o.unitKey, o.name));
             var count = o.countOnly ? (o.count || 1) : o.qty;
             result.push({
                 key: o.key,
@@ -340,16 +349,25 @@
         return grouped;
     }
 
-    /** מוחק פריט לפי מפתח (מפתח רגיל או מאוחד u:unit:name) */
+    /** מוחק פריט לפי מפתח (מפתח רגיל או מאוחד u:unit:name או n:name) */
     function removeByKey(normalizedKey) {
         if (normalizedKey.indexOf('u:') === 0) {
             var parts = normalizedKey.split(':');
             var unitKey = parts[1];
             var nameKey = parts.slice(2).join(':');
             setRaw(getRaw().filter(function (item) {
-                var p = parseIngredient(item.text);
+                var norm = simplifyIngredient(item.text) || item.text;
+                var p = parseIngredient(norm);
                 if (!p || p.unitKey !== unitKey) return true;
-                return normalizeKey(p.name) !== nameKey;
+                return normalizeKey((p.name || '').trim()) !== nameKey;
+            }));
+        } else if (normalizedKey.indexOf('n:') === 0) {
+            var nameKeyN = normalizedKey.slice(2);
+            setRaw(getRaw().filter(function (item) {
+                var norm = simplifyIngredient(item.text) || item.text;
+                var p = parseIngredient(norm);
+                if (!p || !p.name) return true;
+                return normalizeKey(p.name.trim()) !== nameKeyN;
             }));
         } else {
             setRaw(getRaw().filter(function (item) { return normalizeKey(item.text) !== normalizedKey; }));
