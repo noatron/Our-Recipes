@@ -14,9 +14,14 @@
         .tag-group-box { background: #FFF5EE; border: 2px solid #FFD8BE; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
         .tag-group-box h3 { margin: 0 0 12px 0; font-size: 1.1rem; color: #407076; }
         .tag-list { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
-        .tag-item { display: inline-flex; align-items: center; gap: 6px; background: #fff; border: 2px solid #FFD8BE; border-radius: 20px; padding: 4px 10px 4px 14px; font-size: 0.9rem; color: #407076; }
-        .tag-item button { background: none; border: none; color: #698996; cursor: pointer; padding: 0 2px; font-size: 1rem; line-height: 1; }
-        .tag-item button:hover { color: #c62828; }
+        .tag-item { display: inline-flex; align-items: center; gap: 6px; background: #fff; border: 2px solid #FFD8BE; border-radius: 20px; padding: 6px 10px 6px 14px; font-size: 0.9rem; color: #407076; }
+        .tag-item .tag-label { margin-left: 2px; }
+        .tag-item button { background: none; border: none; cursor: pointer; padding: 2px 6px; font-size: 1rem; line-height: 1; border-radius: 6px; font-family: inherit; }
+        .tag-item button.tag-edit { color: #698996; }
+        .tag-item button.tag-edit:hover { color: #407076; background: #f0f7f8; }
+        .tag-item button.tag-delete { color: #698996; }
+        .tag-item button.tag-delete:hover { color: #c62828; background: #ffebee; }
+        .tag-item input.tag-edit-input { width: 80px; min-width: 60px; padding: 2px 6px; border: 1px solid #407076; border-radius: 12px; font-family: inherit; font-size: 0.9rem; color: #407076; outline: none; }
         .add-tag-row { display: flex; gap: 8px; margin-top: 8px; }
         .add-tag-row input { flex: 1; padding: 12px 18px; border: 2px solid #FFD8BE; border-radius: 25px; font-family: 'Varela Round', sans-serif; font-size: 1rem; color: #407076; background: white; outline: none; }
         .add-tag-row input:focus { border-color: #407076; }
@@ -79,8 +84,8 @@
     </div>
 
     <script type="module">
-        import { db, auth, onUserChange, signInWithGoogle } from '/firebase.js';
-        import { doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js';
+        import { db, auth, onUserChange, signInWithGoogle } from './firebase.js';
+        import { doc, getDoc, setDoc, collection, getDocs, updateDoc } from 'https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js';
 
         const CONFIG_PATH = { collection: 'config', id: 'tags' };
         const DEFAULT_GROUPS = [
@@ -97,6 +102,8 @@
         ];
 
         let tagGroups = [];
+        /** עקבות שינויי שמות לתגיות – לעדכון מתכונים בשמירה */
+        let tagRenames = [];
         const container = document.getElementById('tagGroupsContainer');
         const saveBtn = document.getElementById('saveBtn');
         const statusEl = document.getElementById('status');
@@ -111,9 +118,10 @@
                 <div class="tag-group-box" data-group-idx="${gIdx}">
                     <h3>${escapeHtml(group.label)}</h3>
                     <div class="tag-list">${(group.tags || []).map((tag, tIdx) => `
-                        <span class="tag-item">
-                            ${escapeHtml(tag)}
-                            <button type="button" data-group-idx="${gIdx}" data-tag-idx="${tIdx}" aria-label="הסר">×</button>
+                        <span class="tag-item" data-group-idx="${gIdx}" data-tag-idx="${tIdx}">
+                            <span class="tag-label">${escapeHtml(tag)}</span>
+                            <button type="button" class="tag-edit" data-group-idx="${gIdx}" data-tag-idx="${tIdx}" aria-label="ערוך" title="ערוך">✎</button>
+                            <button type="button" class="tag-delete" data-group-idx="${gIdx}" data-tag-idx="${tIdx}" aria-label="מחק תגית" title="מחק תגית">מחק</button>
                         </span>
                     `).join('')}</div>
                     <div class="add-tag-row">
@@ -123,12 +131,42 @@
                 </div>
             `).join('');
 
-            container.querySelectorAll('.tag-item button').forEach(btn => {
+            container.querySelectorAll('.tag-delete').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const gIdx = parseInt(btn.dataset.groupIdx, 10);
+                    const tIdx = parseInt(btn.dataset.tagIdx, 10);
+                    if (!tagGroups[gIdx] || !Array.isArray(tagGroups[gIdx].tags)) return;
+                    tagGroups[gIdx].tags.splice(tIdx, 1);
+                    render();
+                });
+            });
+
+            container.querySelectorAll('.tag-edit').forEach(btn => {
                 btn.addEventListener('click', () => {
                     const gIdx = parseInt(btn.dataset.groupIdx, 10);
                     const tIdx = parseInt(btn.dataset.tagIdx, 10);
-                    tagGroups[gIdx].tags.splice(tIdx, 1);
-                    render();
+                    const tag = tagGroups[gIdx].tags[tIdx];
+                    const item = container.querySelector(`.tag-item[data-group-idx="${gIdx}"][data-tag-idx="${tIdx}"]`);
+                    const labelEl = item.querySelector('.tag-label');
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.className = 'tag-edit-input';
+                    input.value = tag;
+                    input.setAttribute('data-group-idx', gIdx);
+                    input.setAttribute('data-tag-idx', tIdx);
+                    const finishEdit = () => {
+                        const newVal = (input.value || '').trim();
+                        if (newVal && newVal !== tag) {
+                            tagGroups[gIdx].tags[tIdx] = newVal;
+                            tagRenames.push({ old: tag, new: newVal });
+                        }
+                        render();
+                    };
+                    input.addEventListener('blur', finishEdit);
+                    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); input.blur(); } });
+                    labelEl.replaceWith(input);
+                    input.focus();
                 });
             });
             container.querySelectorAll('.add-tag-btn').forEach(btn => {
@@ -161,6 +199,7 @@
         }
 
         async function load() {
+            tagRenames = [];
             try {
                 const snap = await getDoc(doc(db, CONFIG_PATH.collection, CONFIG_PATH.id));
                 if (snap.exists() && Array.isArray(snap.data().tagGroups) && snap.data().tagGroups.length) {
@@ -188,8 +227,31 @@
             statusEl.className = 'status';
             try {
                 const allTags = flattenTags(tagGroups);
+                const currentTagSet = new Set(allTags);
+                const renamesMap = {};
+                tagRenames.forEach(({ old: o, new: n }) => { renamesMap[o] = n; });
+
                 await setDoc(doc(db, CONFIG_PATH.collection, CONFIG_PATH.id), { tagGroups, allTags });
-                statusEl.textContent = 'נשמר. הקטגוריות מתעדכנות באתר.';
+
+                const snapshot = await getDocs(collection(db, 'recipes'));
+                let updated = 0;
+                for (const d of snapshot.docs) {
+                    const data = d.data();
+                    const tags = Array.isArray(data.tags) ? data.tags : [];
+                    const newTags = tags
+                        .map(t => renamesMap[t] !== undefined ? renamesMap[t] : t)
+                        .filter(t => currentTagSet.has(t));
+                    const same = newTags.length === tags.length && newTags.every((t, i) => t === tags[i]);
+                    if (!same) {
+                        await updateDoc(doc(db, 'recipes', d.id), { tags: newTags });
+                        updated++;
+                    }
+                }
+
+                tagRenames = [];
+                statusEl.textContent = updated > 0
+                    ? `נשמר. עודכנו ${updated} מתכונים עם התגיות החדשות.`
+                    : 'נשמר. הקטגוריות מתעדכנות באתר.';
                 statusEl.className = 'status ok';
             } catch (e) {
                 statusEl.textContent = 'שגיאה: ' + (e.message || e);

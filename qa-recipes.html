@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QA מתכונים – תצוגה</title>
+    <style>
+        body { font-family: 'Varela Round', sans-serif; padding: 20px; background: #F8F7FF; color: #407076; direction: rtl; }
+        h1 { font-size: 1.5rem; margin-bottom: 16px; }
+        table { border-collapse: collapse; width: 100%; max-width: 900px; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        th, td { padding: 12px 14px; text-align: right; border-bottom: 1px solid #e8e6f0; }
+        th { background: #407076; color: #FFEEDD; font-weight: 400; }
+        tr:hover { background: #FFF5EE; }
+        .view-iframe { background: #e8f0f1; color: #407076; padding: 4px 10px; border-radius: 12px; font-size: 0.9rem; }
+        .view-inapp { background: #FFD8BE; color: #407076; padding: 4px 10px; border-radius: 12px; font-size: 0.9rem; }
+        .view-reel { background: #f0e8f0; color: #407076; padding: 4px 10px; border-radius: 12px; font-size: 0.9rem; }
+        a { color: #407076; }
+        a:hover { text-decoration: underline; }
+        .loading { padding: 24px; color: #698996; }
+        .summary { margin-bottom: 20px; padding: 16px; background: white; border-radius: 12px; max-width: 900px; }
+        .summary p { margin: 4px 0; }
+    </style>
+</head>
+<body>
+    <h1>🔍 QA מתכונים – תצוגה צפויה</h1>
+    <div id="summary" class="summary" style="display: none;"></div>
+    <div id="out"><p class="loading">טוען מתכונים...</p></div>
+
+    <script type="module">
+        import { db } from './firebase.js';
+        import { collection, getDocs } from 'https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js';
+
+        function escapeHtml(s) {
+            const div = document.createElement('div');
+            div.textContent = s;
+            return div.innerHTML;
+        }
+        function isReelUrl(url) {
+            return url && (String(url).includes('instagram.com') || String(url).includes('tiktok.com'));
+        }
+
+        const snapshot = await getDocs(collection(db, 'recipes'));
+        const recipes = [];
+        snapshot.forEach(d => recipes.push({ id: d.id, ...d.data() }));
+
+        let iframeCount = 0, inappCount = 0, reelCount = 0;
+        const rows = recipes.map(r => {
+            const hasUrl = !!(r.url && String(r.url).trim());
+            const reel = hasUrl && isReelUrl(r.url);
+            const ing = Array.isArray(r.ingredients) ? r.ingredients.length : 0;
+            const inst = Array.isArray(r.instructions) ? r.instructions.length : 0;
+            const hasFull = ing > 0 && inst > 0;
+            let view, viewClass;
+            if (hasUrl && reel) {
+                view = 'ריל (לינק בלבד)';
+                viewClass = 'view-reel';
+                reelCount++;
+            } else if (hasUrl && !hasFull) {
+                view = 'iframe';
+                viewClass = 'view-iframe';
+                iframeCount++;
+            } else {
+                view = 'באפליקציה';
+                viewClass = 'view-inapp';
+                inappCount++;
+            }
+            const name = (r.name || 'ללא שם').trim().slice(0, 40);
+            const link = `recipe-detail.html?id=${encodeURIComponent(r.id)}`;
+            return { name, hasUrl: hasUrl ? 'כן' : 'לא', ing, inst, view, viewClass, link };
+        });
+
+        document.getElementById('summary').style.display = 'block';
+        document.getElementById('summary').innerHTML = `
+            <p><strong>סה"כ מתכונים:</strong> ${recipes.length}</p>
+            <p><strong>צפויים כ-iframe (מלינק, בלי מרכיבים+הוראות מלאים):</strong> ${iframeCount}</p>
+            <p><strong>צפויים בתצוגה באפליקציה (ידני או חילוץ מלא):</strong> ${inappCount}</p>
+            <p><strong>ריל (אינסטגרם/טיקטוק):</strong> ${reelCount}</p>
+        `;
+
+        const tableHtml = `
+            <table>
+                <thead>
+                    <tr>
+                        <th>שם</th>
+                        <th>קישור</th>
+                        <th>מרכיבים</th>
+                        <th>הוראות</th>
+                        <th>צפי תצוגה</th>
+                        <th>בדיקה</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${rows.map(row => `
+                        <tr>
+                            <td>${escapeHtml(row.name)}</td>
+                            <td>${row.hasUrl}</td>
+                            <td>${row.ing}</td>
+                            <td>${row.inst}</td>
+                            <td><span class="${row.viewClass}">${row.view}</span></td>
+                            <td><a href="${escapeHtml(row.link)}" target="_blank">פתחי מתכון</a></td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
+        document.getElementById('out').innerHTML = tableHtml;
+    </script>
+</body>
+</html>

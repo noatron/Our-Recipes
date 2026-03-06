@@ -28,3 +28,15 @@ firebase deploy --only firestore:rules
 ```
 
 (דורש `firebase init` עם Firestore והעתקה של `firestore.rules` לתיקייה שהקלִי מצפה לה.)
+
+## אינדקס ל־"לבבות" (collection group)
+
+כדי שדף הבית יטען מהר (שאילתה אחת לכל הלבבות של המשתמש), צריך אינדקס על ה־collection group `likes` לפי השדה `userId`:
+
+1. ב־Firebase Console → **Firestore** → **Indexes**.
+2. לשונית **Single field** (לא Composite).
+3. **Collection group ID:** `likes`.
+4. **Field path:** `userId`, **Query scope:** Collection group.
+5. ליצור את האינדקס.
+
+אם האינדקס חסר, הקונסול בדפדפן יציג קישור ליצירת האינדקס; אפשר גם ללחוץ עליו.

@@ -1,5 +1,5 @@
 import { db, auth, onUserChange, signInWithGoogle, signOutUser } from './firebase.js';
-import { collection, getDocs, getDoc, setDoc, updateDoc, deleteDoc, doc, increment, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+import { collection, getDocs, getDoc, setDoc, updateDoc, deleteDoc, doc, increment, serverTimestamp, collectionGroup, query, where } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
 /** קבוצות קטגוריות לדרופדאון */
 const TAG_GROUPS = [
@@ -213,14 +213,23 @@ window.shareRecipe = async function(recipeId) {
     }
 };
 
-/** מעשיר את רשימת המתכונים ב-likedByMe לפי המשתמש המחובר */
+/** מעשיר את רשימת המתכונים ב-likedByMe לפי המשתמש המחובר – שאילתה אחת במקום N */
 async function enrichRecipesWithLikes(recipes, user) {
-    await Promise.all(recipes.map(async (r) => {
-        r.likedByMe = false;
-        if (!user) return;
-        const snap = await getDoc(doc(db, 'recipes', r.id, 'likes', user.uid));
-        r.likedByMe = snap.exists();
-    }));
+    recipes.forEach(r => { r.likedByMe = false; });
+    if (!user) return;
+    try {
+        const q = query(collectionGroup(db, 'likes'), where('userId', '==', user.uid));
+        const snapshot = await getDocs(q);
+        const likedRecipeIds = new Set();
+        snapshot.forEach(d => likedRecipeIds.add(d.ref.parent.parent.id));
+        recipes.forEach(r => { r.likedByMe = likedRecipeIds.has(r.id); });
+    } catch (e) {
+        // נפילה ל-N קריאות אם אין אינדקס או שדה userId במסמכי likes ישנים
+        await Promise.all(recipes.map(async (r) => {
+            const snap = await getDoc(doc(db, 'recipes', r.id, 'likes', user.uid));
+            r.likedByMe = snap.exists();
+        }));
+    }
 }
 
 /** עדכון תצוגת Auth (כפתור + שם) */
@@ -265,7 +274,7 @@ async function toggleLike(recipeId) {
             recipe.likedByMe = false;
             recipe.likesCount = (recipe.likesCount ?? 0) - 1;
         } else {
-            await setDoc(likeRef, { createdAt: serverTimestamp() });
+            await setDoc(likeRef, { userId: user.uid, createdAt: serverTimestamp() });
             await updateDoc(recipeRef, { likesCount: increment(1) });
             recipe.likedByMe = true;
             recipe.likesCount = (recipe.likesCount ?? 0) + 1;
@@ -283,6 +292,22 @@ function setupSearch(applyFilters) {
     const searchInput = document.getElementById('searchInput');
     if (!searchInput) return;
     searchInput.addEventListener('input', () => { if (applyFilters) applyFilters(); });
+}
+
+/** במובייל: כפתור "הפתעות ורעיונות" פותח/סוגר את הבלוק */
+function setupSurpriseMobileToggle() {
+    const wrap = document.getElementById('surpriseMobileWrap');
+    const toggle = document.getElementById('surpriseMobileToggle');
+    const content = document.getElementById('surpriseMobileContent');
+    if (!wrap || !toggle || !content) return;
+    toggle.addEventListener('click', () => {
+        const expanded = wrap.classList.toggle('surprise-mobile-expanded');
+        toggle.setAttribute('aria-expanded', String(expanded));
+    });
+    const moreWrap = document.getElementById('mobileMoreWrap');
+    if (moreWrap && window.matchMedia('(max-width: 768px)').matches) {
+        moreWrap.removeAttribute('open');
+    }
 }
 
 /** הפתיעי אותי – הגרלת 3–5 מתכונים; אופציונלי: קטגוריה + רק מועדפים. "יש לי במטבח" – חיפוש לפי מצרכים. */
@@ -590,6 +615,7 @@ async function initApp() {
         setupTagGroupDropdown(applyFilters, tagGroupsData);
         setupSearch(applyFilters);
         setupSurpriseMe(recipes, tagGroupsData, applyFilters);
+        setupSurpriseMobileToggle();
         setupCreateShoppingListModal(recipes);
 
         const favoritesWrap = document.getElementById('favorites-filter-wrap');

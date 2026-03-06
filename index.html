@@ -53,37 +53,49 @@
             <button type="button" id="surpriseBackBtn" class="surprise-back-btn">חזרה לרשימה</button>
         </div>
 
-        <div class="surprise-section">
-            <h2 class="surprise-heading">הפתיעי אותי עם רעיון</h2>
-            <p class="surprise-desc">מגרילים לך 3–5 מתכונים – לפי קטגוריה ו/או רק מהמועדפים שלך.</p>
-            <div class="surprise-row">
-                <label for="surprise-category" class="surprise-label">קטגוריה (אופציונלי):</label>
-                <select id="surprise-category" class="surprise-select" aria-label="קטגוריה להגרלה">
-                    <option value="">כל הקטגוריות</option>
-                </select>
-                <label class="surprise-check-wrap"><input type="checkbox" id="surprise-favorites-only" class="surprise-check"> ממתכונים שאהבתי</label>
-                <button type="button" id="surpriseBtn" class="surprise-btn">הפתיעי אותי</button>
-            </div>
-        </div>
-        <div class="surprise-section surprise-section-ingredients">
-            <h2 class="surprise-heading">יש לי במטבח – מה לבשל?</h2>
-            <p class="surprise-desc">כתבי מה יש לך (מצרכים או סוג מנה), ונציע מתכונים שמתאימים.</p>
-            <div class="surprise-row surprise-row-ingredients">
-                <input type="text" id="ingredients-search" class="surprise-input" placeholder="למשל: חצילים, עגבניות, פסטה או: רעיון לארוחת ערב">
-                <button type="button" id="ingredientsSuggestBtn" class="surprise-btn">הציעי מתכונים</button>
+        <!-- במובייל: בלוק מתקפל "הפתעות ורעיונות" – מפחית עומס -->
+        <div class="surprise-mobile-wrap" id="surpriseMobileWrap">
+            <button type="button" class="surprise-mobile-toggle" id="surpriseMobileToggle" aria-expanded="false" aria-controls="surpriseMobileContent">
+                <span class="surprise-mobile-toggle-text">הפתעות ורעיונות</span>
+                <span class="surprise-mobile-toggle-icon" aria-hidden="true">▼</span>
+            </button>
+            <div class="surprise-mobile-content" id="surpriseMobileContent">
+                <div class="surprise-section">
+                    <h2 class="surprise-heading">הפתיעי אותי עם רעיון</h2>
+                    <p class="surprise-desc">מגרילים לך 3–5 מתכונים – לפי קטגוריה ו/או רק מהמועדפים שלך.</p>
+                    <div class="surprise-row">
+                        <label for="surprise-category" class="surprise-label">קטגוריה (אופציונלי):</label>
+                        <select id="surprise-category" class="surprise-select" aria-label="קטגוריה להגרלה">
+                            <option value="">כל הקטגוריות</option>
+                        </select>
+                        <label class="surprise-check-wrap"><input type="checkbox" id="surprise-favorites-only" class="surprise-check"> ממתכונים שאהבתי</label>
+                        <button type="button" id="surpriseBtn" class="surprise-btn">הפתיעי אותי</button>
+                    </div>
+                </div>
+                <div class="surprise-section surprise-section-ingredients">
+                    <h2 class="surprise-heading">יש לי במטבח – מה לבשל?</h2>
+                    <p class="surprise-desc">כתבי מה יש לך (מצרכים או סוג מנה), ונציע מתכונים שמתאימים.</p>
+                    <div class="surprise-row surprise-row-ingredients">
+                        <input type="text" id="ingredients-search" class="surprise-input" placeholder="למשל: חצילים, עגבניות, פסטה">
+                        <button type="button" id="ingredientsSuggestBtn" class="surprise-btn">הציעי מתכונים</button>
+                    </div>
+                </div>
             </div>
         </div>
 
         <div id="recipes" class="recipes-grid">
             <!-- המתכונים יופיעו כאן -->
         </div>
-        <p class="migrate-link-wrap">
-            <a href="manage-tags.html" class="migrate-link">ניהול קטגוריות</a>
-            <span style="margin: 0 8px; color: #c5d9dc;">|</span>
-            <a href="manage-users.html" class="migrate-link">ניהול משתמשות</a>
-            <span style="margin: 0 8px; color: #c5d9dc;">|</span>
-            <a href="migrate-categories-to-tags.html" class="migrate-link">המרת קטגוריות ישנות (פעם אחת)</a>
-        </p>
+        <details class="mobile-more-wrap" id="mobileMoreWrap" open>
+            <summary class="mobile-more-summary">עוד</summary>
+            <p class="migrate-link-wrap">
+                <a href="manage-tags.html" class="migrate-link">ניהול קטגוריות</a>
+                <span class="migrate-sep">|</span>
+                <a href="manage-users.html" class="migrate-link">ניהול משתמשות</a>
+                <span class="migrate-sep">|</span>
+                <a href="migrate-categories-to-tags.html" class="migrate-link">המרת קטגוריות ישנות</a>
+            </p>
+        </details>
     </div>
 
     <script src="shopping-list-state.js"></script>
