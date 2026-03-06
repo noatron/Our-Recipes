@@ -19,7 +19,7 @@
         .title-section h1 { flex: 1; margin: 0; }
         .menu-button { background: transparent; border: none; color: #407076; cursor: pointer; padding: 8px; display: flex; align-items: center; justify-content: center; transition: all 0.3s; margin-right: 10px; flex-shrink: 0; }
         .menu-button:hover { color: #698996; transform: scale(1.1); }
-        .dropdown-menu { display: none; position: absolute; top: 45px; left: 0; background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); z-index: 1000; min-width: 180px; overflow: hidden; }
+        .dropdown-menu { display: none; position: absolute; top: 45px; right: 0; left: auto; background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); z-index: 1000; min-width: 180px; overflow: hidden; }
         .title-section { z-index: 100; position: relative; }
         .dropdown-menu.show { display: block; }
         .dropdown-menu button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 14px 18px; border: none; background: white; color: #407076; font-family: 'Varela Round', sans-serif; font-size: 1rem; cursor: pointer; transition: all 0.2s; text-align: right; }
@@ -37,19 +37,22 @@
         .recipe-info::before { content: ''; position: absolute; top: 10px; left: 0; right: 0; border-top: 2px solid #FFD8BE; }
         .info-item { font-size: 1.1rem; color: #698996; }
         .section-title { font-size: 1.8rem; color: #407076; margin: 30px 0 15px 0; }
-        .ingredients-list { list-style: none; padding: 30px 20px; margin: 20px 0; background: linear-gradient(transparent 0, transparent 39px, #407076 39px, #407076 40px), linear-gradient(90deg, #FFD8BE 0, #FFD8BE 2px, transparent 2px); background-size: 100% 40px, 100% 100%; background-position: 0 0, 40px 0; position: relative; border-radius: 10px; }
-        .ingredients-list::before { content: ''; position: absolute; right: 40px; top: 0; width: 2px; height: 100%; background: #FFD8BE; }
-        .ingredients-list li { padding: 15px 60px 0px 20px; margin: 0; font-family: 'Varela Round', sans-serif; font-size: 1.1rem; line-height: 32px; height: 40px; }
+        .ingredients-list { list-style: none; padding: 30px 20px; margin: 20px 0; background: linear-gradient(90deg, #FFD8BE 0, #FFD8BE 2px, transparent 2px); background-size: 100% 100%; background-position: 40px 0; position: relative; border-radius: 10px; }
+        .ingredients-list::before { content: ''; position: absolute; right: 40px; top: 0; width: 2px; height: 100%; background: #FFD8BE; z-index: 0; pointer-events: none; }
+        .ingredients-list li { padding: 14px 60px 14px 20px; margin: 0; font-family: 'Varela Round', sans-serif; font-size: 1.1rem; line-height: 1.55; min-height: 40px; position: relative; z-index: 1; box-sizing: border-box; background: linear-gradient(to bottom, #FFEEDD 0, #FFEEDD calc(100% - 1px), #407076 calc(100% - 1px)); }
+        .ingredients-list li:last-child { background: #FFEEDD; }
         .ingredients-list li:hover { color: #698996; cursor: pointer; }
         .ingredients-list li.checked { text-decoration: line-through; opacity: 0.5; color: #698996; }
-        .instructions-list { list-style: none; counter-reset: step-counter; padding: 30px 20px; margin: 20px 0; background: linear-gradient(transparent 0, transparent 39px, #407076 39px, #407076 40px), linear-gradient(90deg, #FFD8BE 0, #FFD8BE 2px, transparent 2px); background-size: 100% 40px, 100% 100%; background-position: 0 0, 40px 0; position: relative; border-radius: 10px; }
-        .instructions-list::before { content: ''; position: absolute; right: 40px; top: 0; width: 2px; height: 100%; background: #FFD8BE; }
-        .instructions-list li { counter-increment: step-counter; padding: 12px 60px 0px 20px; margin: 0; font-family: 'Varela Round', sans-serif; font-size: 1.1rem; line-height: 30px; min-height: 40px; color: #407076; cursor: pointer; transition: all 0.3s; background: transparent; border: none; position: relative; }
-        .instructions-list li::before { content: counter(step-counter) "."; position: absolute; right: 25px; top: 16px; font-family: 'Varela Round', sans-serif; color: #407076; font-size: 1.1rem; }
+        .instructions-list { list-style: none; counter-reset: step-counter; padding: 30px 20px; margin: 20px 0; background: linear-gradient(90deg, #FFD8BE 0, #FFD8BE 2px, transparent 2px); background-size: 100% 100%; background-position: 40px 0; position: relative; border-radius: 10px; }
+        .instructions-list::before { content: ''; position: absolute; right: 40px; top: 0; width: 2px; height: 100%; background: #FFD8BE; z-index: 0; pointer-events: none; }
+        .instructions-list li { counter-increment: step-counter; padding: 14px 60px 14px 20px; margin: 0; font-family: 'Varela Round', sans-serif; font-size: 1.1rem; line-height: 1.55; min-height: 40px; color: #407076; cursor: pointer; transition: all 0.3s; border: none; position: relative; z-index: 1; box-sizing: border-box; background: linear-gradient(to bottom, #FFEEDD 0, #FFEEDD calc(100% - 1px), #407076 calc(100% - 1px)); }
+        .instructions-list li:last-child { background: #FFEEDD; }
+        .instructions-list li::before { content: counter(step-counter) "."; position: absolute; right: 25px; top: 14px; font-family: 'Varela Round', sans-serif; color: #407076; font-size: 1.1rem; z-index: 2; }
         .instructions-list li:hover { color: #698996; }
         .instructions-list li.checked { text-decoration: line-through; opacity: 0.5; color: #698996; }
         .edit-input { width: 100%; background: #F8F7FF; border: none; border-radius: 6px; font-family: 'Varela Round', sans-serif; font-size: 1.1rem; color: #407076; padding: 4px 8px; outline: none; direction: rtl; }
         .edit-title-input { width: 100%; background: #F8F7FF; border: none; border-radius: 6px; font-family: 'Varela Round', sans-serif; font-size: 2.5rem; color: #407076; font-weight: 400; outline: none; direction: rtl; padding: 4px 8px; }
+        .edit-field-label { display: block; font-size: 0.9rem; color: #698996; margin-bottom: 6px; font-family: 'Varela Round', sans-serif; }
         .save-button { display: none; width: 100%; background: #407076; color: white; border: none; border-radius: 12px; padding: 14px; font-family: 'Varela Round', sans-serif; font-size: 1.1rem; cursor: pointer; margin-top: 20px; transition: all 0.3s; }
         .save-button:hover { background: #698996; }
         .save-button.visible { display: block; }
@@ -295,6 +298,13 @@
         function renderRecipe(recipe) {
             const addBlock = document.getElementById('addInstructionsFromImageBlock');
             if (addBlock) addBlock.style.display = 'none';
+            const addTagWrap = document.getElementById('addTagInRecipeWrap');
+            if (addTagWrap) addTagWrap.style.display = 'none';
+            const saveBtn = document.getElementById('saveButton');
+            const cancelBtn = document.getElementById('cancelButton');
+            if (saveBtn) saveBtn.classList.remove('visible');
+            if (cancelBtn) cancelBtn.classList.remove('visible');
+
             const imgSrc = (recipe.image || '').trim().replace(/^http:\/\//i, 'https://');
             document.getElementById('recipeImage').src = imgSrc || '';
             document.getElementById('recipeImage').alt = recipe.name;
@@ -315,14 +325,20 @@
             const sourceLabel = (recipe.source && String(recipe.source).trim()) ? recipe.source.trim() : (recipe.url ? (() => { try { return new URL(recipe.url).hostname.replace(/^www\./, ''); } catch (e) { return ''; } })() : '');
             if (sourceLabel || recipe.url) {
                 const sourceEl = document.getElementById('recipeSource');
+                sourceEl.innerHTML = '';
                 if (recipe.url) {
+                    const fromLinkBadge = document.createElement('span');
+                    fromLinkBadge.className = 'recipe-source-from-link';
+                    fromLinkBadge.textContent = 'מתכון מקישור';
+                    fromLinkBadge.style.cssText = 'display:inline-block; margin-left: 8px; padding: 2px 8px; background: #e8f0f1; color: #407076; border-radius: 12px; font-size: 0.8rem;';
                     const link = document.createElement('a');
                     link.href = recipe.url;
                     link.target = '_blank';
                     link.rel = 'noopener noreferrer';
                     link.className = 'recipe-source-link';
                     link.textContent = sourceLabel || 'צפי בריל';
-                    sourceEl.innerHTML = '';
+                    sourceEl.appendChild(fromLinkBadge);
+                    sourceEl.appendChild(document.createTextNode(' · '));
                     sourceEl.appendChild(link);
                 } else {
                     sourceEl.textContent = sourceLabel;
@@ -334,9 +350,10 @@
 
             const isReelUrl = (url) => url && (String(url).includes('instagram.com') || String(url).includes('tiktok.com'));
             const showReelLinkOnly = recipe.url && isReelUrl(recipe.url);
-            const hasExtractedContent = (Array.isArray(recipe.ingredients) && recipe.ingredients.length > 0) || (Array.isArray(recipe.instructions) && recipe.instructions.length > 0);
+            /* מתכון מלינק מוצג ב-iframe אלא אם חולצו גם מרכיבים וגם הוראות (תוכן חלקי = נשאר iframe) */
+            const hasFullExtractedContent = (Array.isArray(recipe.ingredients) && recipe.ingredients.length > 0) && (Array.isArray(recipe.instructions) && recipe.instructions.length > 0);
 
-            if (recipe.url && !showReelLinkOnly && !hasExtractedContent) {
+            if (recipe.url && !showReelLinkOnly && !hasFullExtractedContent) {
                 document.querySelectorAll('.section-title').forEach(el => el.style.display = 'none');
                 document.getElementById('ingredientsList').style.display = 'none';
                 document.getElementById('instructionsList').style.display = 'none';
@@ -392,6 +409,27 @@
             }
         }
 
+        /** מעדכן רק את רשימות המרכיבים וההוראות ב-DOM (אחרי טעינת מטא ברקע) */
+        function updateIngredientsAndInstructionsInDom(recipe) {
+            const ingredientsList = document.getElementById('ingredientsList');
+            const instructionsList = document.getElementById('instructionsList');
+            if (!ingredientsList || !instructionsList) return;
+            ingredientsList.innerHTML = '';
+            instructionsList.innerHTML = '';
+            (recipe.ingredients || []).forEach(ingredient => {
+                const li = document.createElement('li');
+                li.textContent = ingredient;
+                li.addEventListener('click', function() { this.classList.toggle('checked'); });
+                ingredientsList.appendChild(li);
+            });
+            (recipe.instructions || []).forEach(instruction => {
+                const li = document.createElement('li');
+                li.textContent = instruction;
+                li.addEventListener('click', function() { this.classList.toggle('checked'); });
+                instructionsList.appendChild(li);
+            });
+        }
+
         async function loadRecipe() {
             const urlParams = new URLSearchParams(window.location.search);
             const recipeId = urlParams.get('id') || localStorage.getItem('selectedRecipeId');
@@ -408,26 +446,45 @@
             }
 
             recipe = { id: snap.id, ...snap.data() };
-            const isReel = recipe.url && (String(recipe.url).includes('instagram.com') || String(recipe.url).includes('tiktok.com'));
-            const hasContent = (Array.isArray(recipe.ingredients) && recipe.ingredients.length > 0) || (Array.isArray(recipe.instructions) && recipe.instructions.length > 0);
-            if (recipe.url && !isReel && !hasContent) {
-                try {
-                    const meta = await fetchRecipeMeta(recipe.url);
-                    if ((meta.ingredients && meta.ingredients.length) || (meta.instructions && meta.instructions.length)) {
-                        recipe.name = meta.name || recipe.name;
-                        if (meta.image) recipe.image = meta.image;
-                        recipe.ingredients = meta.ingredients || recipe.ingredients || [];
-                        recipe.instructions = meta.instructions || recipe.instructions || [];
-                        await updateDoc(recipeRef, { name: recipe.name, image: recipe.image || '', ingredients: recipe.ingredients, instructions: recipe.instructions });
-                    }
-                } catch (e) { console.warn('חילוץ מרכיבים מהקישור:', e); }
-            }
             localStorage.setItem('selectedRecipeId', recipe.id);
             likesCount = recipe.likesCount != null ? recipe.likesCount : 0;
-            renderRecipe(recipe);
             currentUser = auth.currentUser;
-            await loadLikeState();
-            await loadComments();
+
+            const isReel = recipe.url && (String(recipe.url).includes('instagram.com') || String(recipe.url).includes('tiktok.com'));
+            const hasFullContent = (Array.isArray(recipe.ingredients) && recipe.ingredients.length > 0) && (Array.isArray(recipe.instructions) && recipe.instructions.length > 0);
+            const needMetaFromUrl = recipe.url && !isReel && !hasFullContent;
+
+            // הצגת הדף מיד – בלי להמתין לחילוץ מהקישור
+            renderRecipe(recipe);
+
+            // טעינת לב, תגובות ומטא (מהקישור) במקביל
+            const loadMetaInBackground = async () => {
+                if (!needMetaFromUrl) return;
+                try {
+                    const meta = await fetchRecipeMeta(recipe.url);
+                    const hasBoth = (meta.ingredients && meta.ingredients.length > 0) && (meta.instructions && meta.instructions.length > 0);
+                    if (hasBoth) {
+                        recipe.name = meta.name || recipe.name;
+                        if (meta.image) recipe.image = meta.image;
+                        recipe.ingredients = meta.ingredients || [];
+                        recipe.instructions = meta.instructions || [];
+                        await updateDoc(recipeRef, { name: recipe.name, image: recipe.image || '', ingredients: recipe.ingredients, instructions: recipe.instructions });
+                        updateIngredientsAndInstructionsInDom(recipe);
+                        const iframeWrap = document.querySelector('.recipe-iframe-wrap');
+                        if (iframeWrap) iframeWrap.remove();
+                        document.querySelectorAll('.section-title').forEach(el => el.style.display = '');
+                        document.getElementById('ingredientsList').style.display = '';
+                        document.getElementById('instructionsList').style.display = '';
+                    }
+                } catch (e) { console.warn('חילוץ מרכיבים מהקישור:', e); }
+            };
+
+            await Promise.all([
+                loadLikeState(),
+                loadComments(),
+                loadMetaInBackground()
+            ]);
+
             renderLikeButton();
             renderComments();
             if (window.location.hash === '#comments') {
@@ -513,7 +570,7 @@
                     likedByMe = false;
                     likesCount = Math.max(0, likesCount - 1);
                 } else {
-                    await setDoc(likeRef, { createdAt: serverTimestamp() });
+                    await setDoc(likeRef, { userId: user.uid, createdAt: serverTimestamp() });
                     await updateDoc(recipeRef, { likesCount: increment(1) });
                     likedByMe = true;
                     likesCount += 1;
@@ -669,9 +726,9 @@
         function editLinkRecipe() {
             document.getElementById('addInstructionsFromImageBlock').style.display = 'none';
             const titleEl = document.getElementById('recipeTitle');
-            titleEl.innerHTML = '<input class="edit-title-input" id="editTitle" value="' + escapeHtml(recipe.name) + '">';
+            titleEl.innerHTML = '<span class="edit-field-label">שם המתכון</span><input class="edit-title-input" id="editTitle" value="' + escapeHtml(recipe.name) + '">';
             const img = document.getElementById('recipeImage');
-            img.insertAdjacentHTML('afterend', '<input class="edit-input" id="editImage" value="' + escapeHtml(recipe.image || '') + '" placeholder="קישור לתמונה (URL)" style="margin-bottom: 15px;">');
+            img.insertAdjacentHTML('afterend', '<div class="edit-image-field-wrap" style="margin-bottom: 15px;"><label class="edit-field-label" for="editImage">קישור לתמונה (URL)</label><input class="edit-input" id="editImage" value="' + escapeHtml(recipe.image || '') + '" placeholder="https://..."></div>');
             document.getElementById('recipeTagsBlock').style.display = 'block';
             document.getElementById('addTagInRecipeWrap').style.display = 'block';
             document.getElementById('addTagGroupSelect').value = '';
@@ -684,10 +741,10 @@
 
         function editFullRecipe() {
             const titleEl = document.getElementById('recipeTitle');
-            titleEl.innerHTML = '<input class="edit-title-input" id="editTitle" value="' + escapeHtml(recipe.name) + '">';
+            titleEl.innerHTML = '<span class="edit-field-label">שם המתכון</span><input class="edit-title-input" id="editTitle" value="' + escapeHtml(recipe.name) + '">';
             const img = document.getElementById('recipeImage');
             if (img && !document.getElementById('editImage')) {
-                img.insertAdjacentHTML('afterend', '<input class="edit-input" id="editImage" value="' + escapeHtml(recipe.image || '') + '" placeholder="קישור לתמונה (URL)" style="margin-bottom: 15px;">');
+                img.insertAdjacentHTML('afterend', '<div class="edit-image-field-wrap" style="margin-bottom: 15px;"><label class="edit-field-label" for="editImage">קישור לתמונה (URL)</label><input class="edit-input" id="editImage" value="' + escapeHtml(recipe.image || '') + '" placeholder="https://..."></div>');
             }
             const ingredientsList = document.getElementById('ingredientsList');
             ingredientsList.innerHTML = '';

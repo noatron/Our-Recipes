@@ -6,13 +6,18 @@
     const CURRENT_KEY = 'app_shopping_list';
     const SAVED_LISTS_KEY = 'app_saved_shopping_lists';
 
-    /** מפתח לאגרגציה: נורמליזציה קלה (תפוח/תפוחים/תפוחי → תפוח) */
+    /** מפתח לאגרגציה: נורמליזציה קלה (תפוח/תפוחים/תפוחי → תפוח; חמאה ללא מלח → חמאה) */
     function normalizeKey(text) {
         if (!text || typeof text !== 'string') return '';
         let s = text.trim().toLowerCase();
         s = s.replace(/\s+/g, ' ');
+        s = s.replace(/\s*ללא\s+מלח\s*/g, ' ').replace(/\s*עם\s+מלח\s*/g, ' ');
+        s = s.replace(/\s*מלוח[ה]?\s*/g, ' ').replace(/\s*לא\s+מלוח[ה]?\s*/g, ' ');
         s = s.replace(/ים\s/g, ' ').replace(/ים$/g, '');
         s = s.replace(/י\s/g, ' ').replace(/י$/g, '');
+        s = s.replace(/\s*רגיל\s*$/g, '').trim();
+        s = s.replace(/\s*לבן\s*$/g, '').trim();
+        s = s.replace(/\s+/g, ' ').trim();
         return s;
     }
 
@@ -31,6 +36,9 @@
     ].map(function (t) { return t.trim().toLowerCase(); });
 
     function isPantryItem(text) {
+        var low = (text || '').trim().toLowerCase();
+        if (/\bתבלין\b/.test(low) || /\bspice\b/.test(low) || /\bherb\b/.test(low)) return true;
+        if (/^קורט\s/.test(low)) return true;
         var key = normalizeKey(text);
         if (!key) return true;
         if (PANTRY_NORMALIZED.indexOf(key) !== -1) return true;
@@ -38,8 +46,6 @@
             var p = PANTRY_NORMALIZED[i];
             if (key === p || key.indexOf(p + ' ') === 0) return true;
         }
-        var low = (text || '').trim().toLowerCase();
-        if (/^קורט\s/.test(low)) return true;
         for (var j = 0; j < PANTRY_EN.length; j++) {
             if (low === PANTRY_EN[j] || low.indexOf(PANTRY_EN[j] + ' ') === 0 || low.indexOf(' ' + PANTRY_EN[j]) >= 0) return true;
         }
@@ -57,6 +63,21 @@
         if (/\bextra\s+virgin\s+olive\s+oil\b/i.test(s)) s = s.replace(/\bextra\s+virgin\s+olive\s+oil\b/gi, 'שמן זית');
         if (/\bolive\s+oil\b/i.test(s)) s = s.replace(/\bolive\s+oil\b/gi, 'שמן זית');
         s = s.replace(/\b(unsalted|salted|low\s+sodium)\s+/gi, ' ');
+        s = s.replace(/\s*ללא\s+מלח\s*/g, ' ').replace(/\s*עם\s+מלח\s*/g, ' ');
+        s = s.replace(/\s*מלוח[ה]?\s*/g, ' ').replace(/\s*לא\s+מלוח[ה]?\s*/g, ' ');
+        s = s.replace(/\s*רגיל\s*/g, ' ').replace(/\s*לבן\s*$/g, ' ');
+        var cupTbsp = s.match(/^(\d+)\s*כוס(?:ות)?\s+ו-?\s*(\d+)\s*(?:כף|כפות)\s+/);
+        if (cupTbsp) {
+            var cups = parseInt(cupTbsp[1], 10);
+            var tbsps = parseInt(cupTbsp[2], 10);
+            s = (cups * 16 + tbsps) + ' כפות ' + s.slice(cupTbsp[0].length);
+        } else {
+            var halfCup = s.match(/^חצי\s+כוס\s+ו-?\s*(\d+)\s*(?:כף|כפות)\s+/);
+            if (halfCup) {
+                var t = parseInt(halfCup[1], 10);
+                s = (8 + t) + ' כפות ' + s.slice(halfCup[0].length);
+            }
+        }
         var remove = [
             /\s*מושר[ייה]?\s*(חצי\s*יום|לילה|יומיים?|\d+\s*שעות?)?/gi,
             /\s*חצי\s*יום\s*מושר[ייה]?/gi,
@@ -149,6 +170,10 @@
                 name = s.replace(ue.re, '').trim();
                 break;
             }
+        }
+        if (!unitKey && /^גר['']?\s+/.test(s)) {
+            unitKey = 'גרם';
+            name = s.replace(/^גר['']?\s+/, '').trim();
         }
         if (!unitKey) {
             for (var j = 0; j < UNIT_PAIRS.length; j++) {
@@ -264,7 +289,8 @@
         list.forEach(function (item) {
             var text = item.text;
             if (isPantryItem(text)) return;
-            var parsed = parseIngredient(text);
+            var normalizedText = simplifyIngredient(text) || text;
+            var parsed = parseIngredient(normalizedText);
             var key;
             var displayText;
             if (parsed && parsed.unitKey && parsed.name) {
