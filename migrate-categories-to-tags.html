@@ -18,7 +18,16 @@
 </head>
 <body>
     <h1>המרת קטגוריות ישנות לחדשות</h1>
-    <p>הסקריפט עובר על <strong>כל</strong> המתכונים ב-Firebase, לוקח את הקטגוריה הישנה של כל מתכון וממיר אותה לקטגוריה (או קטגוריות) מהמערכת החדשה. הקטגוריה הישנה מתאפסת.</p>
+
+    <div class="steps" style="border: 2px solid #c62828; background: #ffebee; margin-bottom: 20px;">
+        <strong>⚠️ אזהרה — לפני הרצת ההמרה:</strong>
+        <ol style="margin: 8px 0 0 0; padding-right: 20px;">
+            <li><strong>ייצאי גיבוי</strong> של אוסף ה-recipes ב-Firestore (Firebase Console → Firestore → ⋮ → Export collection, או דרך gcloud firestore export).</li>
+            <li><strong>בדקי על 2–3 מסמכים קודם</strong> — השתמשי בשדה "הגבל למספר מתכונים" למטה והריצי עם 3 לפני הרצה על כולם.</li>
+        </ol>
+    </div>
+
+    <p>הסקריפט עובר על המתכונים ב-Firebase, לוקח את הקטגוריה הישנה של כל מתכון וממיר אותה לקטגוריה (או קטגוריות) מהמערכת החדשה. הקטגוריה הישנה מתאפסת.</p>
 
     <div class="steps" style="margin-bottom: 20px;">
         <strong>📋 הרשימה החדשה של הקטגוריות (לעריכה ידנית ב-Firebase – העתיקי מכאן)</strong>
@@ -40,7 +49,11 @@
     </div>
 
     <p id="authStatus">טוען סקריפט...</p>
-    <button id="runBtn" disabled>המר קטגוריות ישנות בכל המתכונים</button>
+    <p style="margin-top: 12px;">
+        <label for="limitInput">הגבל למספר מתכונים (0 = כולם; מומלץ 3 למבחן):</label>
+        <input type="number" id="limitInput" min="0" value="3" style="width: 60px; margin-right: 8px; padding: 6px; font-size: 1rem; border: 2px solid #FFD8BE; border-radius: 8px;">
+    </p>
+    <button id="runBtn" disabled>המר קטגוריות ישנות</button>
     <button id="signInBtn" style="display:none; background:#698996; margin-right:8px;">התחברי עם Google</button>
     <p id="hint" style="margin-top:12px; font-size:0.85rem; color:#698996; display:none;">אם כלום לא קורה: פתחי את המסוף (F12 → Console) ובדקי אם מופיעה שגיאה באדום.</p>
     <pre id="log"></pre>
@@ -113,14 +126,20 @@
                 log('צריך להתחבר קודם.', true);
                 return;
             }
+            const limitInput = document.getElementById('limitInput');
+            const limit = Math.max(0, parseInt(limitInput?.value || '0', 10) || 0);
+            if (limit > 0) {
+                log('מצב מבחן: מעדכן רק ' + limit + ' מתכונים ראשונים.');
+            }
             runBtn.disabled = true;
             log('טוען מתכונים מ-Firebase...');
             try {
                 const snapshot = await getDocs(collection(db, 'recipes'));
-                log('נמצאו ' + snapshot.size + ' מתכונים. מעדכן...');
+                const docs = limit > 0 ? snapshot.docs.slice(0, limit) : snapshot.docs;
+                log('נמצאו ' + snapshot.size + ' מתכונים. מעדכן ' + docs.length + '...');
                 let updated = 0;
                 let skipped = 0;
-                for (const d of snapshot.docs) {
+                for (const d of docs) {
                     const data = d.data();
                     const oldCategory = (data.category || '').trim();
                     const newTags = CATEGORY_TO_TAGS[oldCategory] !== undefined
@@ -141,6 +160,9 @@
                     }
                 }
                 log('✅ סיום: ' + updated + ' מתכונים קיבלו קטגוריות, ' + skipped + ' בלי קטגוריה.');
+                if (limit > 0 && docs.length < snapshot.size) {
+                    log('זה היה ריצת מבחן. להרצה על כל ' + snapshot.size + ' המתכונים – שימי 0 בשדה ההגבלה והריצי שוב.');
+                }
             } catch (e) {
                 log('שגיאה: ' + (e.message || e), true);
             }

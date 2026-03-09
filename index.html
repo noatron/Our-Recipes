@@ -23,12 +23,18 @@
                     <h1 class="header-app-title">מפה לפה</h1>
                 </div>
                 <div class="header-app-actions">
-                    <button type="button" id="favoritesFilterBtn" class="header-icon-btn" aria-label="מועדפים" title="מועדפים" style="display: none;">
-                        <svg class="heart-svg favorites-heart" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-                    </button>
                     <a href="add-recipe.html" class="header-icon-btn header-add-btn" aria-label="הוספת מתכון" title="הוסף מתכון">＋</a>
-                    <a href="profile.html" id="user-name" class="header-user-name header-user-link" style="display: none;"></a>
-                    <button type="button" id="auth-btn" class="header-auth-link">התחברות</button>
+                    <div class="header-profile-wrap">
+                        <button type="button" id="header-profile-btn" class="header-icon-btn header-profile-btn" aria-label="פרופיל" aria-expanded="false" aria-haspopup="true" title="פרופיל">
+                            <svg class="header-profile-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 0 0-16 0"/></svg>
+                        </button>
+                        <div id="header-profile-dropdown" class="header-profile-dropdown" hidden>
+                            <button type="button" id="header-dropdown-favorites" class="header-dropdown-item">מועדפים</button>
+                            <button type="button" id="header-dropdown-logout" class="header-dropdown-item" style="display: none;">התנתקות</button>
+                            <button type="button" id="header-dropdown-login" class="header-dropdown-item" style="display: none;">התחברות</button>
+                        </div>
+                    </div>
+                    <button type="button" id="favoritesFilterBtn" class="header-favorites-state" style="display: none;" aria-hidden="true"></button>
                 </div>
             </div>
             <!-- Row 2: Search + Surprise -->

@@ -284,22 +284,73 @@ async function enrichRecipesWithLikes(recipes, user) {
     }
 }
 
-/** עדכון תצוגת Auth (כפתור + שם) */
+/** עדכון תצוגת Auth — פרופיל dropdown: מועדפים + התנתקות (מחובר) או התחברות (לא מחובר) */
 function updateAuthUI(user) {
-    const btn = document.getElementById('auth-btn');
-    const nameEl = document.getElementById('user-name');
-    if (!btn) return;
+    const dropdownLogin = document.getElementById('header-dropdown-login');
+    const dropdownLogout = document.getElementById('header-dropdown-logout');
+    const dropdownFavorites = document.getElementById('header-dropdown-favorites');
     if (user) {
-        if (nameEl) {
-            nameEl.textContent = user.displayName || user.email || 'מחוברת';
-            nameEl.style.display = 'inline';
-        }
-        btn.textContent = 'התנתקות';
-        btn.onclick = () => signOutUser();
+        if (dropdownFavorites) dropdownFavorites.style.display = '';
+        if (dropdownLogout) dropdownLogout.style.display = '';
+        if (dropdownLogin) dropdownLogin.style.display = 'none';
     } else {
-        if (nameEl) nameEl.style.display = 'none';
-        btn.textContent = 'התחברות';
-        btn.onclick = () => signInWithGoogle();
+        if (dropdownFavorites) dropdownFavorites.style.display = 'none';
+        if (dropdownLogout) dropdownLogout.style.display = 'none';
+        if (dropdownLogin) dropdownLogin.style.display = '';
+    }
+}
+
+/** פרופיל: פתיחת/סגירת dropdown, מועדפים / התחברות / התנתקות */
+function setupProfileDropdown(applyFilters) {
+    const profileBtn = document.getElementById('header-profile-btn');
+    const dropdown = document.getElementById('header-profile-dropdown');
+    const favoritesFilterBtn = document.getElementById('favoritesFilterBtn');
+    const dropdownFavorites = document.getElementById('header-dropdown-favorites');
+    const dropdownLogout = document.getElementById('header-dropdown-logout');
+    const dropdownLogin = document.getElementById('header-dropdown-login');
+    if (!profileBtn || !dropdown) return;
+
+    function closeDropdown() {
+        dropdown.hidden = true;
+        profileBtn.setAttribute('aria-expanded', 'false');
+    }
+
+    function syncFavoritesItemState() {
+        if (dropdownFavorites && favoritesFilterBtn) {
+            if (favoritesFilterBtn.classList.contains('active')) dropdownFavorites.classList.add('active');
+            else dropdownFavorites.classList.remove('active');
+        }
+    }
+
+    profileBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isOpen = !dropdown.hidden;
+        dropdown.hidden = isOpen;
+        profileBtn.setAttribute('aria-expanded', String(!isOpen));
+        if (!isOpen) syncFavoritesItemState();
+    });
+
+    document.addEventListener('click', () => closeDropdown());
+    dropdown.addEventListener('click', (e) => e.stopPropagation());
+
+    if (dropdownFavorites && favoritesFilterBtn && applyFilters) {
+        dropdownFavorites.addEventListener('click', () => {
+            favoritesFilterBtn.classList.toggle('active');
+            syncFavoritesItemState();
+            applyFilters();
+        });
+    }
+    if (dropdownLogout) {
+        dropdownLogout.addEventListener('click', () => {
+            signOutUser();
+            closeDropdown();
+        });
+    }
+    if (dropdownLogin) {
+        dropdownLogin.addEventListener('click', () => {
+            signInWithGoogle();
+            closeDropdown();
+        });
     }
 }
 
@@ -757,19 +808,13 @@ async function initApp() {
         setupHeaderChips(applyFilters);
         setupSearch(applyFilters);
         setupSurpriseMe(recipes, tagGroupsData, applyFilters);
+        setupProfileDropdown(applyFilters);
 
-        const favoritesBtn = document.getElementById('favoritesFilterBtn');
-        if (favoritesBtn) {
-            favoritesBtn.addEventListener('click', () => {
-                favoritesBtn.classList.toggle('active');
-                applyFilters();
-            });
-        }
+        const favoritesFilterBtn = document.getElementById('favoritesFilterBtn');
         onUserChange(async (user) => {
             updateAuthUI(user);
             window.__isApproved = false;
-            if (favoritesBtn) favoritesBtn.style.display = user ? '' : 'none';
-            if (!user && favoritesBtn?.classList.contains('active')) favoritesBtn.classList.remove('active');
+            if (!user && favoritesFilterBtn?.classList.contains('active')) favoritesFilterBtn.classList.remove('active');
             const pendingBanner = document.getElementById('pending-approval-banner');
             const addBtn = document.getElementById('add-recipe-btn');
             if (user) {
@@ -792,7 +837,6 @@ async function initApp() {
             enrichRecipesWithLikes(recipes, user).then(applyFilters);
         });
         updateAuthUI(auth.currentUser);
-        if (favoritesBtn) favoritesBtn.style.display = auth.currentUser ? '' : 'none';
         const pendingBanner = document.getElementById('pending-approval-banner');
         const addBtn = document.getElementById('add-recipe-btn');
         if (auth.currentUser) {
