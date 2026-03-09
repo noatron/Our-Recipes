@@ -112,8 +112,25 @@ function getAddedByName(recipe) {
     return (recipe.addedByName && String(recipe.addedByName).trim()) ? recipe.addedByName.trim() : 'נועה';
 }
 
-/** HTML for a single recipe card (shared by carousel and grid) */
-function buildRecipeCardHtml(recipe) {
+/** Carousel-only card: cinematic image, title (2 lines), מאת. One tap → recipe detail. */
+function buildCarouselCardHtml(recipe) {
+    const addedByName = getAddedByName(recipe);
+    const imgSrc = ensureHttpsImage(recipe.image) || 'https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=400&h=534&fit=crop';
+    return `
+    <div class="recipe-card-carousel" data-recipe-id="${recipe.id}" onclick="window.showRecipe('${recipe.id}')">
+        <div class="carousel-card-image-wrap">
+            <img src="${escapeHtml(imgSrc)}" alt="" class="carousel-card-image" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=400&h=534&fit=crop';">
+        </div>
+        <div class="carousel-card-copy">
+            <h2 class="carousel-card-title">${escapeHtml(getRecipeDisplayName(recipe))}</h2>
+            <p class="carousel-card-by">מאת ${escapeHtml(addedByName)}</p>
+        </div>
+    </div>
+    `;
+}
+
+/** Grid card: full recipe card with image, title, source, מאת, comments, tags, like, add-to-meal, edit, share. */
+function buildGridCardHtml(recipe) {
     const likeCount = (r) => (r.likesCount != null ? r.likesCount : 0);
     const commentsCount = (r) => (r.commentsCount != null ? r.commentsCount : 0);
     const sourceLabel = getRecipeSourceLabel(recipe);
@@ -158,6 +175,11 @@ function buildRecipeCardHtml(recipe) {
     `;
 }
 
+function buildRecipeCardHtml(recipe, options = {}) {
+    if (options.carousel) return buildCarouselCardHtml(recipe);
+    return buildGridCardHtml(recipe);
+}
+
 function shuffleArray(arr) {
     const a = [...arr];
     for (let i = a.length - 1; i > 0; i--) {
@@ -183,7 +205,7 @@ function displayRecipes(recipesToShow, options = {}) {
     recipesContainer.style.opacity = '0';
     if (mode === 'carousel') {
         const toShow = shuffleArray(recipesToShow);
-        recipesContainer.innerHTML = `<div class="recipes-carousel-outer"><div class="recipes-carousel">${toShow.map(r => buildRecipeCardHtml(r)).join('')}</div></div>`;
+        recipesContainer.innerHTML = `<div class="recipes-carousel-outer"><div class="recipes-carousel">${toShow.map(r => buildRecipeCardHtml(r, { carousel: true })).join('')}</div></div>`;
     } else {
         recipesContainer.innerHTML = `<p class="recipes-results-header">מציג ${count} מתכונים</p><div class="recipes-grid">${recipesToShow.map(r => buildRecipeCardHtml(r)).join('')}</div>`;
     }
