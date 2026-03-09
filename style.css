@@ -15,6 +15,9 @@ body {
     direction: rtl;
     overflow-x: hidden; /* מונע גלילה אופקית במובייל */
 }
+#app {
+    padding-bottom: 80px;
+}
 
 header {
     text-align: center;
@@ -95,19 +98,19 @@ header {
     line-height: 1;
 }
 
-/* Refactored header: logo + name, search row, chips row */
+/* Refactored header: logo + name centered, profile left; search row; chips row */
 .main-header-refactor {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 14px;
     margin-bottom: 14px;
 }
 .main-header-refactor .header-app-bar {
+    position: relative;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    flex-wrap: wrap;
+    justify-content: center;
+    min-height: 44px;
 }
 .main-header-refactor .header-brand {
     display: flex;
@@ -127,9 +130,12 @@ header {
     line-height: 1;
 }
 .main-header-refactor .header-app-actions {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
     display: flex;
     align-items: center;
-    gap: 6px;
 }
 .main-header-refactor .header-user-name {
     font-size: 0.8rem;
@@ -194,15 +200,12 @@ header {
     stroke: white;
     fill: white;
 }
-.main-header-refactor .header-add-btn {
-    font-size: 1.2rem;
-    line-height: 1;
-}
 .main-header-refactor .header-search-row {
     display: flex;
     align-items: center;
     gap: 8px;
     width: 100%;
+    margin-bottom: 2px;
 }
 .main-header-refactor .header-search-input {
     flex: 1;
@@ -228,13 +231,14 @@ header {
     flex-shrink: 0;
     padding: 8px 12px;
     font-family: 'Varela Round', sans-serif;
-    font-size: 0.88rem;
+    font-size: 0.82rem;
     border: 1.5px solid #FFD8BE;
     border-radius: 50px;
     background: #F8F7FF;
     color: #407076;
     cursor: pointer;
     transition: background 0.2s, border-color 0.2s;
+    white-space: nowrap;
 }
 .main-header-refactor .header-surprise-btn:hover {
     background: #FFEEDD;
@@ -289,6 +293,7 @@ header {
     width: 100%;
     overflow: hidden;
     padding-bottom: 14px;
+    margin-bottom: 24px;
 }
 .main-header-refactor .header-chips {
     display: flex;
@@ -1185,7 +1190,7 @@ header .logo {
 /* Floating Add Recipe Button */
 .floating-add-btn {
     position: fixed;
-    bottom: 24px;
+    bottom: 80px;
     right: 24px;
     width: 56px;
     height: 56px;
@@ -1627,7 +1632,7 @@ header .logo {
     }
 
     .floating-add-btn {
-        bottom: 16px;
+        bottom: 80px;
         right: 16px;
     }
 
