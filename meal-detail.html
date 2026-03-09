@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#407076">
+    <title>פרטי ארוחה – מפה לפה</title>
+    <link rel="icon" href="logo.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="style.css">
+    <script src="shopping-list-state.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Varela+Round&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="app">
+        <header class="main-header main-header-refactor">
+            <div class="header-app-bar">
+                <div class="header-brand">
+                    <a href="index.html" class="header-logo-link"><img src="logo.svg" alt="" class="header-logo"></a>
+                    <h1 class="header-app-title">מפה לפה</h1>
+                </div>
+            </div>
+        </header>
+
+        <main class="meal-detail-main">
+            <a href="profile.html" class="back-link">← חזרה לפרופיל</a>
+            <div id="meal-detail-header" style="display: none;">
+                <h2 id="meal-detail-name" class="meal-detail-title"></h2>
+                <p id="meal-detail-meta" class="meal-detail-meta"></p>
+                <button type="button" id="meal-detail-shopping-btn" class="sl-btn sl-btn-primary meal-detail-shopping-btn" style="display: none;">צרי רשימת קניות מהארוחה הזו</button>
+            </div>
+            <div id="meal-detail-recipes" class="recipes-grid meal-detail-recipes-grid">
+                <!-- recipe cards injected by JS -->
+            </div>
+            <p id="meal-detail-empty" class="profile-empty" style="display: none;">אין מתכונים בארוחה זו.</p>
+            <p id="meal-detail-loading" class="profile-loading">טוען...</p>
+            <p id="meal-detail-error" class="profile-empty" style="display: none;"></p>
+        </main>
+    </div>
+    <script type="module" src="meal-detail.js"></script>
+</body>
+</html>

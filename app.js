@@ -1,5 +1,6 @@
 import { db, auth, onUserChange, signInWithGoogle, signOutUser } from './firebase.js';
 import { collection, getDocs, getDoc, setDoc, updateDoc, deleteDoc, doc, increment, serverTimestamp, collectionGroup, query, where } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+import { getMealsByUser, createMeal, addRecipeToMeal } from './meals.js';
 
 /** קבוצות קטגוריות לדרופדאון */
 const TAG_GROUPS = [
@@ -111,53 +112,82 @@ function getAddedByName(recipe) {
     return (recipe.addedByName && String(recipe.addedByName).trim()) ? recipe.addedByName.trim() : 'נועה';
 }
 
-function displayRecipes(recipesToShow) {
+/** HTML for a single recipe card (shared by carousel and grid) */
+function buildRecipeCardHtml(recipe) {
+    const likeCount = (r) => (r.likesCount != null ? r.likesCount : 0);
+    const commentsCount = (r) => (r.commentsCount != null ? r.commentsCount : 0);
+    const sourceLabel = getRecipeSourceLabel(recipe);
+    const addedByName = getAddedByName(recipe);
+    const tags = Array.isArray(recipe.tags) ? recipe.tags : [];
+    const tagsHtml = tags.length
+        ? `<div class="recipe-tags">${tags.map(t => `<span class="recipe-tag">${escapeHtml(t)}</span>`).join('')}</div>`
+        : '';
+    const liked = !!recipe.likedByMe;
+    const count = likeCount(recipe);
+    const numComments = commentsCount(recipe);
+    const commentsLabel = numComments === 0 ? 'הערות' : (numComments === 1 ? 'הערה' : 'הערות');
+    const commentsLinkHtml = `<a href="recipe-detail.html#comments" class="recipe-comments-link" data-recipe-id="${recipe.id}" onclick="event.preventDefault(); event.stopPropagation(); window.showRecipeToComments('${recipe.id}')">${numComments} ${commentsLabel}</a>`;
+    const editBtnHtml = `<button type="button" class="recipe-card-edit" data-recipe-id="${recipe.id}" aria-label="ערוך מתכון" onclick="event.preventDefault(); event.stopPropagation(); window.showRecipeEdit('${recipe.id}')" title="ערוך מתכון"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></button>`;
+    const shareBtnHtml = `<button type="button" class="recipe-card-share" data-recipe-id="${recipe.id}" aria-label="שתפי קישור" onclick="event.preventDefault(); event.stopPropagation(); window.shareRecipe('${recipe.id}')" title="שתפי קישור"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>`;
+    const showAddToMeal = !!(window.__isApproved && auth.currentUser);
+    const addToMealBtnHtml = showAddToMeal ? `<button type="button" class="recipe-add-to-meal-btn" data-recipe-id="${recipe.id}" aria-label="הוספה לארוחה" onclick="event.preventDefault(); event.stopPropagation(); window.openAddToMealSheet('${recipe.id}')" title="＋ לארוחה">＋ לארוחה</button>` : '';
+    return `
+    <div class="recipe-card" data-recipe-id="${recipe.id}" onclick="window.showRecipe('${recipe.id}')">
+        <div class="recipe-card-image-wrap">
+            <img src="${escapeHtml(ensureHttpsImage(recipe.image) || 'https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=400&h=200&fit=crop')}" alt="" class="recipe-image" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=400&h=200&fit=crop';">
+            ${shareBtnHtml}
+            ${editBtnHtml}
+        </div>
+        <div class="recipe-content">
+            <div class="recipe-title-row">
+                <h2 class="recipe-name">${escapeHtml(getRecipeDisplayName(recipe))}</h2>
+                <div class="recipe-card-actions">
+                    ${addToMealBtnHtml}
+                    <button type="button" class="recipe-like-btn ${liked ? 'liked' : ''}" data-recipe-id="${recipe.id}" aria-label="עשי לב">
+                        <span class="like-icon">${getHeartSvg(liked)}</span>
+                        <span class="like-count">${count}</span>
+                    </button>
+                </div>
+            </div>
+            ${sourceLabel ? (recipe.url ? `<p class="recipe-source"><a href="${escapeHtml(recipe.url)}" target="_blank" rel="noopener noreferrer" class="recipe-source-link">${escapeHtml(sourceLabel)}</a></p>` : `<p class="recipe-source">${escapeHtml(sourceLabel)}</p>`) : ''}
+            <p class="recipe-added-by">${recipe.addedByUid ? `<a href="profile.html?uid=${encodeURIComponent(recipe.addedByUid)}" class="recipe-added-by-link" onclick="event.stopPropagation()">מאת ${escapeHtml(addedByName)}</a>` : `מאת ${escapeHtml(addedByName)}`}</p>
+            <div class="recipe-comments-row">${commentsLinkHtml}</div>
+            ${tagsHtml}
+        </div>
+    </div>
+    `;
+}
+
+function shuffleArray(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+}
+
+/** mode: 'carousel' (browse) | 'grid' (search/filter). count only for grid. */
+function displayRecipes(recipesToShow, options = {}) {
     const recipesContainer = document.getElementById('recipes');
     if (!recipesContainer) return;
+
+    const mode = options.mode || 'grid';
+    const count = options.count ?? recipesToShow.length;
 
     if (recipesToShow.length === 0) {
         recipesContainer.innerHTML = '<div class="no-recipes">לא נמצאו מתכונים 😔</div>';
         return;
     }
 
-    const likeCount = (r) => (r.likesCount != null ? r.likesCount : 0);
-    const commentsCount = (r) => (r.commentsCount != null ? r.commentsCount : 0);
-    recipesContainer.innerHTML = recipesToShow.map(recipe => {
-        const sourceLabel = getRecipeSourceLabel(recipe);
-        const addedByName = getAddedByName(recipe);
-        const tags = Array.isArray(recipe.tags) ? recipe.tags : [];
-        const tagsHtml = tags.length
-            ? `<div class="recipe-tags">${tags.map(t => `<span class="recipe-tag">${escapeHtml(t)}</span>`).join('')}</div>`
-            : '';
-        const liked = !!recipe.likedByMe;
-        const count = likeCount(recipe);
-        const numComments = commentsCount(recipe);
-        const commentsLabel = numComments === 0 ? 'הערות' : (numComments === 1 ? 'הערה' : 'הערות');
-        const commentsLinkHtml = `<a href="recipe-detail.html#comments" class="recipe-comments-link" data-recipe-id="${recipe.id}" onclick="event.preventDefault(); event.stopPropagation(); window.showRecipeToComments('${recipe.id}')">${numComments} ${commentsLabel}</a>`;
-        const editBtnHtml = `<button type="button" class="recipe-card-edit" data-recipe-id="${recipe.id}" aria-label="ערוך מתכון" onclick="event.preventDefault(); event.stopPropagation(); window.showRecipeEdit('${recipe.id}')" title="ערוך מתכון"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></button>`;
-        const shareBtnHtml = `<button type="button" class="recipe-card-share" data-recipe-id="${recipe.id}" aria-label="שתפי קישור" onclick="event.preventDefault(); event.stopPropagation(); window.shareRecipe('${recipe.id}')" title="שתפי קישור"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>`;
-        return `
-        <div class="recipe-card" data-recipe-id="${recipe.id}" onclick="window.showRecipe('${recipe.id}')">
-            <div class="recipe-card-image-wrap">
-                <img src="${escapeHtml(ensureHttpsImage(recipe.image) || 'https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=400&h=200&fit=crop')}" alt="" class="recipe-image" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=400&h=200&fit=crop';">
-                ${shareBtnHtml}
-                ${editBtnHtml}
-            </div>
-            <div class="recipe-content">
-                <div class="recipe-title-row">
-                    <h2 class="recipe-name">${escapeHtml(getRecipeDisplayName(recipe))}</h2>
-                    <button type="button" class="recipe-like-btn ${liked ? 'liked' : ''}" data-recipe-id="${recipe.id}" aria-label="עשי לב">
-                        <span class="like-icon">${getHeartSvg(liked)}</span>
-                        <span class="like-count">${count}</span>
-                    </button>
-                </div>
-                ${sourceLabel ? (recipe.url ? `<p class="recipe-source"><a href="${escapeHtml(recipe.url)}" target="_blank" rel="noopener noreferrer" class="recipe-source-link">${escapeHtml(sourceLabel)}</a></p>` : `<p class="recipe-source">${escapeHtml(sourceLabel)}</p>`) : ''}
-                <p class="recipe-added-by">מאת ${escapeHtml(addedByName)}</p>
-                <div class="recipe-comments-row">${commentsLinkHtml}</div>
-                ${tagsHtml}
-            </div>
-        </div>
-    `}).join('');
+    recipesContainer.style.opacity = '0';
+    if (mode === 'carousel') {
+        const toShow = shuffleArray(recipesToShow);
+        recipesContainer.innerHTML = `<div class="recipes-carousel-outer"><div class="recipes-carousel">${toShow.map(r => buildRecipeCardHtml(r)).join('')}</div></div>`;
+    } else {
+        recipesContainer.innerHTML = `<p class="recipes-results-header">מציג ${count} מתכונים</p><div class="recipes-grid">${recipesToShow.map(r => buildRecipeCardHtml(r)).join('')}</div>`;
+    }
+    requestAnimationFrame(() => { recipesContainer.style.opacity = '1'; });
 
     recipesContainer.querySelectorAll('.recipe-like-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
@@ -287,6 +317,89 @@ async function toggleLike(recipeId) {
 }
 
 window.toggleLike = toggleLike;
+
+/** bottom sheet: הוסיפי לארוחה קיימת / צרי ארוחה חדשה – רק למשתמשות מאושרות */
+window.openAddToMealSheet = async function (recipeId) {
+    const user = auth.currentUser;
+    if (!user || !window.__isApproved) return;
+    const overlay = document.createElement('div');
+    overlay.className = 'add-to-meal-overlay';
+    const sheet = document.createElement('div');
+    sheet.className = 'add-to-meal-sheet';
+    sheet.setAttribute('role', 'dialog');
+    sheet.setAttribute('aria-label', 'הוספת מתכון לארוחה');
+    const close = () => {
+        sheet.classList.remove('add-to-meal-sheet-open');
+        overlay.classList.remove('add-to-meal-overlay-open');
+        setTimeout(() => overlay.remove(), 280);
+    };
+    overlay.appendChild(sheet);
+    overlay.onclick = (e) => { if (e.target === overlay) close(); };
+    sheet.innerHTML = '<div class="add-to-meal-sheet-inner"><h3 class="add-to-meal-title">הוספה לארוחה</h3><p class="add-to-meal-sub">הוסיפי לארוחה קיימת</p><div class="add-to-meal-list" aria-busy="true">טוען...</div><p class="add-to-meal-sub add-to-meal-new-label">צרי ארוחה חדשה</p><div class="add-to-meal-new-row"><input type="text" class="add-to-meal-input" placeholder="שם הארוחה" id="addToMealNewName" maxlength="80"><button type="button" class="sl-btn sl-btn-primary" id="addToMealCreateBtn">שמירה</button></div></div>';
+    document.body.appendChild(overlay);
+    requestAnimationFrame(() => {
+        overlay.classList.add('add-to-meal-overlay-open');
+        sheet.classList.add('add-to-meal-sheet-open');
+    });
+
+    const listEl = sheet.querySelector('.add-to-meal-list');
+    const inputEl = document.getElementById('addToMealNewName');
+    const createBtn = document.getElementById('addToMealCreateBtn');
+    let meals = [];
+    try {
+        meals = await getMealsByUser(user.uid);
+    } catch (e) {
+        console.error('getMealsByUser', e);
+    }
+    if (meals.length === 0) {
+        listEl.innerHTML = '<p class="add-to-meal-empty">אין לך עדיין ארוחות. צרי ארוחה חדשה למטה.</p>';
+    } else {
+        listEl.innerHTML = meals.map(m => `<button type="button" class="add-to-meal-item" data-meal-id="${escapeHtml(m.id)}">${escapeHtml(m.name || 'ארוחה')} (${(m.recipeIds || []).length} מתכונים)</button>`).join('');
+        listEl.querySelectorAll('.add-to-meal-item').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const mealId = btn.dataset.mealId;
+                if (!mealId) return;
+                btn.disabled = true;
+                try {
+                    await addRecipeToMeal(mealId, recipeId);
+                    close();
+                    if (typeof alert === 'function') alert('המתכון נוסף לארוחה ✓');
+                } catch (err) {
+                    console.error(err);
+                    alert('שגיאה בהוספה. נסי שוב.');
+                } finally {
+                    btn.disabled = false;
+                }
+            });
+        });
+    }
+    listEl.removeAttribute('aria-busy');
+
+    createBtn.addEventListener('click', async () => {
+        const name = (inputEl && inputEl.value || '').trim();
+        if (!name) {
+            alert('הזיני שם לארוחה.');
+            return;
+        }
+        createBtn.disabled = true;
+        try {
+            const meal = await createMeal({
+                name,
+                recipeIds: [recipeId],
+                createdBy: { uid: user.uid, name: user.displayName || user.email || 'משתמשת' }
+            });
+            if (meal) {
+                close();
+                if (typeof alert === 'function') alert('ארוחה נוצרה והמתכון נוסף ✓');
+            }
+        } catch (err) {
+            console.error(err);
+            alert('שגיאה ביצירת ארוחה. נסי שוב.');
+        } finally {
+            createBtn.disabled = false;
+        }
+    });
+};
 
 const SEARCH_PLACEHOLDERS = ['חפשי מתכון...', 'מה יש לך במטבח?', 'קינוח לשבת?'];
 
@@ -522,6 +635,12 @@ function getActiveFilters() {
     return { searchTerm, selectedTags, favoritesOnly };
 }
 
+/** True when no search and chip is "הכל" → show carousel (browse) mode */
+function isBrowseMode() {
+    const { searchTerm, selectedTags } = getActiveFilters();
+    return !searchTerm && selectedTags.length === 0;
+}
+
 function filterRecipes(allRecipes) {
     const { searchTerm, selectedTags, favoritesOnly } = getActiveFilters();
     let list = allRecipes;
@@ -604,7 +723,12 @@ async function initApp() {
         const applyFilters = () => {
             const list = window.__allRecipes || recipes;
             const filtered = filterRecipes(list);
-            displayRecipes(filtered);
+            const browseMode = isBrowseMode();
+            if (browseMode) {
+                displayRecipes(filtered, { mode: 'carousel' });
+            } else {
+                displayRecipes(filtered, { mode: 'grid', count: filtered.length });
+            }
         };
         window.__applyFilters = applyFilters;
 
@@ -621,6 +745,7 @@ async function initApp() {
         }
         onUserChange(async (user) => {
             updateAuthUI(user);
+            window.__isApproved = false;
             if (favoritesBtn) favoritesBtn.style.display = user ? '' : 'none';
             if (!user && favoritesBtn?.classList.contains('active')) favoritesBtn.classList.remove('active');
             const pendingBanner = document.getElementById('pending-approval-banner');
@@ -628,6 +753,7 @@ async function initApp() {
             if (user) {
                 const approved = await getApprovedUids();
                 const isApproved = approved.includes(user.uid);
+                window.__isApproved = isApproved;
                 if (!isApproved) {
                     const showBanner = !sessionStorage.getItem('pendingBannerSeen');
                     if (pendingBanner) pendingBanner.style.display = showBanner ? 'block' : 'none';
@@ -649,7 +775,8 @@ async function initApp() {
         const addBtn = document.getElementById('add-recipe-btn');
         if (auth.currentUser) {
             const approved = await getApprovedUids();
-            if (!approved.includes(auth.currentUser.uid)) {
+            window.__isApproved = approved.includes(auth.currentUser.uid);
+            if (!window.__isApproved) {
                 const showBanner = !sessionStorage.getItem('pendingBannerSeen');
                 if (pendingBanner) pendingBanner.style.display = showBanner ? 'block' : 'none';
                 if (showBanner) sessionStorage.setItem('pendingBannerSeen', '1');

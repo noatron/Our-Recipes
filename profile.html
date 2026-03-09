@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#407076">
+    <title>פרופיל – מפה לפה</title>
+    <link rel="icon" href="logo.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Varela+Round&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="app">
+        <header class="main-header main-header-refactor">
+            <div class="header-app-bar">
+                <div class="header-brand">
+                    <a href="index.html" class="header-logo-link"><img src="logo.svg" alt="" class="header-logo"></a>
+                    <h1 class="header-app-title">מפה לפה</h1>
+                </div>
+                <div class="header-app-actions">
+                    <span id="profile-user-name" class="header-user-name" style="display: none;"></span>
+                    <button type="button" id="profile-auth-btn" class="header-auth-link">התחברות</button>
+                </div>
+            </div>
+        </header>
+
+        <main class="profile-main">
+            <a href="index.html" class="back-link">← חזרה</a>
+            <div id="profile-title-wrap">
+                <h2 id="profile-title" class="profile-page-title">הארוחות שלי</h2>
+            </div>
+            <div id="profile-meals-section">
+                <p id="profile-loading" class="profile-loading">טוען...</p>
+                <div id="profile-meals-grid" class="meals-grid" style="display: none;"></div>
+                <p id="profile-empty" class="profile-empty" style="display: none;">אין עדיין ארוחות. הוסיפי מתכונים לארוחה מדף הבית (כפתור "＋ לארוחה" על כרטיס מתכון).</p>
+                <p id="profile-login-hint" class="profile-login-hint" style="display: none;">התחברי כדי לראות את הארוחות שלך.</p>
+            </div>
+        </main>
+    </div>
+    <script type="module" src="profile.js"></script>
+</body>
+</html>

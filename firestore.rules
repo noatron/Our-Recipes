@@ -61,5 +61,12 @@ service cloud.firestore {
     match /users/{userId}/savedShoppingLists/{listId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
+
+    // ארוחות – כולם קוראים (לצפייה בפרופילים); יצירה/עריכה/מחיקה רק למשתמש מאושר ושל הארוחה שלו
+    match /meals/{mealId} {
+      allow read: if true;
+      allow create: if request.auth != null && isApproved() && request.resource.data.createdBy.uid == request.auth.uid;
+      allow update, delete: if request.auth != null && isApproved() && resource.data.createdBy.uid == request.auth.uid;
+    }
   }
 }
