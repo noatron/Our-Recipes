@@ -137,6 +137,8 @@ async function initMealDetail() {
     const recipeIds = Array.isArray(meal.recipeIds) ? meal.recipeIds : [];
 
     nameEl.textContent = mealName;
+    const headerTitleEl = document.getElementById('meal-detail-header-title');
+    if (headerTitleEl) headerTitleEl.textContent = mealName;
     metaEl.textContent = 'מאת ' + by + ' · ' + recipeIds.length + (recipeIds.length === 1 ? ' מתכון' : ' מתכונים');
     headerEl.style.display = 'block';
 

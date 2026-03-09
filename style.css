@@ -111,6 +111,7 @@ header {
     align-items: center;
     justify-content: center;
     min-height: 44px;
+    padding: 0 16px;
 }
 .main-header-refactor .header-brand {
     display: flex;
@@ -136,6 +137,16 @@ header {
     transform: translateY(-50%);
     display: flex;
     align-items: center;
+    gap: 16px;
+}
+.main-header-refactor .header-username-muted {
+    font-size: 0.8rem;
+    color: #698996;
+    font-weight: 400;
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 .main-header-refactor .header-user-name {
     font-size: 0.8rem;
@@ -244,6 +255,40 @@ header {
     background: #FFEEDD;
     border-color: #407076;
 }
+/* Inner pages: only back arrow + title, no user name or logout */
+.inner-page-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    min-height: 44px;
+    padding: 0 16px;
+    margin-bottom: 16px;
+}
+.inner-page-header .inner-back {
+    position: absolute;
+    right: 16px;
+    color: #407076;
+    text-decoration: none;
+    font-size: 1.1rem;
+    font-family: 'Varela Round', sans-serif;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: color 0.2s;
+}
+.inner-page-header .inner-back:hover {
+    color: #698996;
+}
+.inner-page-header .inner-title {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 400;
+    color: #407076;
+    font-family: 'Varela Round', sans-serif;
+    text-align: center;
+}
+
 /* Profile dropdown (avatar icon → favorites + logout/login) */
 .main-header-refactor .header-profile-wrap {
     position: relative;
@@ -508,7 +553,8 @@ header {
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
-.carousel-card-by {
+.carousel-card-by,
+.carousel-card-source {
     font-size: 0.85rem;
     color: #698996;
     margin: 0;

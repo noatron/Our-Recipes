@@ -11,24 +11,12 @@
 </head>
 <body>
     <div id="app">
-        <header class="main-header main-header-refactor">
-            <div class="header-app-bar">
-                <div class="header-brand">
-                    <a href="index.html" class="header-logo-link"><img src="logo.svg" alt="" class="header-logo"></a>
-                    <h1 class="header-app-title">מפה לפה</h1>
-                </div>
-                <div class="header-app-actions">
-                    <span id="profile-user-name" class="header-user-name" style="display: none;"></span>
-                    <button type="button" id="profile-auth-btn" class="header-auth-link">התחברות</button>
-                </div>
-            </div>
+        <header class="inner-page-header">
+            <a href="index.html" class="inner-back" aria-label="חזרה">← חזרה</a>
+            <h1 id="profile-title" class="inner-title">הארוחות שלי</h1>
         </header>
 
         <main class="profile-main">
-            <a href="index.html" class="back-link">← חזרה</a>
-            <div id="profile-title-wrap">
-                <h2 id="profile-title" class="profile-page-title">הארוחות שלי</h2>
-            </div>
             <div id="profile-meals-section">
                 <p id="profile-loading" class="profile-loading">טוען...</p>
                 <div id="profile-meals-grid" class="meals-grid" style="display: none;"></div>

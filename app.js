@@ -112,9 +112,9 @@ function getAddedByName(recipe) {
     return (recipe.addedByName && String(recipe.addedByName).trim()) ? recipe.addedByName.trim() : 'נועה';
 }
 
-/** Carousel-only card: cinematic image, title (2 lines), מאת. One tap → recipe detail. */
+/** Carousel-only card: cinematic image, title (2 lines), מקור. One tap → recipe detail. */
 function buildCarouselCardHtml(recipe) {
-    const addedByName = getAddedByName(recipe);
+    const sourceLabel = getRecipeSourceLabel(recipe);
     const imgSrc = ensureHttpsImage(recipe.image) || 'https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=400&h=534&fit=crop';
     return `
     <div class="recipe-card-carousel" data-recipe-id="${recipe.id}" onclick="window.showRecipe('${recipe.id}')">
@@ -123,7 +123,7 @@ function buildCarouselCardHtml(recipe) {
         </div>
         <div class="carousel-card-copy">
             <h2 class="carousel-card-title">${escapeHtml(getRecipeDisplayName(recipe))}</h2>
-            <p class="carousel-card-by">מאת ${escapeHtml(addedByName)}</p>
+            ${sourceLabel ? `<p class="carousel-card-source">${escapeHtml(sourceLabel)}</p>` : ''}
         </div>
     </div>
     `;
@@ -284,19 +284,25 @@ async function enrichRecipesWithLikes(recipes, user) {
     }
 }
 
-/** עדכון תצוגת Auth — פרופיל dropdown: מועדפים + התנתקות (מחובר) או התחברות (לא מחובר) */
+/** עדכון תצוגת Auth — פרופיל dropdown (התנתקות רק בתפריט); שם משתמש קטן ומושתק בבר הבית בלבד */
 function updateAuthUI(user) {
     const dropdownLogin = document.getElementById('header-dropdown-login');
     const dropdownLogout = document.getElementById('header-dropdown-logout');
     const dropdownFavorites = document.getElementById('header-dropdown-favorites');
+    const headerUserName = document.getElementById('header-user-name');
     if (user) {
         if (dropdownFavorites) dropdownFavorites.style.display = '';
         if (dropdownLogout) dropdownLogout.style.display = '';
         if (dropdownLogin) dropdownLogin.style.display = 'none';
+        if (headerUserName) {
+            headerUserName.textContent = user.displayName || user.email || 'מחוברת';
+            headerUserName.style.display = '';
+        }
     } else {
         if (dropdownFavorites) dropdownFavorites.style.display = 'none';
         if (dropdownLogout) dropdownLogout.style.display = 'none';
         if (dropdownLogin) dropdownLogin.style.display = '';
+        if (headerUserName) headerUserName.style.display = 'none';
     }
 }
 
