@@ -19,6 +19,10 @@ const TAG_GROUPS = [
 /** רשימת כל הקטגוריות – לסינון, תצוגה וייבוא מתמונות */
 const ALL_TAGS = ['בשר', 'דגים', 'פסטות', 'קישים ופשטידות', 'צמחוני', 'סלטים', 'תוספות', 'לחם ומאפים', 'רטבים וממרחים', 'מרקים', 'עוגות', 'עוגיות', 'קינוחים', 'שוקולד', 'ארוחות בוקר', 'חטיפים', 'שתייה'];
 
+/** אייקוני Lucide לכפתורי ארוחה וקניות (כמו בגישה מהירה) */
+const ICON_MEAL = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12h20"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M4 8h16"/><path d="M6 4h12"/><path d="M6 2v4"/><path d="M18 2v4"/></svg>';
+const ICON_CART = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>';
+
 const defaultRecipes = [
     {
         id: "1",
@@ -119,8 +123,8 @@ function buildCarouselCardHtml(recipe) {
     const showPills = !!(window.__isApproved && auth.currentUser);
     const pillsHtml = showPills
         ? `<div class="carousel-card-pills" onclick="event.stopPropagation();">
-            <button type="button" class="recipe-pill-btn recipe-pill-to-meal" data-recipe-id="${escapeHtml(recipe.id)}" aria-label="הוספה לארוחה">🍽️ לארוחה</button>
-            <button type="button" class="recipe-pill-btn recipe-pill-to-sl" data-recipe-id="${escapeHtml(recipe.id)}" aria-label="הוספה לרשימת קניות">🛒 לקניות</button>
+            <button type="button" class="recipe-pill-btn recipe-pill-to-meal" data-recipe-id="${escapeHtml(recipe.id)}" aria-label="הוספה לארוחה">${ICON_MEAL} לארוחה</button>
+            <button type="button" class="recipe-pill-btn recipe-pill-to-sl" data-recipe-id="${escapeHtml(recipe.id)}" aria-label="הוספה לרשימת קניות">${ICON_CART} לקניות</button>
           </div>`
         : '';
     return `
@@ -157,8 +161,8 @@ function buildGridCardHtml(recipe) {
     const showPills = !!(window.__isApproved && auth.currentUser);
     const pillsHtml = showPills
         ? `<div class="recipe-card-pills">
-            <button type="button" class="recipe-pill-btn recipe-pill-to-meal" data-recipe-id="${recipe.id}" aria-label="הוספה לארוחה">🍽️ לארוחה</button>
-            <button type="button" class="recipe-pill-btn recipe-pill-to-sl" data-recipe-id="${recipe.id}" aria-label="הוספה לרשימת קניות">🛒 לקניות</button>
+            <button type="button" class="recipe-pill-btn recipe-pill-to-meal" data-recipe-id="${recipe.id}" aria-label="הוספה לארוחה">${ICON_MEAL} לארוחה</button>
+            <button type="button" class="recipe-pill-btn recipe-pill-to-sl" data-recipe-id="${recipe.id}" aria-label="הוספה לרשימת קניות">${ICON_CART} לקניות</button>
           </div>`
         : '';
     return `

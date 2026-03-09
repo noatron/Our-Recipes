@@ -1,5 +1,5 @@
 import { auth } from './firebase.js';
-import { getMealById, addRecipeToMeal } from './meals.js';
+import { getMealById, addRecipeToMeal, removeRecipeFromMeal } from './meals.js';
 import { doc, getDoc, getDocs, collection } from 'https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js';
 import { db } from './firebase.js';
 
@@ -64,23 +64,30 @@ function getAddedByName(recipe) {
     return (recipe.addedByName && String(recipe.addedByName).trim()) ? recipe.addedByName.trim() : 'נועה';
 }
 
-function buildRecipeCardHtml(recipe) {
+/** אייקון Lucide להסרה מהארוחה */
+const ICON_REMOVE = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>';
+
+function buildRecipeCardHtml(recipe, opts) {
+    const { mealId, isOwner } = opts || {};
     const sourceLabel = getRecipeSourceLabel(recipe);
     const addedByName = getAddedByName(recipe);
     const tags = Array.isArray(recipe.tags) ? recipe.tags : [];
     const tagsHtml = tags.length
         ? `<div class="recipe-tags">${tags.map(t => `<span class="recipe-tag">${escapeHtml(t)}</span>`).join('')}</div>`
         : '';
-    const count = recipe.likesCount != null ? recipe.likesCount : 0;
     const numComments = recipe.commentsCount != null ? recipe.commentsCount : 0;
     const commentsLabel = numComments === 0 ? 'הערות' : (numComments === 1 ? 'הערה' : 'הערות');
     const commentsLinkHtml = `<a href="recipe-detail.html?id=${escapeHtml(recipe.id)}#comments" class="recipe-comments-link">${numComments} ${commentsLabel}</a>`;
     const shareBtnHtml = `<button type="button" class="recipe-card-share" data-recipe-id="${recipe.id}" aria-label="שתפי קישור" onclick="event.preventDefault(); event.stopPropagation(); window.shareRecipe('${recipe.id}')" title="שתפי קישור"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>`;
+    const removeFromMealBtnHtml = (isOwner && mealId)
+        ? `<button type="button" class="recipe-card-remove-from-meal" data-meal-id="${escapeHtml(mealId)}" data-recipe-id="${escapeHtml(recipe.id)}" aria-label="הסר מהארוחה" title="הסר מהארוחה">${ICON_REMOVE}</button>`
+        : '';
     const imgSrc = ensureHttpsImage(recipe.image) || DEFAULT_IMAGE;
     return `
     <div class="recipe-card" data-recipe-id="${recipe.id}" onclick="window.showRecipe('${recipe.id}')">
         <div class="recipe-card-image-wrap">
             <img src="${escapeHtml(imgSrc)}" alt="" class="recipe-image" onerror="this.onerror=null;this.src='${escapeHtml(DEFAULT_IMAGE)}';">
+            ${removeFromMealBtnHtml}
             ${shareBtnHtml}
         </div>
         <div class="recipe-content">
@@ -270,9 +277,27 @@ async function loadAndRenderMeal(mealId) {
         if (r) recipes.push(r);
     }
 
-    recipesEl.innerHTML = recipes.map(r => buildRecipeCardHtml(r)).join('');
+    recipesEl.innerHTML = recipes.map(r => buildRecipeCardHtml(r, { mealId, isOwner })).join('');
     recipesEl.style.display = 'grid';
     emptyEl.style.display = 'none';
+
+    recipesEl.querySelectorAll('.recipe-card-remove-from-meal').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const mid = btn.dataset.mealId;
+            const rid = btn.dataset.recipeId;
+            if (!mid || !rid) return;
+            if (!confirm('להסיר את המתכון מהארוחה?')) return;
+            try {
+                await removeRecipeFromMeal(mid, rid);
+                await loadAndRenderMeal(mid);
+            } catch (err) {
+                console.error(err);
+                alert('שגיאה בהסרת המתכון. נסי שוב.');
+            }
+        });
+    });
 
     const withIngredients = recipes.filter(r => Array.isArray(r.ingredients) && r.ingredients.length > 0);
     if (withIngredients.length > 0) {

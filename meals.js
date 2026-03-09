@@ -51,6 +51,20 @@ export async function addRecipeToMeal(mealId, recipeId) {
 }
 
 /**
+ * מסיר מתכון מארוחה.
+ * @param {string} mealId
+ * @param {string} recipeId
+ */
+export async function removeRecipeFromMeal(mealId, recipeId) {
+    const ref = doc(db, MEALS_COLLECTION, mealId);
+    const snap = await getDoc(ref);
+    if (!snap.exists()) throw new Error('הארוחה לא נמצאה');
+    const data = snap.data();
+    const ids = Array.isArray(data.recipeIds) ? data.recipeIds.filter(id => id !== recipeId) : [];
+    await updateDoc(ref, { recipeIds: ids });
+}
+
+/**
  * @param {string} mealId
  */
 export async function deleteMeal(mealId) {
