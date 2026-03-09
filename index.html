@@ -15,72 +15,48 @@
 </head>
 <body>
     <div id="app">
-        <header class="main-header">
-            <div class="header-top-row">
-                <div id="auth-area" class="auth-area">
-                    <span id="user-name" class="auth-user-name"></span>
-                    <button id="auth-btn" class="auth-btn">התחברות</button>
+        <header class="main-header main-header-refactor">
+            <!-- Row 1: App bar -->
+            <div class="header-app-bar">
+                <h1 class="header-app-title">מפה לפה 🍴</h1>
+                <div class="header-app-actions">
+                    <button type="button" id="favoritesFilterBtn" class="header-icon-btn" aria-label="מועדפים" title="מועדפים" style="display: none;">
+                        <svg class="heart-svg favorites-heart" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                    </button>
+                    <a href="add-recipe.html" class="header-icon-btn header-add-btn" aria-label="הוספת מתכון" title="הוסף מתכון">＋</a>
+                    <div id="auth-area" class="auth-area header-auth">
+                        <span id="user-name" class="auth-user-name"></span>
+                        <button id="auth-btn" class="auth-btn">התחברות</button>
+                    </div>
                 </div>
             </div>
-            <div class="header-title-row">
-                <div class="header-title-spacer"></div>
-                <h1>
-                    <span class="logo-wrap"><img src="logo.svg" alt="מפה לפה" class="Logo"></span>
-                    מפה לפה
-                </h1>
-                <div id="favorites-filter-wrap" class="favorites-filter-wrap header-favorites-left" style="display: none;">
-                    <button type="button" id="favoritesFilterBtn" class="favorites-chip"><svg class="heart-svg favorites-heart" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> אהבתי</button>
+            <!-- Row 2: Search + Surprise -->
+            <div class="header-search-row">
+                <input type="text" id="searchInput" class="header-search-input" placeholder="חפשי מתכון..." autocomplete="off" aria-label="חיפוש מתכונים או מצרכים">
+                <button type="button" id="headerSurpriseBtn" class="header-surprise-btn">🎲 הפתעי</button>
+            </div>
+            <!-- Row 3: Filter chips -->
+            <div class="header-chips-wrap">
+                <div class="header-chips" role="tablist" aria-label="סינון לפי קטגוריה">
+                    <button type="button" class="header-chip active" data-tag="" role="tab" aria-selected="true">הכל</button>
+                    <button type="button" class="header-chip" data-tag="בשר" role="tab">בשרי</button>
+                    <button type="button" class="header-chip" data-tag="חלבי" role="tab">חלבי</button>
+                    <button type="button" class="header-chip" data-tag="צמחוני" role="tab">פרווה</button>
+                    <button type="button" class="header-chip" data-tags="עוגות,עוגיות,קינוחים,שוקולד" role="tab">קינוחים</button>
+                    <button type="button" class="header-chip" data-tag="לחם ומאפים" role="tab">לחמים</button>
+                    <button type="button" class="header-chip" data-tag="מרקים" role="tab">מרקים</button>
                 </div>
             </div>
         </header>
 
-        <nav class="shopping-list-nav" aria-label="רשימת קניות">
-            <a href="shopping-list.html" class="shopping-list-nav-link">🛒 רשימת קניות</a>
-            <span class="shopping-list-nav-dot">·</span>
-            <button type="button" id="createShoppingListBtn" class="shopping-list-nav-btn">צור רשימה ממתכונים</button>
-        </nav>
-
         <div id="pending-approval-banner" class="pending-approval-banner" style="display: none;">
             בקשתך ממתינה לאישור. אחרי שאושרת תוכלי להוסיף מתכונים.
-        </div>
-        <div class="search-bar">
-            <input type="text" id="searchInput" placeholder="חפשי">
         </div>
 
         <div id="surprise-bar" class="surprise-bar" style="display: none;">
             <span class="surprise-bar-title">ההפתעה שלך</span>
             <button type="button" id="surpriseAgainBtn" class="surprise-again-btn">עוד אחת</button>
             <button type="button" id="surpriseBackBtn" class="surprise-back-btn">חזרה לרשימה</button>
-        </div>
-
-        <!-- במובייל: בלוק מתקפל "הפתעות ורעיונות" – מפחית עומס -->
-        <div class="surprise-mobile-wrap" id="surpriseMobileWrap">
-            <button type="button" class="surprise-mobile-toggle" id="surpriseMobileToggle" aria-expanded="false" aria-controls="surpriseMobileContent">
-                <span class="surprise-mobile-toggle-text">הפתעות ורעיונות</span>
-                <span class="surprise-mobile-toggle-icon" aria-hidden="true">▼</span>
-            </button>
-            <div class="surprise-mobile-content" id="surpriseMobileContent">
-                <div class="surprise-section">
-                    <h2 class="surprise-heading">הפתיעי אותי עם רעיון</h2>
-                    <p class="surprise-desc">מגרילים לך 3–5 מתכונים – לפי קטגוריה ו/או רק מהמועדפים שלך.</p>
-                    <div class="surprise-row">
-                        <label for="surprise-category" class="surprise-label">קטגוריה (אופציונלי):</label>
-                        <select id="surprise-category" class="surprise-select" aria-label="קטגוריה להגרלה">
-                            <option value="">כל הקטגוריות</option>
-                        </select>
-                        <label class="surprise-check-wrap"><input type="checkbox" id="surprise-favorites-only" class="surprise-check"> ממתכונים שאהבתי</label>
-                        <button type="button" id="surpriseBtn" class="surprise-btn">הפתיעי אותי</button>
-                    </div>
-                </div>
-                <div class="surprise-section surprise-section-ingredients">
-                    <h2 class="surprise-heading">יש לי במטבח – מה לבשל?</h2>
-                    <p class="surprise-desc">כתבי מה יש לך (מצרכים או סוג מנה), ונציע מתכונים שמתאימים.</p>
-                    <div class="surprise-row surprise-row-ingredients">
-                        <input type="text" id="ingredients-search" class="surprise-input" placeholder="למשל: חצילים, עגבניות, פסטה">
-                        <button type="button" id="ingredientsSuggestBtn" class="surprise-btn">הציעי מתכונים</button>
-                    </div>
-                </div>
-            </div>
         </div>
 
         <div id="recipes" class="recipes-grid">

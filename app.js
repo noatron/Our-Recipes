@@ -288,10 +288,32 @@ async function toggleLike(recipeId) {
 
 window.toggleLike = toggleLike;
 
+const SEARCH_PLACEHOLDERS = ['חפשי מתכון...', 'מה יש לך במטבח?', 'קינוח לשבת?'];
+
 function setupSearch(applyFilters) {
     const searchInput = document.getElementById('searchInput');
     if (!searchInput) return;
     searchInput.addEventListener('input', () => { if (applyFilters) applyFilters(); });
+    searchInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && applyFilters) applyFilters(); });
+    let phIndex = 0;
+    if (SEARCH_PLACEHOLDERS.length > 0) {
+        setInterval(() => {
+            phIndex = (phIndex + 1) % SEARCH_PLACEHOLDERS.length;
+            searchInput.placeholder = SEARCH_PLACEHOLDERS[phIndex];
+        }, 3500);
+    }
+}
+
+function setupHeaderChips(applyFilters) {
+    const chips = document.querySelectorAll('.header-chip');
+    chips.forEach(chip => {
+        chip.addEventListener('click', () => {
+            chips.forEach(c => { c.classList.remove('active'); c.setAttribute('aria-selected', 'false'); });
+            chip.classList.add('active');
+            chip.setAttribute('aria-selected', 'true');
+            if (applyFilters) applyFilters();
+        });
+    });
 }
 
 /** במובייל: כפתור "הפתעות ורעיונות" פותח/סוגר את הבלוק */
@@ -310,35 +332,19 @@ function setupSurpriseMobileToggle() {
     }
 }
 
-/** הפתיעי אותי – הגרלת 3–5 מתכונים; אופציונלי: קטגוריה + רק מועדפים. "יש לי במטבח" – חיפוש לפי מצרכים. */
+/** הפתיעי אותי – הגרלת 3–5 מתכונים. כפתור בהדר + בר "ההפתעה שלך". */
 function setupSurpriseMe(allRecipes, tagGroupsData, applyFilters) {
-    const surpriseBtn = document.getElementById('surpriseBtn');
-    const surpriseCategory = document.getElementById('surprise-category');
-    const surpriseFavoritesOnly = document.getElementById('surprise-favorites-only');
+    const headerSurpriseBtn = document.getElementById('headerSurpriseBtn');
     const surpriseBar = document.getElementById('surprise-bar');
     const surpriseAgainBtn = document.getElementById('surpriseAgainBtn');
     const surpriseBackBtn = document.getElementById('surpriseBackBtn');
-    const ingredientsSearch = document.getElementById('ingredients-search');
-    const ingredientsSuggestBtn = document.getElementById('ingredientsSuggestBtn');
-    if (!surpriseBtn || !surpriseBar) return;
-
-    const tagGroups = tagGroupsData || TAG_GROUPS;
-    const allTags = tagGroups.reduce((arr, g) => arr.concat(g.tags || []), []);
-    const uniqueTags = [...new Set(allTags)];
-    if (surpriseCategory) {
-        surpriseCategory.innerHTML = '<option value="">כל הקטגוריות</option>' +
-            uniqueTags.map(t => '<option value="' + escapeHtml(t) + '">' + escapeHtml(t) + '</option>').join('');
-    }
+    if (!surpriseBar) return;
 
     /** מתכונים שכבר הוצגו בהגרלה הנוכחית – "עוד אחת" יציע מתכונים אחרים */
     let surpriseAlreadyShownIds = new Set();
 
     function getPool() {
-        let pool = [...allRecipes];
-        const tag = (surpriseCategory && surpriseCategory.value && surpriseCategory.value.trim()) || '';
-        if (tag) pool = pool.filter(r => Array.isArray(r.tags) && r.tags.includes(tag));
-        if (surpriseFavoritesOnly && surpriseFavoritesOnly.checked) pool = pool.filter(r => !!r.likedByMe);
-        return pool;
+        return [...allRecipes];
     }
 
     function shuffle(arr) {
@@ -369,53 +375,12 @@ function setupSurpriseMe(allRecipes, tagGroupsData, applyFilters) {
         surpriseBar.style.display = 'flex';
     }
 
-    /** נורמליזציה לחיפוש: יחיד/רבים וסמיכות (תפוחים→תפוח, תפוחי→תפוח) – stemming קל בעברית */
-    function normalizeForSearch(str) {
-        if (!str || typeof str !== 'string') return '';
-        let s = str.trim().toLowerCase();
-        // הסרת סיומות רווחות: רבים (ים), סמיכות (י) – כדי שיחיד ורבים יתאימו
-        s = s.replace(/ים\s/g, ' ').replace(/ים$/g, '');  // תפוחים → תפוח
-        s = s.replace(/י\s/g, ' ').replace(/י$/g, '');     // תפוחי אדמה → תפוח אדמה
-        return s;
-    }
-
-    /** חיפוש לפי מצרכים/טקסט – מילים חייבות להופיע באותו מרכיב (או בשם) – phrase/same-segment matching; יחיד/רבים מנורמלים */
-    function searchByIngredients(text) {
-        const rawWords = (text || '').trim().split(/[\s,]+/).filter(Boolean);
-        if (rawWords.length === 0) return [];
-        const words = rawWords.map(w => normalizeForSearch(w)).filter(Boolean);
-        if (words.length === 0) return [];
-        return allRecipes
-            .map(r => {
-                const name = (r.name || '').trim();
-                const ingredients = Array.isArray(r.ingredients) ? r.ingredients : [];
-                const tags = Array.isArray(r.tags) ? r.tags : [];
-                const units = [name, ...ingredients, ...tags].map(u => (u && String(u).trim()) || '').filter(Boolean);
-                let score = 0;
-                units.forEach(unit => {
-                    const normalizedUnit = normalizeForSearch(unit);
-                    const allWordsInUnit = words.every(w => normalizedUnit.includes(w));
-                    if (allWordsInUnit) score += words.length;
-                });
-                return { recipe: r, score };
-            })
-            .filter(x => x.score > 0)
-            .sort((a, b) => b.score - a.score)
-            .slice(0, 15)
-            .map(x => x.recipe);
-    }
-
-    function showIngredientsSuggestions() {
-        const text = ingredientsSearch ? ingredientsSearch.value.trim() : '';
-        const list = searchByIngredients(text);
-        displayRecipes(list);
-        surpriseBar.style.display = 'flex';
-    }
-
-    surpriseBtn.addEventListener('click', () => {
+    function runSurprise() {
         surpriseAlreadyShownIds.clear();
         drawSurprise();
-    });
+    }
+
+    if (headerSurpriseBtn) headerSurpriseBtn.addEventListener('click', runSurprise);
     if (surpriseAgainBtn) surpriseAgainBtn.addEventListener('click', drawSurprise);
     if (surpriseBackBtn) {
         surpriseBackBtn.addEventListener('click', () => {
@@ -423,18 +388,6 @@ function setupSurpriseMe(allRecipes, tagGroupsData, applyFilters) {
             surpriseAlreadyShownIds.clear();
             if (applyFilters) applyFilters();
         });
-    }
-    if (ingredientsSuggestBtn && ingredientsSearch) {
-        ingredientsSuggestBtn.addEventListener('click', showIngredientsSuggestions);
-        ingredientsSearch.addEventListener('keydown', (e) => { if (e.key === 'Enter') showIngredientsSuggestions(); });
-    }
-
-    if (surpriseFavoritesOnly) {
-        onUserChange((user) => {
-            surpriseFavoritesOnly.style.display = user ? '' : 'none';
-            if (!user) surpriseFavoritesOnly.checked = false;
-        });
-        surpriseFavoritesOnly.style.display = auth.currentUser ? '' : 'none';
     }
 }
 
@@ -490,15 +443,16 @@ function setupCreateShoppingListModal(allRecipes) {
 }
 
 function setupTagGroupDropdown(applyFilters, tagGroupsData) {
-    const groups = tagGroupsData || TAG_GROUPS;
     const select = document.getElementById('tag-group-select');
-    if (!select) return;
-    select.innerHTML = '<option value="">הכל</option>' + groups.map(g =>
-        '<optgroup label="' + escapeHtml(g.label) + '">' +
-        (g.tags || []).map(t => '<option value="' + escapeHtml(t) + '">' + escapeHtml(t) + '</option>').join('') +
-        '</optgroup>'
-    ).join('');
-    select.addEventListener('change', () => { if (applyFilters) applyFilters(); });
+    if (select) {
+        const groups = tagGroupsData || TAG_GROUPS;
+        select.innerHTML = '<option value="">הכל</option>' + groups.map(g =>
+            '<optgroup label="' + escapeHtml(g.label) + '">' +
+            (g.tags || []).map(t => '<option value="' + escapeHtml(t) + '">' + escapeHtml(t) + '</option>').join('') +
+            '</optgroup>'
+        ).join('');
+        select.addEventListener('change', () => { if (applyFilters) applyFilters(); });
+    }
 }
 
 /** מחזיר רשימת UID של משתמשות מאושרות */
@@ -521,11 +475,49 @@ async function addToPendingUsers(user) {
     } catch (_) {}
 }
 
+/** נורמליזציה לחיפוש – לשימוש בחיפוש שם ומצרכים */
+function normalizeForSearch(str) {
+    if (!str || typeof str !== 'string') return '';
+    let s = str.trim().toLowerCase();
+    s = s.replace(/ים\s/g, ' ').replace(/ים$/g, '');
+    s = s.replace(/י\s/g, ' ').replace(/י$/g, '');
+    return s;
+}
+
+/** חיפוש לפי מצרכים/טקסט – מחזיר מתכונים שהמילים מופיעות בשם/מרכיבים/תגיות */
+function searchByIngredientsFromList(recipes, text) {
+    const rawWords = (text || '').trim().split(/[\s,]+/).filter(Boolean);
+    if (rawWords.length === 0) return [];
+    const words = rawWords.map(w => normalizeForSearch(w)).filter(Boolean);
+    if (words.length === 0) return [];
+    return recipes
+        .map(r => {
+            const name = (r.name || '').trim();
+            const ingredients = Array.isArray(r.ingredients) ? r.ingredients : [];
+            const tags = Array.isArray(r.tags) ? r.tags : [];
+            const units = [name, ...ingredients, ...tags].map(u => (u && String(u).trim()) || '').filter(Boolean);
+            let score = 0;
+            units.forEach(unit => {
+                const normalizedUnit = normalizeForSearch(unit);
+                if (words.every(w => normalizedUnit.includes(w))) score += words.length;
+            });
+            return { recipe: r, score };
+        })
+        .filter(x => x.score > 0)
+        .sort((a, b) => b.score - a.score)
+        .map(x => x.recipe);
+}
+
 function getActiveFilters() {
-    const searchTerm = (document.getElementById('searchInput')?.value || '').toLowerCase();
-    const groupSelect = document.getElementById('tag-group-select');
-    const groupTag = (groupSelect && groupSelect.value && groupSelect.value.trim()) || '';
-    const selectedTags = groupTag ? [groupTag] : [];
+    const searchTerm = (document.getElementById('searchInput')?.value || '').trim();
+    const activeChip = document.querySelector('.header-chip.active');
+    let selectedTags = [];
+    if (activeChip) {
+        const tag = activeChip.getAttribute('data-tag');
+        const tags = activeChip.getAttribute('data-tags');
+        if (tags) selectedTags = tags.split(',').map(t => t.trim()).filter(Boolean);
+        else if (tag) selectedTags = [tag];
+    }
     const favoritesOnly = document.getElementById('favoritesFilterBtn')?.classList.contains('active') || false;
     return { searchTerm, selectedTags, favoritesOnly };
 }
@@ -536,11 +528,15 @@ function filterRecipes(allRecipes) {
     if (favoritesOnly) list = list.filter(r => !!r.likedByMe);
     if (selectedTags.length > 0) list = list.filter(r => Array.isArray(r.tags) && selectedTags.some(t => r.tags.includes(t)));
     if (searchTerm) {
-        list = list.filter(recipe => {
+        const term = searchTerm.toLowerCase();
+        const byNameOrSource = list.filter(recipe => {
             const name = (recipe.name || '').toLowerCase();
             const source = getRecipeSourceLabel(recipe).toLowerCase();
-            return name.includes(searchTerm) || source.includes(searchTerm);
+            return name.includes(term) || source.includes(term);
         });
+        const byIngredients = searchByIngredientsFromList(list, searchTerm);
+        const ids = new Set([...byNameOrSource.map(r => r.id), ...byIngredients.map(r => r.id)]);
+        list = list.filter(r => ids.has(r.id));
     }
     return list;
 }
@@ -612,13 +608,10 @@ async function initApp() {
         };
         window.__applyFilters = applyFilters;
 
-        setupTagGroupDropdown(applyFilters, tagGroupsData);
+        setupHeaderChips(applyFilters);
         setupSearch(applyFilters);
         setupSurpriseMe(recipes, tagGroupsData, applyFilters);
-        setupSurpriseMobileToggle();
-        setupCreateShoppingListModal(recipes);
 
-        const favoritesWrap = document.getElementById('favorites-filter-wrap');
         const favoritesBtn = document.getElementById('favoritesFilterBtn');
         if (favoritesBtn) {
             favoritesBtn.addEventListener('click', () => {
@@ -628,7 +621,7 @@ async function initApp() {
         }
         onUserChange(async (user) => {
             updateAuthUI(user);
-            if (favoritesWrap) favoritesWrap.style.display = user ? 'block' : 'none';
+            if (favoritesBtn) favoritesBtn.style.display = user ? '' : 'none';
             if (!user && favoritesBtn?.classList.contains('active')) favoritesBtn.classList.remove('active');
             const pendingBanner = document.getElementById('pending-approval-banner');
             const addBtn = document.getElementById('add-recipe-btn');
@@ -651,7 +644,7 @@ async function initApp() {
             enrichRecipesWithLikes(recipes, user).then(applyFilters);
         });
         updateAuthUI(auth.currentUser);
-        if (favoritesWrap) favoritesWrap.style.display = auth.currentUser ? 'block' : 'none';
+        if (favoritesBtn) favoritesBtn.style.display = auth.currentUser ? '' : 'none';
         const pendingBanner = document.getElementById('pending-approval-banner');
         const addBtn = document.getElementById('add-recipe-btn');
         if (auth.currentUser) {

@@ -95,6 +95,158 @@ header {
     line-height: 1;
 }
 
+/* Refactored header: compact app bar + search + chips */
+.main-header-refactor {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+.main-header-refactor .header-app-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+.main-header-refactor .header-app-title {
+    margin: 0;
+    font-size: 1.35rem;
+    font-weight: 400;
+    color: #407076;
+    line-height: 1;
+}
+.main-header-refactor .header-app-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.main-header-refactor .header-icon-btn,
+.main-header-refactor .header-icon-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    min-height: 40px;
+    padding: 0;
+    border: 2px solid #FFD8BE;
+    border-radius: 50px;
+    background: #F8F7FF;
+    color: #407076;
+    font-size: 1.25rem;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+    text-decoration: none;
+    font-family: 'Varela Round', sans-serif;
+}
+.main-header-refactor .header-icon-btn:hover,
+.main-header-refactor .header-icon-link:hover {
+    background: #FFEEDD;
+    border-color: #407076;
+}
+.main-header-refactor .header-icon-btn.active {
+    background: #407076;
+    border-color: #407076;
+    color: white;
+}
+.main-header-refactor .header-icon-btn.active .favorites-heart {
+    stroke: white;
+    fill: white;
+}
+.main-header-refactor .header-add-btn {
+    font-size: 1.4rem;
+    line-height: 1;
+}
+.main-header-refactor .header-auth {
+    margin-right: 4px;
+}
+.main-header-refactor .header-auth .auth-btn {
+    border-radius: 50px;
+    padding: 6px 12px;
+    font-size: 0.75rem;
+}
+.main-header-refactor .header-search-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+}
+.main-header-refactor .header-search-input {
+    flex: 1;
+    min-width: 0;
+    padding: 10px 16px;
+    font-size: 1rem;
+    font-family: 'Varela Round', sans-serif;
+    border: 2px solid #FFD8BE;
+    border-radius: 50px;
+    background: white;
+    color: #407076;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+.main-header-refactor .header-search-input:focus {
+    border-color: #407076;
+    box-shadow: 0 2px 8px rgba(64, 112, 118, 0.15);
+}
+.main-header-refactor .header-search-input::placeholder {
+    color: #698996;
+}
+.main-header-refactor .header-surprise-btn {
+    flex-shrink: 0;
+    padding: 10px 14px;
+    font-family: 'Varela Round', sans-serif;
+    font-size: 0.95rem;
+    border: 2px solid #FFD8BE;
+    border-radius: 50px;
+    background: #F8F7FF;
+    color: #407076;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+}
+.main-header-refactor .header-surprise-btn:hover {
+    background: #FFEEDD;
+    border-color: #407076;
+}
+.main-header-refactor .header-chips-wrap {
+    width: 100%;
+    overflow: hidden;
+}
+.main-header-refactor .header-chips {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+}
+.main-header-refactor .header-chips::-webkit-scrollbar {
+    height: 4px;
+}
+.main-header-refactor .header-chip {
+    flex-shrink: 0;
+    scroll-snap-align: start;
+    padding: 8px 14px;
+    font-family: 'Varela Round', sans-serif;
+    font-size: 0.9rem;
+    border: 2px solid #FFD8BE;
+    border-radius: 50px;
+    background: #F8F7FF;
+    color: #407076;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+}
+.main-header-refactor .header-chip:hover {
+    background: #FFEEDD;
+    border-color: #407076;
+}
+.main-header-refactor .header-chip.active {
+    background: #407076;
+    border-color: #407076;
+    color: white;
+}
+
 .search-bar {
     max-width: 600px;
     margin: 0 auto 14px;
@@ -627,6 +779,14 @@ main {
     }
     header .Logo, header .logo { height: 1rem; }
 
+    .main-header-refactor { margin-bottom: 12px; gap: 8px; }
+    .main-header-refactor .header-app-title { font-size: 1.2rem; }
+    .main-header-refactor .header-icon-btn,
+    .main-header-refactor .header-icon-link { width: 44px; height: 44px; min-width: 44px; min-height: 44px; }
+    .main-header-refactor .header-search-input { padding: 12px 14px; }
+    .main-header-refactor .header-surprise-btn { padding: 12px 14px; min-height: 44px; }
+    .main-header-refactor .header-chip { padding: 10px 14px; min-height: 44px; }
+
     .auth-btn {
         padding: 6px 10px;
         font-size: 0.75rem;
@@ -690,9 +850,8 @@ main {
     }
     header .Logo, header .logo { height: 0.95rem; }
 
-    .shopping-list-nav { padding: 6px 0; margin-bottom: 10px; }
-    .search-bar { margin-bottom: 10px; }
-    .search-bar input { padding: 11px 14px; }
+    .main-header-refactor .header-app-title { font-size: 1.1rem; }
+    .main-header-refactor .header-search-input { padding: 11px 14px; }
 
     .add-recipe-form {
         padding: 16px;
