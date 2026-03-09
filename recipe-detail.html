@@ -91,7 +91,7 @@
     <div id="app">
         <div class="recipe-detail">
             <div class="recipe-detail-top-bar" style="display: flex; justify-content: space-between; align-items: center;">
-                <a href="shopping-list.html" class="back-button" style="text-decoration: none;">🛒 רשימת קניות</a>
+                <a href="shopping-list.html" class="back-button" style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px;"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg> רשימת קניות</a>
                 <button type="button" class="back-button" id="backBtn">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="m9 18 6-6-6-6"/>
@@ -115,7 +115,7 @@
                         שתפי קישור
                     </button>
                     <button type="button" id="addToShoppingListBtn">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
                         הוסיפי לרשימת קניות
                     </button>
                     <button type="button" id="editRecipeBtn">
@@ -140,6 +140,10 @@
             </p>
             <p class="recipe-added-by-meta" id="recipeAddedByContainer">מאת <span id="recipeAddedByName"></span></p>
 
+            <div id="recipeDetailActionButtons" class="recipe-detail-action-buttons" style="display: none;">
+                <button type="button" id="detailAddToMealBtn" class="recipe-detail-action-btn">🍽️ לארוחה</button>
+                <button type="button" id="detailAddToSlBtn" class="recipe-detail-action-btn">🛒 לקניות</button>
+            </div>
             <div class="recipe-info">
                 <div class="recipe-like-detail">
                     <button type="button" id="detailLikeBtn" class="detail-like-btn" aria-label="הוספי למועדפים">
@@ -213,6 +217,7 @@
         import { db, auth, onUserChange, signInWithGoogle } from './firebase.js';
         import { getDoc, doc, updateDoc, deleteDoc, setDoc, collection, addDoc, getDocs, query, orderBy, serverTimestamp, increment, arrayUnion } from 'https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js';
         import { fetchRecipeMeta } from './recipe-import-utils.js';
+        import { getMealsByUser, createMeal, addRecipeToMeal } from './meals.js';
         let recipe = null;
         let currentUser = null;
         let likedByMe = false;
@@ -487,6 +492,7 @@
 
             renderLikeButton();
             renderComments();
+            await checkApprovedAndShowActionButtons();
             if (window.location.hash === '#comments') {
                 setTimeout(() => {
                     document.getElementById('commentsSection')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -496,6 +502,112 @@
                 editRecipe();
                 history.replaceState(null, '', 'recipe-detail.html' + (window.location.hash || ''));
             }
+        }
+
+        function showToast(message) {
+            const existing = document.querySelector('.recipe-toast');
+            if (existing) existing.remove();
+            const el = document.createElement('div');
+            el.className = 'recipe-toast';
+            el.setAttribute('aria-live', 'polite');
+            el.textContent = message || '';
+            document.body.appendChild(el);
+            requestAnimationFrame(() => el.classList.add('recipe-toast-visible'));
+            setTimeout(() => {
+                el.classList.remove('recipe-toast-visible');
+                setTimeout(() => el.remove(), 320);
+            }, 2200);
+        }
+
+        async function checkApprovedAndShowActionButtons() {
+            const wrap = document.getElementById('recipeDetailActionButtons');
+            const mealBtn = document.getElementById('detailAddToMealBtn');
+            const slBtn = document.getElementById('detailAddToSlBtn');
+            if (!wrap || !mealBtn || !slBtn) return;
+            const user = auth.currentUser;
+            if (!user) return;
+            let approved = [];
+            try {
+                const snap = await getDoc(doc(db, 'config', 'approvedUsers'));
+                if (snap.exists() && Array.isArray(snap.data().uids)) approved = snap.data().uids;
+            } catch (_) {}
+            if (!approved.includes(user.uid)) return;
+            wrap.style.display = 'flex';
+            mealBtn.onclick = () => openAddToMealSheetInDetail();
+            slBtn.onclick = () => {
+                if (!recipe) return;
+                const ingredients = Array.isArray(recipe.ingredients) ? recipe.ingredients : [];
+                if (ingredients.length === 0) {
+                    alert('אין מרכיבים במתכון הזה.');
+                    return;
+                }
+                if (typeof window.ShoppingList !== 'undefined') {
+                    window.ShoppingList.addItems(recipe.id, recipe.name || 'מתכון', ingredients);
+                }
+                showToast('✓ נוסף לרשימת הקניות');
+            };
+        }
+
+        async function openAddToMealSheetInDetail() {
+            const user = auth.currentUser;
+            if (!user || !recipe) return;
+            const overlay = document.createElement('div');
+            overlay.className = 'add-to-meal-overlay';
+            const sheet = document.createElement('div');
+            sheet.className = 'add-to-meal-sheet';
+            sheet.setAttribute('role', 'dialog');
+            sheet.setAttribute('aria-label', 'הוספת מתכון לארוחה');
+            const close = () => {
+                sheet.classList.remove('add-to-meal-sheet-open');
+                overlay.classList.remove('add-to-meal-overlay-open');
+                setTimeout(() => overlay.remove(), 280);
+            };
+            overlay.appendChild(sheet);
+            overlay.onclick = (e) => { if (e.target === overlay) close(); };
+            sheet.innerHTML = '<div class="add-to-meal-sheet-inner"><h3 class="add-to-meal-title">הוספה לארוחה</h3><p class="add-to-meal-sub">הוסיפי לארוחה קיימת</p><div class="add-to-meal-list" aria-busy="true">טוען...</div><p class="add-to-meal-sub add-to-meal-new-label">צרי ארוחה חדשה</p><div class="add-to-meal-new-row"><input type="text" class="add-to-meal-input" placeholder="שם הארוחה" id="addToMealNewName" maxlength="80"><button type="button" class="sl-btn sl-btn-primary" id="addToMealCreateBtn">שמירה</button></div></div>';
+            document.body.appendChild(overlay);
+            requestAnimationFrame(() => {
+                overlay.classList.add('add-to-meal-overlay-open');
+                sheet.classList.add('add-to-meal-sheet-open');
+            });
+            const listEl = sheet.querySelector('.add-to-meal-list');
+            const inputEl = document.getElementById('addToMealNewName');
+            const createBtn = document.getElementById('addToMealCreateBtn');
+            let meals = [];
+            try { meals = await getMealsByUser(user.uid); } catch (e) { console.error(e); }
+            if (meals.length === 0) {
+                listEl.innerHTML = '<p class="add-to-meal-empty">אין לך עדיין ארוחות. צרי ארוחה חדשה למטה.</p>';
+            } else {
+                listEl.innerHTML = meals.map(m => `<button type="button" class="add-to-meal-item" data-meal-id="${(m.id || '').replace(/"/g, '&quot;')}">${(m.name || 'ארוחה').replace(/</g, '&lt;')} (${(m.recipeIds || []).length} מתכונים)</button>`).join('');
+                listEl.querySelectorAll('.add-to-meal-item').forEach(btn => {
+                    btn.addEventListener('click', async () => {
+                        const mealId = btn.dataset.mealId;
+                        if (!mealId) return;
+                        btn.disabled = true;
+                        try {
+                            await addRecipeToMeal(mealId, recipe.id);
+                            close();
+                            alert('המתכון נוסף לארוחה ✓');
+                        } catch (err) {
+                            console.error(err);
+                            alert('שגיאה בהוספה. נסי שוב.');
+                        } finally { btn.disabled = false; }
+                    });
+                });
+            }
+            listEl.removeAttribute('aria-busy');
+            createBtn.addEventListener('click', async () => {
+                const name = (inputEl && inputEl.value || '').trim();
+                if (!name) { alert('הזיני שם לארוחה.'); return; }
+                createBtn.disabled = true;
+                try {
+                    const meal = await createMeal({ name, recipeIds: [recipe.id], createdBy: { uid: user.uid, name: user.displayName || user.email || 'משתמשת' } });
+                    if (meal) { close(); alert('ארוחה נוצרה והמתכון נוסף ✓'); }
+                } catch (err) {
+                    console.error(err);
+                    alert('שגיאה ביצירת ארוחה. נסי שוב.');
+                } finally { createBtn.disabled = false; }
+            });
         }
 
         async function loadLikeState() {
@@ -926,11 +1038,20 @@
             statusEl.className = 'instructions-image-status';
             try {
                 const compressed = await compressImageForExtract(file);
-                const res = await fetch('/.netlify/functions/extract-image', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ images: [compressed] })
-                });
+                const EXTRACT_IMAGE_TIMEOUT_MS = 60000;
+                const ac = new AbortController();
+                const timeoutId = setTimeout(() => ac.abort(), EXTRACT_IMAGE_TIMEOUT_MS);
+                let res;
+                try {
+                    res = await fetch('/.netlify/functions/extract-image', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ images: [compressed] }),
+                        signal: ac.signal
+                    });
+                } finally {
+                    clearTimeout(timeoutId);
+                }
                 if (res.status === 502 || res.status === 504) {
                     statusEl.textContent = 'השרת לא הספיק להגיב. נסי שוב.';
                     statusEl.className = 'instructions-image-status error';
@@ -958,7 +1079,7 @@
                 fileInput.value = '';
             } catch (err) {
                 console.error(err);
-                statusEl.textContent = err.message || 'שגיאה. נסי שוב.';
+                statusEl.textContent = (err.name === 'AbortError' ? 'השרת לא הספיק להגיב. נסי שוב.' : err.message) || 'שגיאה. נסי שוב.';
                 statusEl.className = 'instructions-image-status error';
             }
             btn.disabled = false;

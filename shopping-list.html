@@ -42,7 +42,7 @@
             חזרה לדף הבית
         </a>
         <h1>
-            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
             רשימת קניות
         </h1>
 
@@ -50,8 +50,8 @@
 
         <div style="margin-bottom: 20px;">
             <button type="button" class="sl-btn sl-btn-secondary" id="slAddRecipesBtn">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-                הוסיפי מתכונים לרשימה
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
+                ＋ הוסיפי מתכון לרשימה
             </button>
         </div>
 
@@ -102,6 +102,40 @@
             } catch (e) { return null; }
         }
 
+        var TAG_GROUPS_SL = [
+            { label: 'מנות עיקריות', tags: ['בשר', 'דגים', 'פסטות', 'קישים ופשטידות', 'צמחוני'] },
+            { label: 'סלטים', tags: ['סלטים'] }, { label: 'תוספות', tags: ['תוספות'] },
+            { label: 'לחם ומאפים', tags: ['לחם ומאפים'] }, { label: 'רטבים וממרחים', tags: ['רטבים וממרחים'] },
+            { label: 'מרקים', tags: ['מרקים'] }, { label: 'קינוחים', tags: ['עוגות', 'עוגיות', 'קינוחים', 'שוקולד'] },
+            { label: 'ארוחות בוקר', tags: ['ארוחות בוקר'] }, { label: 'חטיפים', tags: ['חטיפים'] }, { label: 'שתייה', tags: ['שתייה'] }
+        ];
+        function filterRecipesSl(recipes, searchTerm, selectedTags) {
+            var list = recipes;
+            if (selectedTags.length > 0) {
+                list = list.filter(function (r) { return Array.isArray(r.tags) && selectedTags.some(function (t) { return r.tags.indexOf(t) !== -1; }); });
+            }
+            if ((searchTerm || '').trim()) {
+                var term = searchTerm.trim().toLowerCase();
+                list = list.filter(function (r) {
+                    var name = (r.name || '').toLowerCase();
+                    var source = (r.source || '').toLowerCase();
+                    return name.indexOf(term) !== -1 || source.indexOf(term) !== -1;
+                });
+            }
+            return list;
+        }
+        function showSlToast(msg) {
+            var el = document.createElement('div');
+            el.className = 'recipe-toast';
+            el.setAttribute('aria-live', 'polite');
+            el.textContent = msg || '';
+            document.body.appendChild(el);
+            requestAnimationFrame(function () { el.classList.add('recipe-toast-visible'); });
+            setTimeout(function () {
+                el.classList.remove('recipe-toast-visible');
+                setTimeout(function () { el.remove(); }, 320);
+            }, 2200);
+        }
         function openAddRecipesModal() {
             if (typeof window.ShoppingList === 'undefined') return;
             function runModal(recipes) {
@@ -111,30 +145,56 @@
                     return;
                 }
                 var overlay = document.createElement('div');
-                overlay.className = 'create-sl-overlay';
-                overlay.style.cssText = 'position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;padding:16px;';
-                var listHtml = recipes.map(function (r) {
-                    return '<label class="create-sl-recipe" style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:6px 0;"><input type="checkbox" class="create-sl-check" data-recipe-id="' + escapeAttr(r.id) + '"> ' + escapeHtml(r.name || 'מתכון') + '</label>';
-                }).join('');
-                overlay.innerHTML = '<div class="create-sl-modal" style="background:#F8F7FF;border-radius:16px;padding:24px;max-width:480px;width:100%;max-height:85vh;overflow:auto;font-family:Varela Round,sans-serif;direction:rtl;box-shadow:0 8px 32px rgba(0,0,0,0.2);">' +
-                    '<h3 style="margin:0 0 8px;color:#407076;font-size:1.25rem;">הוסיפי מתכונים לרשימה</h3>' +
-                    '<p style="margin:0 0 16px;color:#698996;font-size:0.9rem;">בחרי מתכונים – המרכיבים יתווספו לרשימה (תבלינים ושמן לא ייכללו).</p>' +
-                    '<div class="create-sl-list" style="margin-bottom:20px;">' + listHtml + '</div>' +
-                    '<div style="display:flex;gap:10px;flex-wrap:wrap;">' +
+                overlay.className = 'recipe-picker-overlay';
+                var modal = document.createElement('div');
+                modal.className = 'recipe-picker-modal';
+                modal.innerHTML = '<div class="recipe-picker-search"><input type="text" id="slPickerSearch" placeholder="חפשי מתכון..." aria-label="חיפוש מתכונים" autocomplete="off"></div>' +
+                    '<div class="recipe-picker-chips" id="slPickerChips"></div>' +
+                    '<div class="recipe-picker-list" id="slPickerList"></div>' +
+                    '<div class="recipe-picker-actions">' +
                     '<button type="button" class="sl-btn sl-btn-primary" id="slAddRecipesConfirm">הוסיפי לרשימה</button>' +
                     '<button type="button" class="sl-btn sl-btn-secondary" id="slAddRecipesCancel">ביטול</button>' +
-                    '</div></div>';
+                    '</div>';
+                overlay.appendChild(modal);
                 overlay.onclick = function (e) { if (e.target === overlay) overlay.remove(); };
                 document.body.appendChild(overlay);
+                var chipsWrap = document.getElementById('slPickerChips');
+                var listEl = document.getElementById('slPickerList');
+                var searchInput = document.getElementById('slPickerSearch');
+                var selectedTag = '';
+                chipsWrap.innerHTML = '<button type="button" class="recipe-picker-chip active" data-tag="">הכל</button>' +
+                    TAG_GROUPS_SL.map(function (g) { return '<button type="button" class="recipe-picker-chip" data-tags="' + (g.tags || []).join(',') + '">' + escapeHtml(g.label) + '</button>'; }).join('');
+                chipsWrap.querySelectorAll('.recipe-picker-chip').forEach(function (chip) {
+                    chip.addEventListener('click', function () {
+                        chipsWrap.querySelectorAll('.recipe-picker-chip').forEach(function (c) { c.classList.remove('active'); });
+                        chip.classList.add('active');
+                        selectedTag = chip.dataset.tags || chip.dataset.tag || '';
+                        renderList();
+                    });
+                });
+                function renderList() {
+                    var tags = (selectedTag || '').split(',').map(function (t) { return t.trim(); }).filter(Boolean);
+                    var term = (searchInput && searchInput.value) || '';
+                    var filtered = filterRecipesSl(recipes, term, tags);
+                    listEl.innerHTML = filtered.length === 0
+                        ? '<p style="color:#698996;padding:16px;">לא נמצאו מתכונים.</p>'
+                        : filtered.map(function (r) { return '<label><input type="checkbox" class="recipe-picker-check" data-recipe-id="' + escapeAttr(r.id) + '"> ' + escapeHtml(r.name || 'מתכון') + '</label>'; }).join('');
+                }
+                if (searchInput) {
+                    searchInput.oninput = renderList;
+                    searchInput.onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); renderList(); } };
+                }
+                renderList();
                 document.getElementById('slAddRecipesCancel').onclick = function () { overlay.remove(); };
                 document.getElementById('slAddRecipesConfirm').onclick = function () {
-                    var checked = overlay.querySelectorAll('.create-sl-check:checked');
+                    var checked = listEl.querySelectorAll('.recipe-picker-check:checked');
                     if (checked.length === 0) { alert('בחרי לפחות מתכון אחד.'); return; }
                     checked.forEach(function (cb) {
                         var recipe = recipes.find(function (r) { return r.id === cb.dataset.recipeId; });
                         if (recipe && recipe.ingredients && recipe.ingredients.length) window.ShoppingList.addItems(recipe.id, recipe.name, recipe.ingredients);
                     });
                     overlay.remove();
+                    showSlToast('✓ נוסף לרשימת הקניות');
                     render();
                 };
             }
@@ -195,10 +255,8 @@
                 totalItems += items.length;
                 parts.push('<li class="sl-category-header"><span>' + escapeHtml(cat) + '</span><button type="button" class="sl-remove" aria-label="הסרי">✕</button></li>');
                 items.forEach(function (item) {
-                    var alreadyMerged = /^\d|^חצי\s|^רבע\s/.test(item.displayText || '');
-                    var countLabel = (!alreadyMerged && item.count > 1) ? ' <span class="sl-count">x' + item.count + '</span>' : '';
                     parts.push('<li data-key="' + escapeAttr(item.key) + '">' +
-                        '<span>' + escapeHtml(item.displayText) + countLabel + '</span>' +
+                        '<span>' + escapeHtml(item.displayText) + '</span>' +
                         '<button type="button" class="sl-remove" aria-label="הסרי">✕</button></li>');
                 });
             });

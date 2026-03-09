@@ -531,6 +531,18 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    const EXTRACT_IMAGE_TIMEOUT_MS = 60000; // 60 seconds – matches Netlify function timeout
+    function fetchExtractImage(body) {
+        const ac = new AbortController();
+        const id = setTimeout(() => ac.abort(), EXTRACT_IMAGE_TIMEOUT_MS);
+        return fetch('/.netlify/functions/extract-image', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+            signal: ac.signal
+        }).finally(() => clearTimeout(id));
+    }
+
     /** שליחה ברצף: תמונה אחת לכל בקשה, then מיזוג תוצאות – מונע timeout בסקרינשוטים מרובי תמונות */
     async function extractSequentialAndMerge(files, onProgress) {
         const allIngredients = [];
@@ -540,17 +552,9 @@ document.addEventListener('DOMContentLoaded', () => {
         for (let i = 0; i < files.length; i++) {
             if (onProgress) onProgress(i + 1, files.length);
             const compressed = await compressImageFile(files[i]);
-            let res = await fetch('/.netlify/functions/extract-image', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ images: [compressed] })
-            });
+            let res = await fetchExtractImage({ images: [compressed] });
             if (res.status === 502 || res.status === 504) {
-                res = await fetch('/.netlify/functions/extract-image', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ images: [compressed] })
-                });
+                res = await fetchExtractImage({ images: [compressed] });
             }
             if (res.status === 502 || res.status === 504) {
                 throw new Error('TIMEOUT');
@@ -609,17 +613,29 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     setImagesStatus('loading', '⏳ שולח תמונה ל-AI...');
                     const compressed = await compressImageFile(files[0]);
-                    async function doFetch() {
-                        return fetch('/.netlify/functions/extract-image', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ images: [compressed] })
-                        });
+                    let response;
+                    try {
+                        response = await fetchExtractImage({ images: [compressed] });
+                    } catch (e) {
+                        if (e.name === 'AbortError') {
+                            setImagesStatus('error', 'השרת לא הספיק להגיב (timeout). נסי עם תמונה אחת ברורה וקטנה יותר, או שוב בעוד רגע.');
+                            extractFromImagesBtn.disabled = false;
+                            return;
+                        }
+                        throw e;
                     }
-                    let response = await doFetch();
                     if (response.status === 502 || response.status === 504) {
                         setImagesStatus('loading', '⏳ ניסיון נוסף...');
-                        response = await doFetch();
+                        try {
+                            response = await fetchExtractImage({ images: [compressed] });
+                        } catch (e) {
+                            if (e.name === 'AbortError') {
+                                setImagesStatus('error', 'השרת לא הספיק להגיב (timeout). נסי עם תמונה אחת ברורה וקטנה יותר, או שוב בעוד רגע.');
+                                extractFromImagesBtn.disabled = false;
+                                return;
+                            }
+                            throw e;
+                        }
                     }
                     if (response.status === 502 || response.status === 504) {
                         setImagesStatus('error', 'השרת לא הספיק להגיב (timeout). נסי עם תמונה אחת ברורה וקטנה יותר, או שוב בעוד רגע.');
@@ -665,7 +681,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 showImageResultModal(result);
             } catch (err) {
                 console.error(err);
-                const isTimeout = err.message === 'TIMEOUT';
+                const isTimeout = err.message === 'TIMEOUT' || err.name === 'AbortError';
                 let msg = isTimeout
                     ? (useSequential ? 'השרת לא הספיק להגיב. נסי עם תמונה אחת או שתיים, או שוב בעוד רגע.' : 'השרת לא הספיק להגיב. נסי שוב בעוד רגע.')
                     : (err.message || 'חיבור ל-AI נכשל. נסי שוב.');

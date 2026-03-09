@@ -112,10 +112,17 @@ function getAddedByName(recipe) {
     return (recipe.addedByName && String(recipe.addedByName).trim()) ? recipe.addedByName.trim() : 'נועה';
 }
 
-/** Carousel-only card: cinematic image, title (2 lines), מקור. One tap → recipe detail. */
+/** Carousel-only card: cinematic image, title (2 lines), מקור. One tap → recipe detail. Pills when logged in. */
 function buildCarouselCardHtml(recipe) {
     const sourceLabel = getRecipeSourceLabel(recipe);
     const imgSrc = ensureHttpsImage(recipe.image) || 'https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=400&h=534&fit=crop';
+    const showPills = !!(window.__isApproved && auth.currentUser);
+    const pillsHtml = showPills
+        ? `<div class="carousel-card-pills" onclick="event.stopPropagation();">
+            <button type="button" class="recipe-pill-btn recipe-pill-to-meal" data-recipe-id="${escapeHtml(recipe.id)}" aria-label="הוספה לארוחה">🍽️ לארוחה</button>
+            <button type="button" class="recipe-pill-btn recipe-pill-to-sl" data-recipe-id="${escapeHtml(recipe.id)}" aria-label="הוספה לרשימת קניות">🛒 לקניות</button>
+          </div>`
+        : '';
     return `
     <div class="recipe-card-carousel" data-recipe-id="${recipe.id}" onclick="window.showRecipe('${recipe.id}')">
         <div class="carousel-card-image-wrap">
@@ -124,6 +131,7 @@ function buildCarouselCardHtml(recipe) {
         <div class="carousel-card-copy">
             <h2 class="carousel-card-title">${escapeHtml(getRecipeDisplayName(recipe))}</h2>
             ${sourceLabel ? `<p class="carousel-card-source">${escapeHtml(sourceLabel)}</p>` : ''}
+            ${pillsHtml}
         </div>
     </div>
     `;
@@ -146,8 +154,13 @@ function buildGridCardHtml(recipe) {
     const commentsLinkHtml = `<a href="recipe-detail.html#comments" class="recipe-comments-link" data-recipe-id="${recipe.id}" onclick="event.preventDefault(); event.stopPropagation(); window.showRecipeToComments('${recipe.id}')">${numComments} ${commentsLabel}</a>`;
     const editBtnHtml = `<button type="button" class="recipe-card-edit" data-recipe-id="${recipe.id}" aria-label="ערוך מתכון" onclick="event.preventDefault(); event.stopPropagation(); window.showRecipeEdit('${recipe.id}')" title="ערוך מתכון"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></button>`;
     const shareBtnHtml = `<button type="button" class="recipe-card-share" data-recipe-id="${recipe.id}" aria-label="שתפי קישור" onclick="event.preventDefault(); event.stopPropagation(); window.shareRecipe('${recipe.id}')" title="שתפי קישור"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>`;
-    const showAddToMeal = !!(window.__isApproved && auth.currentUser);
-    const addToMealBtnHtml = showAddToMeal ? `<button type="button" class="recipe-add-to-meal-btn" data-recipe-id="${recipe.id}" aria-label="הוספה לארוחה" onclick="event.preventDefault(); event.stopPropagation(); window.openAddToMealSheet('${recipe.id}')" title="＋ לארוחה">＋ לארוחה</button>` : '';
+    const showPills = !!(window.__isApproved && auth.currentUser);
+    const pillsHtml = showPills
+        ? `<div class="recipe-card-pills">
+            <button type="button" class="recipe-pill-btn recipe-pill-to-meal" data-recipe-id="${recipe.id}" aria-label="הוספה לארוחה">🍽️ לארוחה</button>
+            <button type="button" class="recipe-pill-btn recipe-pill-to-sl" data-recipe-id="${recipe.id}" aria-label="הוספה לרשימת קניות">🛒 לקניות</button>
+          </div>`
+        : '';
     return `
     <div class="recipe-card" data-recipe-id="${recipe.id}" onclick="window.showRecipe('${recipe.id}')">
         <div class="recipe-card-image-wrap">
@@ -159,7 +172,6 @@ function buildGridCardHtml(recipe) {
             <div class="recipe-title-row">
                 <h2 class="recipe-name">${escapeHtml(getRecipeDisplayName(recipe))}</h2>
                 <div class="recipe-card-actions">
-                    ${addToMealBtnHtml}
                     <button type="button" class="recipe-like-btn ${liked ? 'liked' : ''}" data-recipe-id="${recipe.id}" aria-label="עשי לב">
                         <span class="like-icon">${getHeartSvg(liked)}</span>
                         <span class="like-count">${count}</span>
@@ -170,6 +182,7 @@ function buildGridCardHtml(recipe) {
             <p class="recipe-added-by">${recipe.addedByUid ? `<a href="profile.html?uid=${encodeURIComponent(recipe.addedByUid)}" class="recipe-added-by-link" onclick="event.stopPropagation()">מאת ${escapeHtml(addedByName)}</a>` : `מאת ${escapeHtml(addedByName)}`}</p>
             <div class="recipe-comments-row">${commentsLinkHtml}</div>
             ${tagsHtml}
+            ${pillsHtml}
         </div>
     </div>
     `;
@@ -217,6 +230,23 @@ function displayRecipes(recipesToShow, options = {}) {
             e.stopPropagation();
             const id = btn.dataset.recipeId;
             if (id) window.toggleLike(id);
+        });
+    });
+
+    recipesContainer.querySelectorAll('.recipe-pill-to-meal').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const id = btn.dataset.recipeId;
+            if (id && typeof window.openAddToMealSheet === 'function') window.openAddToMealSheet(id);
+        });
+    });
+    recipesContainer.querySelectorAll('.recipe-pill-to-sl').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const id = btn.dataset.recipeId;
+            if (id && typeof window.addRecipeToShoppingList === 'function') window.addRecipeToShoppingList(id);
         });
     });
 }
@@ -422,6 +452,36 @@ async function toggleLike(recipeId) {
 }
 
 window.toggleLike = toggleLike;
+
+/** Toast message (e.g. "✓ נוסף לרשימת הקניות") */
+window.showToast = function (message) {
+    const existing = document.querySelector('.recipe-toast');
+    if (existing) existing.remove();
+    const el = document.createElement('div');
+    el.className = 'recipe-toast';
+    el.setAttribute('aria-live', 'polite');
+    el.textContent = message || '';
+    document.body.appendChild(el);
+    requestAnimationFrame(() => el.classList.add('recipe-toast-visible'));
+    setTimeout(() => {
+        el.classList.remove('recipe-toast-visible');
+        setTimeout(() => el.remove(), 320);
+    }, 2200);
+};
+
+/** Add one recipe's ingredients to shopping list and show toast. Used from cards and recipe detail. */
+window.addRecipeToShoppingList = function (recipeId) {
+    const recipes = window.__allRecipes || [];
+    const recipe = recipes.find(r => r.id === recipeId);
+    if (!recipe || !Array.isArray(recipe.ingredients) || recipe.ingredients.length === 0) {
+        if (typeof alert === 'function') alert('אין מרכיבים במתכון הזה.');
+        return;
+    }
+    if (typeof window.ShoppingList !== 'undefined') {
+        window.ShoppingList.addItems(recipe.id, recipe.name || 'מתכון', recipe.ingredients);
+    }
+    window.showToast('✓ נוסף לרשימת הקניות');
+};
 
 /** bottom sheet: הוסיפי לארוחה קיימת / צרי ארוחה חדשה – רק למשתמשות מאושרות */
 window.openAddToMealSheet = async function (recipeId) {

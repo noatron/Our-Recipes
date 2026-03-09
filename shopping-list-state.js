@@ -1,12 +1,13 @@
 /**
  * רשימת קניות – state משותף (זיכרון + localStorage לרשימה הנוכחית ורשימות שמורות).
- * אגרגציה: מרכיבים זהים מכמה מתכונים מתאחדים עם ספירה (למשל 2 עגבניות).
+ * נורמליזציה: מוציאים מכל מרכיב כמות ויחידה ומשאירים רק שם המוצר (למשל "1 כף סוכר" → "סוכר").
+ * איחוד: מרכיבים עם אותו שם מוצר מופיעים בשורה אחת, בלי כמויות – הרשימה היא צ'קליסט של מה לקנות.
  */
 (function () {
     const CURRENT_KEY = 'app_shopping_list';
     const SAVED_LISTS_KEY = 'app_saved_shopping_lists';
 
-    /** מפתח לאגרגציה: נורמליזציה קלה (תפוח/תפוחים/תפוחי → תפוח; חמאה ללא מלח → חמאה) */
+    /** מפתח לאגרגציה: נורמליזציה קלה (תפוח/תפוחים/תפוחי → תפוח) */
     function normalizeKey(text) {
         if (!text || typeof text !== 'string') return '';
         let s = text.trim().toLowerCase();
@@ -21,7 +22,7 @@
         return s;
     }
 
-    /** תבלינים יבשים, שמנים ומים – לא נכנסים לרשימת הקניות (בזיליקום טרי וכו' כן) */
+    /** תבלינים יבשים, שמנים ומים – לא נכנסים לרשימת הקניות (בזיליקום טרי וכו' כן). שמנים – רק אם הכמות פחות מכוס (Rule 4). */
     var PANTRY_NORMALIZED = [
         'מלח', 'פלפל', 'פפריקה', 'אורגנו', 'כורכום', 'כמון', 'זעתר',
         'פלפל שחור', 'פלפל לבן', 'פפריקה מתוקה', 'מלח גס', 'תבלין', 'קורט',
@@ -29,11 +30,15 @@
         'מים'
     ].map(function (t) { return normalizeKey(t); });
 
-    /** תבלינים/שמנים באנגלית – לזיהוי והשמטה */
+    /** תבלינים/שמנים באנגלית – לזיהוי והשמטה (שמנים – Rule 4 לפי כמות) */
     var PANTRY_EN = [
         'black pepper', 'salt', 'kosher salt', 'cooking salt', 'dried thyme',
         'olive oil', 'extra virgin olive oil', 'evoo', 'vegetable oil'
     ].map(function (t) { return t.trim().toLowerCase(); });
+
+    /** מוצרים שהם שמן – עבורם מחילים כלל כמות (כוס ומעלה נכנס לרשימה) */
+    var OIL_NORMALIZED = ['שמן', 'שמן זית', 'שמן רגיל', 'שמן קנולה', 'שמן צמחי'].map(function (t) { return normalizeKey(t); });
+    var OIL_EN = ['olive oil', 'extra virgin olive oil', 'evoo', 'vegetable oil'];
 
     function isPantryItem(text) {
         var low = (text || '').trim().toLowerCase();
@@ -50,6 +55,28 @@
             if (low === PANTRY_EN[j] || low.indexOf(PANTRY_EN[j] + ' ') === 0 || low.indexOf(' ' + PANTRY_EN[j]) >= 0) return true;
         }
         return false;
+    }
+
+    /** האם המוצר הוא שמן (כל סוג) – Rule 4: שמן נכנס רק אם כמות >= כוס או גרסה ספציפית */
+    function isOilProduct(text) {
+        var low = (text || '').trim().toLowerCase();
+        var key = normalizeKey(text);
+        if (key === 'שמן' || key.indexOf('שמן ') === 0) return true;
+        for (var i = 0; i < OIL_NORMALIZED.length; i++) {
+            if (key === OIL_NORMALIZED[i] || key.indexOf(OIL_NORMALIZED[i] + ' ') === 0) return true;
+        }
+        for (var j = 0; j < OIL_EN.length; j++) {
+            if (low.indexOf(OIL_EN[j]) >= 0) return true;
+        }
+        return false;
+    }
+
+    /** גרסה ספציפית של שמן/חומץ (כתית מעולה, בלסמי וכו') – נשמרת ברשימה; רק הגרסה הגנרית מושמטת. */
+    function isSpecificOilOrVinegar(productName) {
+        if (!productName || typeof productName !== 'string') return false;
+        var n = (productName || '').trim();
+        if (!n) return false;
+        return (/כתית|מעולה|בלסמי|אדום\s*יין|לבן\s*יין|סינטי|אורגני|קולד\s*פרס|פריס/i.test(n) || n.length > 12);
     }
 
     /** מפשט מרכיב לפירוט מינימלי – רק שם וכמות, בלי הכנה/מידות אמריקאיות/סוגריים */
@@ -113,7 +140,39 @@
         return s || text.trim();
     }
 
-    /** יחידות נפוצות – לנורמליזציה ורבים (כף→כפות); כולל אנגלית → מפתח עברי */
+    /** יחידות עבריות לזיהוי – ממוינות לפי אורך (ארוך קודם) כדי להתאים "כפות" לפני "כף". */
+    var UNITS = [
+        'שלושה רבעים', 'שלושה רבעי', 'כפות', 'כף', 'כפיות', 'כפית', 'כוסות', 'כוס',
+        'קילו', 'ק\"ג', 'גרם', 'מ"ל', 'ליטר', 'יחידות', 'יחידה', 'חבילות', 'חבילה',
+        'פרוסות', 'פרוסה', 'ענפים', 'ענף', 'שיני', 'שן', 'קורט'
+    ];
+    /** מילות מספר עבריות → מספר */
+    var NUMBER_WORDS = {
+        'חצי': 0.5,
+        'רבע': 0.25,
+        'שליש': 0.33,
+        'שלושה רבעים': 0.75,
+        'שלושה רבעי': 0.75,
+        'אחד': 1,
+        'אחת': 1,
+        'שתי': 2,
+        'שתיים': 2,
+        'שנים': 2,
+        'שתי': 2,
+        'שלוש': 3,
+        'שלושה': 3,
+        'ארבע': 4,
+        'ארבעה': 4,
+        'חמש': 5,
+        'חמישה': 5,
+        'שש': 6,
+        'שישה': 6,
+        'שבע': 7,
+        'שמונה': 8,
+        'תשע': 9,
+        'עשר': 10
+    };
+    /** יחידות לנורמליזציה (מפתח יחיד) – לתאימות קוד קיים */
     var UNIT_PAIRS = [
         { singular: 'כף', plural: 'כפות', key: 'כף' },
         { singular: 'כפית', plural: 'כפיות', key: 'כפית' },
@@ -122,125 +181,234 @@
         { singular: 'יחידה', plural: 'יחידות', key: 'יחידה' },
         { singular: 'גרם', plural: 'גרם', key: 'גרם' },
         { singular: 'ק"ג', plural: 'ק"ג', key: 'ק\"ג' },
-        { singular: 'מלא', plural: 'מלא', key: 'מלא' }
+        { singular: 'מ"ל', plural: 'מ"ל', key: 'מ\"ל' },
+        { singular: 'ליטר', plural: 'ליטר', key: 'ליטר' },
+        { singular: 'מלא', plural: 'מלא', key: 'מלא' },
+        { singular: 'פרוסה', plural: 'פרוסות', key: 'פרוסה' },
+        { singular: 'ענף', plural: 'ענפים', key: 'ענף' },
+        { singular: 'שן', plural: 'שיני', key: 'שן' },
+        { singular: 'קורט', plural: 'קורט', key: 'קורט' }
     ];
     var UNIT_EN = [
         { re: /^tbsp\.?\s+|^tbs\.?\s+|^tablespoons?\s+/i, key: 'כף' },
         { re: /^tsp\.?\s+|^teaspoons?\s+/i, key: 'כפית' },
         { re: /^cups?\s+/i, key: 'כוס' },
         { re: /^g\s+|^gram(?:s)?\s+/i, key: 'גרם' },
-        { re: /^kg\s+|^kilo(?:gram)?s?\s+/i, key: 'ק\"ג' }
+        { re: /^kg\s+|^kilo(?:gram)?s?\s+/i, key: 'ק\"ג' },
+        { re: /^ml\s+|^milliliter(?:s)?\s+/i, key: 'מ\"ל' },
+        { re: /^l\s+|^liter(?:s)?\s+/i, key: 'ליטר' }
     ];
 
-    /** מפרק מרכיב למספר + יחידה + שם (תומך בעברית, אנגלית, שברים 1/2) */
+    /**
+     * מפרק מרכיב מחרוזת ל-3 חלקים: amount, unit, product.
+     * @returns {{ amount: number|null, unit: string|null, product: string }} או null
+     */
     function parseIngredient(text) {
         if (!text || typeof text !== 'string') return null;
         var s = text.trim().replace(/\s+/g, ' ');
-        var qty = 1;
-        var unitKey = '';
-        var name = s;
+        var amount = null;
+        var unit = null;
+        var product = s;
 
-        var numMatch = s.match(/^(\d+(?:\.\d+)?)\s+/);
-        var gMatch = s.match(/^(\d+(?:\.\d+)?)\s*g\s+/i);
-        var fracMatch = s.match(/^(\d+)\/(\d+)\s+/);
-        if (gMatch) {
-            qty = parseFloat(gMatch[1], 10);
-            s = s.slice(gMatch[0].length).trim();
-            unitKey = 'גרם';
-            name = s;
-            return { qty: qty, unitKey: unitKey, name: name };
+        var phrases = Object.keys(NUMBER_WORDS).sort(function (a, b) { return b.length - a.length; });
+        for (var pi = 0; pi < phrases.length; pi++) {
+            var phrase = phrases[pi];
+            if (s.indexOf(phrase) === 0) {
+                amount = NUMBER_WORDS[phrase];
+                s = s.slice(phrase.length).trim();
+                break;
+            }
         }
-        if (numMatch) {
-            qty = parseFloat(numMatch[1], 10);
-            s = s.slice(numMatch[0].length).trim();
-        } else if (fracMatch) {
-            qty = parseInt(fracMatch[1], 10) / parseInt(fracMatch[2], 10);
-            s = s.slice(fracMatch[0].length).trim();
-        } else if (/^חצי\s/i.test(s)) {
-            qty = 0.5;
-            s = s.replace(/^חצי\s+/, '').trim();
-        } else if (/^רבע\s/i.test(s)) {
-            qty = 0.25;
-            s = s.replace(/^רבע\s+/, '').trim();
+        if (amount === null) {
+            var fracMatch = s.match(/^(\d+)\/(\d+)\s+/);
+            var numMatch = s.match(/^(\d+(?:\.\d+)?)\s+/);
+            if (fracMatch) {
+                amount = parseInt(fracMatch[1], 10) / parseInt(fracMatch[2], 10);
+                s = s.slice(fracMatch[0].length).trim();
+            } else if (numMatch) {
+                amount = parseFloat(numMatch[1], 10);
+                s = s.slice(numMatch[0].length).trim();
+            }
         }
 
-        for (var i = 0; i < UNIT_EN.length; i++) {
-            var ue = UNIT_EN[i];
+        for (var i = 0; i < UNITS.length; i++) {
+            var u = UNITS[i];
+            var escaped = u.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            var re = new RegExp('^' + escaped + '\\s+', 'i');
+            if (re.test(s)) {
+                unit = u;
+                product = s.replace(re, '').trim();
+                break;
+            }
+        }
+        if (!unit && amount !== null) {
+            var gMatch = s.match(/^(\d+(?:\.\d+)?)\s*g\s+/i);
+            if (gMatch) {
+                amount = parseFloat(gMatch[1], 10);
+                unit = 'גרם';
+                product = s.slice(gMatch[0].length).trim();
+            }
+        }
+        for (var j = 0; j < UNIT_EN.length; j++) {
+            if (unit) break;
+            var ue = UNIT_EN[j];
             if (ue.re.test(s)) {
-                unitKey = ue.key;
-                name = s.replace(ue.re, '').trim();
+                unit = ue.key;
+                product = s.replace(ue.re, '').trim();
                 break;
             }
         }
-        if (!unitKey && /^גר.\s+/.test(s)) {
-            unitKey = 'גרם';
-            name = s.replace(/^גר.\s+/, '').trim();
-        }
-        if (!unitKey) {
-            for (var j = 0; j < UNIT_PAIRS.length; j++) {
-                var u = UNIT_PAIRS[j];
-                var re = new RegExp('^(' + u.singular + '|' + u.plural + ')\\s+', 'i');
-                if (re.test(s)) {
-                    unitKey = u.key;
-                    name = s.replace(re, '').trim();
-                    break;
-                }
-            }
-        }
-        if (numMatch && !unitKey && s) name = s;
-        if (!name) name = text.trim();
-        return { qty: qty, unitKey: unitKey, name: name };
+        if (!product && s) product = s;
+        product = (product || '').replace(/^קורט\s+/, '').trim() || (product || text.trim()).trim();
+        var result = { amount: amount, unit: unit, product: product };
+        result.qty = amount != null ? amount : 1;
+        result.unitKey = unit || '';
+        result.name = product;
+        return result;
     }
 
-    /** מחזיר טקסט לתצוגה: כמות + יחידה ברבים + שם (2 כפות סוכר) */
-    function formatMerged(qty, unitKey, name) {
-        if (!unitKey) return name;
-        var unitDisplay = unitKey;
+    /** Rule 4 – ממיר כמות ליחידות כוס: כוס=1, כף=1/16, כפית=1/48. יחידות אחרות (גרם וכו') → null. */
+    function quantityInCups(parsed) {
+        if (!parsed || typeof parsed.qty !== 'number') return null;
+        var u = parsed.unitKey || '';
+        if (u === 'כוס') return parsed.qty;
+        if (u === 'כף') return parsed.qty / 16;
+        if (u === 'כפית') return parsed.qty / 48;
+        return null;
+    }
+
+    /** Rule 4 – שמן: נכנס לרשימה רק אם כמות >= כוס אחת. אין כמות/יחידה לא כוס → לא נכנס. */
+    function oilQuantityAtLeastOneCup(text) {
+        var simplified = simplifyIngredient(text) || text;
+        var parsed = parseIngredient(simplified);
+        var cups = quantityInCups(parsed);
+        return cups !== null && cups >= 1;
+    }
+
+    /**
+     * Rule 4 – האם להחרים את הפריט מרשימת הקניות: תבלינים/מלח/מים תמיד; שמן גנרי רק אם כמות < כוס.
+     * גרסה ספציפית (שמן זית כתית מעולה, חומץ בלסמי) נשמרת תמיד.
+     */
+    function shouldExcludeFromShoppingList(text) {
+        if (!text || !String(text).trim()) return true;
+        if (!isPantryItem(text)) return false;
+        if (!isOilProduct(text)) return true;
+        var simplified = simplifyIngredient(text) || text;
+        var parsed = parseIngredient(simplified);
+        var productName = (parsed && parsed.name) ? parsed.name.trim() : '';
+        if (isSpecificOilOrVinegar(productName)) return false;
+        return !oilQuantityAtLeastOneCup(text);
+    }
+
+    /**
+     * Rule 1 / Rule 5 – product name only: strip quantity and unit before comparing.
+     * Remove: numbers, כף, כפית, כוס, גרם, ק"ג, מ"ל, ליטר, יחידות, קורט. Trim; compare via normalizeKey (lowercase/normalized Hebrew).
+     * "1 כף סוכר" → "סוכר", "2 כפות שמן זית כתית מעולה" → "שמן זית כתית מעולה" (specific version kept).
+     */
+    function toProductName(text) {
+        if (!text || typeof text !== 'string') return '';
+        var simplified = simplifyIngredient(text) || text.trim();
+        var parsed = parseIngredient(simplified);
+        if (parsed && parsed.name && (parsed.name = parsed.name.trim())) return parsed.name;
+        var s = simplified.replace(/\s+/g, ' ');
+        s = s.replace(/^\d+(\.\d+)?\s*/, '').replace(/^\d+\/\d+\s*/, '').replace(/^חצי\s+/, '').replace(/^רבע\s+/, '').replace(/^קורט\s+/, '');
+        for (var j = 0; j < UNIT_PAIRS.length; j++) {
+            var u = UNIT_PAIRS[j];
+            var re = new RegExp('^(' + u.singular + '|' + u.plural + ')\\s+', 'i');
+            s = s.replace(re, '');
+        }
+        for (var i = 0; i < UNIT_EN.length; i++) s = s.replace(UNIT_EN[i].re, '');
+        s = s.replace(/^\d+(\.\d+)?\s*g\s+/i, '').replace(/^גר.\s+/, '').replace(/^\d+(\.\d+)?\s*מ"ל\s+/i, '').replace(/^\d+(\.\d+)?\s*ליטר\s+/i, '');
+        return s.replace(/\s+/g, ' ').trim() || text.trim();
+    }
+
+    /** יחידה ברבים לתצוגה */
+    function pluralizeUnit(unit, amount) {
+        if (!unit) return '';
+        var usePlural = (amount > 1 || (amount !== Math.floor(amount) && amount > 0));
         for (var i = 0; i < UNIT_PAIRS.length; i++) {
-            if (UNIT_PAIRS[i].key === unitKey) {
-                unitDisplay = (qty > 1 || qty !== Math.floor(qty)) ? UNIT_PAIRS[i].plural : UNIT_PAIRS[i].singular;
-                break;
+            var u = UNIT_PAIRS[i];
+            if (u.key === unit || u.singular === unit || u.plural === unit) {
+                return usePlural ? u.plural : u.singular;
             }
         }
-        if (qty === Math.floor(qty) && qty >= 1) {
-            return qty + ' ' + unitDisplay + ' ' + name;
-        }
-        if (qty === 0.5) return 'חצי ' + unitDisplay + ' ' + name;
-        if (qty === 0.25) return 'רבע ' + unitDisplay + ' ' + name;
-        return qty + ' ' + unitDisplay + ' ' + name;
+        return unit;
     }
+
+    /** פורמט שורה אחת: עם כמות+יחידה "3 כוסות קמח", עם כמות בלבד "4 ביצים", בלי כמות "שמן זית כתית". */
+    function formatDisplayLine(amount, unit, product) {
+        if (!product) return '';
+        if (amount == null) return product;
+        var unitDisplay = unit ? pluralizeUnit(unit, amount) : '';
+        if (amount === 0.5 && unitDisplay) return 'חצי ' + unitDisplay + ' ' + product;
+        if (amount === 0.25 && unitDisplay) return 'רבע ' + unitDisplay + ' ' + product;
+        if (unitDisplay) return amount + ' ' + unitDisplay + ' ' + product;
+        return amount + ' ' + product;
+    }
+
+    /** קטגוריות לפי מדור בסופרמרקט – קל להרחבה */
+    var CATEGORIES = {
+        'ירקות ופירות': ['עגבנייה', 'עגבניות', 'מלפפון', 'מלפפונים', 'בצל', 'בצלים', 'שום', 'לימון', 'לימונים', 'תפוח', 'תפוחים', 'בננה', 'בננות', 'גזר', 'חסה', 'ברוקולי', 'כרוב', 'קישוא', 'חציל', 'סלרי', 'בטטה', 'תפוח אדמה', 'פלפל', 'גמבה', 'אבטיח', 'מלון', 'ענבים', 'רימון', 'אגס', 'משמש', 'פרי', 'ירק'],
+        'בשר ודגים': ['עוף', 'בקר', 'בשר', 'טונה', 'סלמון', 'דג', 'דגים', 'הודו', 'כבש', 'חזה', 'שוק', 'צלי'],
+        'מוצרי חלב וביצים': ['ביצה', 'ביצים', 'חמאה', 'שמנת', 'גבינה', 'יוגורט', 'חלב', 'ריקוטה', 'משקה חלב'],
+        'מאפייה': ['קמח', 'לחם', 'שמרים', 'פירורי לחם', 'לחמנייה', 'פיתה', 'חלה'],
+        'קטניות ודגנים': ['אורז', 'פסטה', 'עדשים', 'חומוס', 'קינואה', 'בורגול', 'שעועית', 'אפונה', 'מאש'],
+        'תבלינים ורטבים': ['פפריקה', 'כמון', 'אורגנו', 'כורכום', 'זעתר', 'רוטב סויה', 'חומץ', 'רוטב', 'תבלין'],
+        'שימורים': ['עגבניות מרוסקות', 'שימורי טונה', 'מרק משומר', 'רסק עגבניות', 'תירס משומר'],
+        'אחר': []
+    };
 
     /** סדר קטגוריות ברשימת הקניות */
     var CATEGORY_ORDER = [
-        'מוצרי חלב',
-        'ביצים',
-        'בשר ועוף',
-        'דגים',
-        'ירקות',
-        'פירות',
-        'חומרים יבשים',
+        'מוצרי חלב וביצים',
+        'בשר ודגים',
+        'ירקות ופירות',
+        'מאפייה',
+        'קטניות ודגנים',
+        'תבלינים ורטבים',
+        'שימורים',
         'אחר'
     ];
 
-    /** מחזיר קטגוריה לפי מילות מפתח בשם המרכיב */
-    function getCategory(displayText) {
-        var t = (displayText || '').toLowerCase().trim();
-        var n = normalizeKey(t);
-        var dairy = /חלב|שמנת|גבינה|יוגורט|חמאה|ריקוטה|משקה חלב|milk|cream|cheese|butter|yogurt|mascarpone/i;
-        var eggs = /ביצה|ביצים|egg/i;
-        var meat = /עוף|בקר|כבש|הודו|חזה|שוק|צלי|בשר|meat|chicken|beef|turkey|lamb/i;
-        var fish = /דג|סלמון|טונה|לברק|בורי|דגים|fish|salmon|tuna/i;
-        var veg = /עגבני[הות]|מלפפון|גזר|בצל|שום|פלפל|חסה|ברוקולי|כרוב|גמבה|קישוא|חציל|סלרי|בטטה|תפוח\s*אדמה|עגבניה|מלפפון|tomato|potato|onion|carrot|vegetable|lettuce|pepper/i;
-        var fruit = /תפוח|בננה|לימון|תפוז|אבטיח|מלון|ענבים|רימון|אגס|משמש|פרי|apple|banana|lemon|orange|fruit/i;
-        var dry = /קמח|סוכר|אורז|פסטה|שקדים|אגוזים|צימוקים|קורנפלור|סודה לשתייה|אבקת אפייה|שוקולד|קקאו|גרעינים|שומשום|קוקוס|מיונז|פירורי לחם|flour|sugar|rice|pasta|almond|nut|chocolate|coconut|stock|broth/i;
-        if (dairy.test(t) || dairy.test(n)) return 'מוצרי חלב';
-        if (eggs.test(t) || eggs.test(n)) return 'ביצים';
-        if (meat.test(t) || meat.test(n)) return 'בשר ועוף';
-        if (fish.test(t) || fish.test(n)) return 'דגים';
-        if (veg.test(t) || veg.test(n)) return 'ירקות';
-        if (fruit.test(t) || fruit.test(n)) return 'פירות';
-        if (dry.test(t) || dry.test(n)) return 'חומרים יבשים';
+    /** מחזיר קטגוריה לפי שם מוצר – קל להרחבה */
+    function categorizeProduct(productName) {
+        if (!productName || typeof productName !== 'string') return 'אחר';
+        var t = (productName || '').toLowerCase().trim();
+        var n = normalizeKey(productName);
+        var keys = Object.keys(CATEGORIES);
+        for (var i = 0; i < keys.length; i++) {
+            var cat = keys[i];
+            if (cat === 'אחר') continue;
+            var terms = CATEGORIES[cat];
+            for (var j = 0; j < terms.length; j++) {
+                var term = (terms[j] || '').toLowerCase();
+                if (!term) continue;
+                if (t.indexOf(term) >= 0 || n.indexOf(normalizeKey(term)) >= 0) return cat;
+            }
+        }
         return 'אחר';
+    }
+
+    function getCategory(displayText) {
+        return categorizeProduct(displayText);
+    }
+
+    /** בדיקת parseIngredient על 6 דוגמאות – הרצה מהקונסול: ShoppingList.runParseTest() */
+    function runParseTest() {
+        var examples = [
+            '2 כפות שמן זית',
+            'חצי כוס קמח',
+            '3 שיני שום',
+            '1 קורט מלח',
+            '250 גרם בשר טחון',
+            '4 ביצים'
+        ];
+        console.log('parseIngredient test:');
+        examples.forEach(function (str) {
+            var simplified = simplifyIngredient(str);
+            var parsed = parseIngredient(simplified);
+            console.log(JSON.stringify(str), '→', parsed ? { amount: parsed.amount, unit: parsed.unit, product: parsed.product } : null);
+        });
     }
 
     function getRaw() {
@@ -267,7 +435,7 @@
         const list = getRaw();
         const toAdd = (items || []).filter(function (t) {
             var s = t && String(t).trim();
-            return s && !isPantryItem(s);
+            return s && !shouldExcludeFromShoppingList(s);
         });
         toAdd.forEach(function (text) {
             var raw = String(text).trim();
@@ -282,54 +450,40 @@
     }
 
     /**
-     * מחזיר רשימה מאוגדת: [{ key, displayText, count }]
-     * מרכיבים עם יחידה (כף סוכר) מתאחדים לסכום (2 כפות סוכר); בלי יחידה – איחוד לפי שם + count.
+     * אגרגציה: קבוצה לפי product+unit; אותו מוצר+אותה יחידה – מסכמים כמות; יחידות שונות – שורות נפרדות; בלי כמות – דדופליקציה.
      */
     function getAggregated() {
         var list = getRaw();
         var byKey = {};
         list.forEach(function (item) {
             var text = item.text;
-            if (isPantryItem(text)) return;
-            var normalizedText = simplifyIngredient(text) || text;
-            var parsed = parseIngredient(normalizedText);
-            var key;
-            var displayText;
-            if (parsed && parsed.unitKey && parsed.name) {
-                var nameKey = normalizeKey(parsed.name.trim());
-                key = 'u:' + parsed.unitKey + ':' + nameKey;
-                if (!byKey[key]) {
-                    byKey[key] = { key: key, qty: 0, unitKey: parsed.unitKey, name: (nameKey || parsed.name.trim()), displayText: '' };
-                }
-                byKey[key].qty += parsed.qty;
-            } else if (parsed && parsed.name && !parsed.unitKey) {
-                var nameKeyN = normalizeKey(parsed.name.trim());
-                key = 'n:' + nameKeyN;
-                var addQty = (parsed.qty && parsed.qty > 0) ? parsed.qty : 1;
-                if (!byKey[key]) {
-                    byKey[key] = { key: key, qty: 0, unitKey: '', name: parsed.name.trim(), displayText: '', countOnly: false };
-                }
-                byKey[key].qty += addQty;
+            var simplified = simplifyIngredient(text) || text;
+            var parsed = parseIngredient(simplified);
+            if (!parsed || !parsed.product) return;
+            var product = parsed.product.trim();
+            var productKey = normalizeKey(product) || '_';
+            var unit = parsed.unit || '';
+            var key = productKey + '|' + unit;
+            var amount = parsed.amount;
+            if (!byKey[key]) {
+                byKey[key] = { key: key, product: product, unit: unit, amount: amount };
             } else {
-                key = normalizeKey(text) || text.trim().toLowerCase() || '_';
-                if (!byKey[key]) {
-                    byKey[key] = { key: key, qty: 0, unitKey: '', name: '', displayText: text, countOnly: true };
+                var existing = byKey[key];
+                if (existing.amount != null && amount != null) {
+                    existing.amount = existing.amount + amount;
+                } else if (amount != null) {
+                    existing.amount = amount;
                 }
-                byKey[key].countOnly = true;
-                byKey[key].count = (byKey[key].count || 0) + 1;
-                byKey[key].displayText = byKey[key].displayText || text;
             }
         });
         var result = [];
         Object.keys(byKey).forEach(function (k) {
             var o = byKey[k];
-            var displayText = o.countOnly ? o.displayText : (k.indexOf('n:') === 0 && o.name ? o.qty + ' ' + o.name : formatMerged(o.qty, o.unitKey, o.name));
-            var count = o.countOnly ? (o.count || 1) : o.qty;
+            var displayText = formatDisplayLine(o.amount, o.unit, o.product);
             result.push({
                 key: o.key,
                 displayText: displayText,
-                count: count,
-                category: getCategory(displayText)
+                category: categorizeProduct(o.product)
             });
         });
         result.sort(function (a, b) { return (a.displayText || '').localeCompare(b.displayText || '', 'he'); });
@@ -349,29 +503,15 @@
         return grouped;
     }
 
-    /** מוחק פריט לפי מפתח (מפתח רגיל או מאוחד u:unit:name או n:name) */
-    function removeByKey(normalizedKey) {
-        if (normalizedKey.indexOf('u:') === 0) {
-            var parts = normalizedKey.split(':');
-            var unitKey = parts[1];
-            var nameKey = parts.slice(2).join(':');
-            setRaw(getRaw().filter(function (item) {
-                var norm = simplifyIngredient(item.text) || item.text;
-                var p = parseIngredient(norm);
-                if (!p || p.unitKey !== unitKey) return true;
-                return normalizeKey((p.name || '').trim()) !== nameKey;
-            }));
-        } else if (normalizedKey.indexOf('n:') === 0) {
-            var nameKeyN = normalizedKey.slice(2);
-            setRaw(getRaw().filter(function (item) {
-                var norm = simplifyIngredient(item.text) || item.text;
-                var p = parseIngredient(norm);
-                if (!p || !p.name) return true;
-                return normalizeKey(p.name.trim()) !== nameKeyN;
-            }));
-        } else {
-            setRaw(getRaw().filter(function (item) { return normalizeKey(item.text) !== normalizedKey; }));
-        }
+    /** מוחק פריט לפי מפתח (productKey|unit) – מוחק את כל השורות שמתאגדות למפתח הזה */
+    function removeByKey(aggregateKey) {
+        setRaw(getRaw().filter(function (item) {
+            var simplified = simplifyIngredient(item.text) || item.text;
+            var parsed = parseIngredient(simplified);
+            if (!parsed || !parsed.product) return true;
+            var key = (normalizeKey(parsed.product.trim()) || '_') + '|' + (parsed.unit || '');
+            return key !== aggregateKey;
+        }));
     }
 
     function clear() {
@@ -427,7 +567,7 @@
         setRaw(raw);
     }
 
-    /** טקסט לרשימה (לשיתוף בווטסאפ) – שורות מאוחדות (2 כפות סוכר) כבר כוללות כמות */
+    /** טקסט לרשימה (לשיתוף בווטסאפ) – שם מוצר בלבד, בלי כמויות */
     function getShareText() {
         var grouped = getAggregatedGroupedByCategory();
         var lines = [];
@@ -436,9 +576,7 @@
             if (!items || items.length === 0) return;
             lines.push('*' + cat + '*');
             items.forEach(function (item) {
-                var alreadyMerged = /^\d|^חצי\s|^רבע\s/.test(item.displayText || '');
-                if (alreadyMerged) lines.push(item.displayText);
-                else lines.push(item.count > 1 ? item.displayText + ' x' + item.count : item.displayText);
+                lines.push(item.displayText || '');
             });
             lines.push('');
         });
@@ -468,6 +606,7 @@
         getShareText,
         shareToWhatsApp,
         normalizeKey,
-        isPantryItem
+        isPantryItem,
+        runParseTest
     };
 })();
