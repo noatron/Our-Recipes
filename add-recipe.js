@@ -478,7 +478,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return typeof btoa !== 'undefined' ? btoa(binary) : '';
     }
 
-    /** דחיסה אגרסיבית – מפחיתה timeout: רוחב מקס 900px, JPEG 0.72. טקסט באינסטגרם/טיקטוק עדיין קריא. */
+    /** דחיסה אגרסיבית – מפחיתה timeout: רוחב מקס 720px, JPEG 0.65. טקסט באינסטגרם/טיקטוק עדיין קריא. */
     function compressImageFile(file) {
         return new Promise((resolve, reject) => {
             const mediaType = (file.type || 'image/jpeg').toLowerCase();
@@ -505,7 +505,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const url = URL.createObjectURL(file);
             img.onload = () => {
                 URL.revokeObjectURL(url);
-                const maxW = 900;
+                const maxW = 720;
                 let w = img.width, h = img.height;
                 if (w > maxW) {
                     h = Math.round((h * maxW) / w);
@@ -517,7 +517,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, w, h);
                 try {
-                    const dataUrl = canvas.toDataURL('image/jpeg', 0.72);
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.65);
                     resolve({ data: dataUrl.split(',')[1], mediaType: 'image/jpeg' });
                 } catch (e) {
                     fallbackDataURL();
@@ -592,7 +592,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             const type = (first.type || '').toLowerCase();
-            if (!type.startsWith('image/')) {
+                if (!type.startsWith('image/')) {
                 setImagesStatus('error', 'נא לבחור קובץ תמונה (JPEG או PNG).');
                 return;
             }
@@ -609,13 +609,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     setImagesStatus('loading', '⏳ שולח תמונה ל-AI...');
                     const compressed = await compressImageFile(files[0]);
-                    const response = await fetch('/.netlify/functions/extract-image', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ images: [compressed] })
-                    });
+                    async function doFetch() {
+                        return fetch('/.netlify/functions/extract-image', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ images: [compressed] })
+                        });
+                    }
+                    let response = await doFetch();
                     if (response.status === 502 || response.status === 504) {
-                        setImagesStatus('error', 'השרת לא הספיק להגיב (timeout). נסי שוב בעוד רגע.');
+                        setImagesStatus('loading', '⏳ ניסיון נוסף...');
+                        response = await doFetch();
+                    }
+                    if (response.status === 502 || response.status === 504) {
+                        setImagesStatus('error', 'השרת לא הספיק להגיב (timeout). נסי עם תמונה אחת ברורה וקטנה יותר, או שוב בעוד רגע.');
                         extractFromImagesBtn.disabled = false;
                         return;
                     }

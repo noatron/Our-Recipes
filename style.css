@@ -374,6 +374,74 @@ header {
     transform: translateY(-3px);
     box-shadow: 0 4px 12px rgba(64, 112, 118, 0.2);
 }
+
+/* Quick access – גישה מהירה (logged-in only) */
+.quick-access-wrap {
+    display: flex;
+    flex-direction: row;
+    gap: 12px;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+.quick-access-card {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 14px 10px;
+    background: #FFD8BE;
+    color: #407076;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(64, 112, 118, 0.1);
+    text-decoration: none;
+    font-family: 'Varela Round', sans-serif;
+    font-size: 0.95rem;
+    transition: box-shadow 0.2s, transform 0.2s;
+    position: relative;
+}
+.quick-access-card:hover {
+    box-shadow: 0 4px 12px rgba(64, 112, 118, 0.18);
+    transform: translateY(-2px);
+}
+.quick-access-icon {
+    font-size: 1.6rem;
+    line-height: 1;
+    margin-bottom: 6px;
+}
+.quick-access-label {
+    font-weight: 400;
+}
+.quick-access-badge {
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 10px;
+    background: #407076;
+    color: #F8F7FF;
+    font-size: 0.75rem;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    display: none;
+}
+.quick-access-badge:not(:empty) {
+    display: inline-flex;
+}
+@media (max-width: 480px) {
+    .quick-access-wrap { gap: 8px; }
+    .quick-access-card { padding: 12px 8px; font-size: 0.88rem; }
+    .quick-access-icon { font-size: 1.4rem; }
+}
+
 /* Main content: carousel (browse) or grid (search/filter) */
 .recipes-carousel-outer {
     width: 100%;

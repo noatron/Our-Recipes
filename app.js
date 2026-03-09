@@ -300,6 +300,32 @@ function updateAuthUI(user) {
     }
 }
 
+/** גישה מהירה – הצגה/הסתרה לפי התחברות + עדכון תגיות (מועדפים, ארוחות, קניות) */
+async function updateQuickAccess(user) {
+    const wrap = document.getElementById('quick-access-wrap');
+    if (!wrap) return;
+    if (!user) {
+        wrap.style.display = 'none';
+        return;
+    }
+    wrap.style.display = 'flex';
+    const favEl = document.getElementById('quick-access-fav-count');
+    const mealsEl = document.getElementById('quick-access-meals-count');
+    const slEl = document.getElementById('quick-access-sl-count');
+    const favCount = (window.__allRecipes || []).filter(r => r.likedByMe).length;
+    if (favEl) {
+        favEl.textContent = favCount > 0 ? String(favCount) : '';
+    }
+    try {
+        const meals = await getMealsByUser(user.uid);
+        if (mealsEl) mealsEl.textContent = meals.length > 0 ? String(meals.length) : '';
+    } catch (_) {
+        if (mealsEl) mealsEl.textContent = '';
+    }
+    const slCount = (typeof window.ShoppingList !== 'undefined' && window.ShoppingList.getRaw) ? window.ShoppingList.getRaw().length : 0;
+    if (slEl) slEl.textContent = slCount > 0 ? String(slCount) : '';
+}
+
 /** פרופיל: פתיחת/סגירת dropdown, מועדפים / התחברות / התנתקות */
 function setupProfileDropdown(applyFilters) {
     const profileBtn = document.getElementById('header-profile-btn');
@@ -834,7 +860,10 @@ async function initApp() {
                 if (pendingBanner) pendingBanner.style.display = 'none';
                 if (addBtn) addBtn.style.display = 'none';
             }
-            enrichRecipesWithLikes(recipes, user).then(applyFilters);
+            enrichRecipesWithLikes(recipes, user).then(() => {
+                applyFilters();
+                updateQuickAccess(user);
+            });
         });
         updateAuthUI(auth.currentUser);
         const pendingBanner = document.getElementById('pending-approval-banner');
@@ -857,7 +886,17 @@ async function initApp() {
 
         // מציגים את הרשימה מיד; הלבבות מתעדכנים ברקע
         applyFilters();
-        enrichRecipesWithLikes(recipes, auth.currentUser).then(applyFilters);
+        const urlParams = new URLSearchParams(window.location.search);
+        enrichRecipesWithLikes(recipes, auth.currentUser).then(() => {
+            applyFilters();
+            updateQuickAccess(auth.currentUser);
+            if (urlParams.get('favorites') === '1' && auth.currentUser && favoritesFilterBtn) {
+                favoritesFilterBtn.classList.add('active');
+                applyFilters();
+                updateQuickAccess(auth.currentUser);
+                if (window.history.replaceState) window.history.replaceState(null, '', 'index.html');
+            }
+        });
 
         // גלילה למתכון שחזרנו אליו (אחרי שמירה / כפתור חזרה)
         if (scrollToIdOnLoad) {

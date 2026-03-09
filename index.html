@@ -41,16 +41,20 @@
                 <input type="text" id="searchInput" class="header-search-input" placeholder="חפשי מתכון..." autocomplete="off" aria-label="חיפוש מתכונים או מצרכים">
                 <button type="button" id="headerSurpriseBtn" class="header-surprise-btn">מתכון בהפתעה</button>
             </div>
-            <!-- Row 3: Filter chips (single scrollable row) -->
+            <!-- Row 3: Filter chips (single scrollable row) – תואם ל-TAG_GROUPS ב-app.js -->
             <div class="header-chips-wrap">
                 <div class="header-chips" role="tablist" aria-label="סינון לפי קטגוריה">
                     <button type="button" class="header-chip active" data-tag="" role="tab" aria-selected="true">הכל</button>
-                    <button type="button" class="header-chip" data-tag="בשר" role="tab">בשרי</button>
-                    <button type="button" class="header-chip" data-tag="חלבי" role="tab">חלבי</button>
-                    <button type="button" class="header-chip" data-tag="צמחוני" role="tab">פרווה</button>
-                    <button type="button" class="header-chip" data-tags="עוגות,עוגיות,קינוחים,שוקולד" role="tab">קינוחים</button>
-                    <button type="button" class="header-chip" data-tag="לחם ומאפים" role="tab">לחמים</button>
+                    <button type="button" class="header-chip" data-tags="בשר,דגים,פסטות,קישים ופשטידות,צמחוני" role="tab">מנות עיקריות</button>
+                    <button type="button" class="header-chip" data-tag="סלטים" role="tab">סלטים</button>
+                    <button type="button" class="header-chip" data-tag="תוספות" role="tab">תוספות</button>
+                    <button type="button" class="header-chip" data-tag="לחם ומאפים" role="tab">לחם ומאפים</button>
+                    <button type="button" class="header-chip" data-tag="רטבים וממרחים" role="tab">רטבים וממרחים</button>
                     <button type="button" class="header-chip" data-tag="מרקים" role="tab">מרקים</button>
+                    <button type="button" class="header-chip" data-tags="עוגות,עוגיות,קינוחים,שוקולד" role="tab">קינוחים</button>
+                    <button type="button" class="header-chip" data-tag="ארוחות בוקר" role="tab">ארוחות בוקר</button>
+                    <button type="button" class="header-chip" data-tag="חטיפים" role="tab">חטיפים</button>
+                    <button type="button" class="header-chip" data-tag="שתייה" role="tab">שתייה</button>
                 </div>
             </div>
         </header>
@@ -68,6 +72,25 @@
         <div id="recipes">
             <!-- Carousel (browse) or grid (search/filter) + count injected by JS -->
         </div>
+
+        <div id="quick-access-wrap" class="quick-access-wrap" style="display: none;" aria-label="גישה מהירה">
+            <a href="index.html?favorites=1" id="quick-access-favorites" class="quick-access-card">
+                <span class="quick-access-icon" aria-hidden="true">🤍</span>
+                <span class="quick-access-label">מועדפים</span>
+                <span class="quick-access-badge" id="quick-access-fav-count" aria-hidden="true"></span>
+            </a>
+            <a href="profile.html" class="quick-access-card">
+                <span class="quick-access-icon" aria-hidden="true">🍽️</span>
+                <span class="quick-access-label">ארוחות</span>
+                <span class="quick-access-badge" id="quick-access-meals-count" aria-hidden="true"></span>
+            </a>
+            <a href="shopping-list.html" class="quick-access-card">
+                <span class="quick-access-icon" aria-hidden="true">🛒</span>
+                <span class="quick-access-label">קניות</span>
+                <span class="quick-access-badge" id="quick-access-sl-count" aria-hidden="true"></span>
+            </a>
+        </div>
+
         <details class="mobile-more-wrap" id="mobileMoreWrap" open>
             <summary class="mobile-more-summary"></summary>
             <p class="migrate-link-wrap">
