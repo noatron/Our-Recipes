@@ -67,8 +67,9 @@ function buildMealCardHtml(meal, thumbnailUrl, isMe) {
     const byHtml = byUid
         ? `<a href="profile.html?uid=${escapeHtml(byUid)}" class="meal-card-by-link" onclick="event.preventDefault(); event.stopPropagation(); event.stopImmediatePropagation();">מאת ${escapeHtml(by)}</a>`
         : `מאת ${escapeHtml(by)}`;
+    const plusIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>';
     const addRecipeBtn = isMe
-        ? `<button type="button" class="meal-card-add-recipe-btn" data-meal-id="${escapeHtml(meal.id)}" onclick="event.preventDefault(); event.stopPropagation();">＋ הוסיפי מתכון</button>`
+        ? `<button type="button" class="meal-card-add-recipe-btn" data-meal-id="${escapeHtml(meal.id)}" onclick="event.preventDefault(); event.stopPropagation();">${plusIcon} הוסיפי מתכון</button>`
         : '';
     return `
     <a href="meal-detail.html?id=${escapeHtml(meal.id)}" class="meal-card">

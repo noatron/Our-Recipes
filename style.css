@@ -2503,11 +2503,26 @@ header .logo {
 }
 
 /* ---------- Profile page ---------- */
-.profile-header-add-wrap {
-    position: absolute;
-    left: 16px;
-    top: 50%;
-    transform: translateY(-50%);
+.profile-add-recipes-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 12px 16px;
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+    background: #FFEEDD;
+    border-top: 1px solid #FFD8BE;
+    box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.06);
+    z-index: 100;
+    display: flex;
+    justify-content: center;
+}
+.profile-add-recipes-bar .profile-add-recipes-btn {
+    width: 100%;
+    max-width: 320px;
+    justify-content: center;
+    padding: 14px 20px;
+    font-size: 1rem;
 }
 .profile-add-recipes-btn {
     padding: 8px 14px;
@@ -2518,7 +2533,7 @@ header .logo {
 .profile-main {
     max-width: 800px;
     margin: 0 auto;
-    padding: 20px 16px 80px;
+    padding: 20px 16px 100px;
     position: relative;
 }
 .profile-page-title {
@@ -2622,8 +2637,15 @@ header .logo {
     color: #698996;
     margin: 0 0 20px 0;
 }
-.meal-detail-shopping-btn {
+.meal-detail-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
     margin-bottom: 24px;
+}
+.meal-detail-add-recipes-btn,
+.meal-detail-shopping-btn {
+    margin-bottom: 0;
 }
 .meal-detail-recipes-grid {
     margin-top: 8px;

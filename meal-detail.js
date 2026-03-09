@@ -1,6 +1,36 @@
-import { getMealById } from './meals.js';
-import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js';
+import { auth } from './firebase.js';
+import { getMealById, addRecipeToMeal } from './meals.js';
+import { doc, getDoc, getDocs, collection } from 'https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js';
 import { db } from './firebase.js';
+
+const TAG_GROUPS = [
+    { label: 'מנות עיקריות', tags: ['בשר', 'דגים', 'פסטות', 'קישים ופשטידות', 'צמחוני'] },
+    { label: 'סלטים', tags: ['סלטים'] },
+    { label: 'תוספות', tags: ['תוספות'] },
+    { label: 'לחם ומאפים', tags: ['לחם ומאפים'] },
+    { label: 'רטבים וממרחים', tags: ['רטבים וממרחים'] },
+    { label: 'מרקים', tags: ['מרקים'] },
+    { label: 'קינוחים', tags: ['עוגות', 'עוגיות', 'קינוחים', 'שוקולד'] },
+    { label: 'ארוחות בוקר', tags: ['ארוחות בוקר'] },
+    { label: 'חטיפים', tags: ['חטיפים'] },
+    { label: 'שתייה', tags: ['שתייה'] }
+];
+
+function filterRecipesForPicker(recipes, searchTerm, selectedTags) {
+    let list = recipes;
+    if (selectedTags.length > 0) {
+        list = list.filter(r => Array.isArray(r.tags) && selectedTags.some(t => r.tags.includes(t)));
+    }
+    if ((searchTerm || '').trim()) {
+        const term = searchTerm.trim().toLowerCase();
+        list = list.filter(r => {
+            const name = (r.name || '').toLowerCase();
+            const source = (r.source || '').toLowerCase();
+            return name.includes(term) || source.includes(term);
+        });
+    }
+    return list;
+}
 
 const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=400&h=200&fit=crop';
 
@@ -98,9 +128,92 @@ async function loadRecipe(recipeId) {
     return null;
 }
 
-async function initMealDetail() {
-    const params = new URLSearchParams(window.location.search);
-    const mealId = params.get('id');
+async function openRecipePicker(mealId, onDone) {
+    const overlay = document.createElement('div');
+    overlay.className = 'recipe-picker-overlay';
+    const modal = document.createElement('div');
+    modal.className = 'recipe-picker-modal';
+    modal.innerHTML = `
+        <div class="recipe-picker-search">
+            <input type="text" id="recipePickerSearch" placeholder="חפשי מתכון..." aria-label="חיפוש מתכונים" autocomplete="off">
+        </div>
+        <div class="recipe-picker-chips" id="recipePickerChips"></div>
+        <div class="recipe-picker-list" id="recipePickerList" aria-busy="true">טוען...</div>
+        <div class="recipe-picker-actions">
+            <button type="button" class="sl-btn sl-btn-primary" id="recipePickerConfirm">הוסיפי לארוחה</button>
+            <button type="button" class="sl-btn sl-btn-secondary" id="recipePickerCancel">ביטול</button>
+        </div>
+    `;
+    overlay.appendChild(modal);
+    overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+    document.body.appendChild(overlay);
+
+    const chipsWrap = document.getElementById('recipePickerChips');
+    const listEl = document.getElementById('recipePickerList');
+    const searchInput = document.getElementById('recipePickerSearch');
+    let allRecipes = [];
+    try {
+        const snapshot = await getDocs(collection(db, 'recipes'));
+        allRecipes = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+    } catch (e) {
+        console.error(e);
+        listEl.innerHTML = '<p style="color:#698996;padding:16px;">שגיאה בטעינת מתכונים.</p>';
+        listEl.removeAttribute('aria-busy');
+    }
+
+    let selectedTag = '';
+    const renderChips = () => {
+        chipsWrap.innerHTML = '<button type="button" class="recipe-picker-chip active" data-tag="">הכל</button>' +
+            TAG_GROUPS.map(g => `<button type="button" class="recipe-picker-chip" data-tags="${escapeHtml((g.tags || []).join(','))}">${escapeHtml(g.label)}</button>`).join('');
+        chipsWrap.querySelectorAll('.recipe-picker-chip').forEach(chip => {
+            chip.addEventListener('click', () => {
+                chipsWrap.querySelectorAll('.recipe-picker-chip').forEach(c => c.classList.remove('active'));
+                chip.classList.add('active');
+                selectedTag = chip.dataset.tags || chip.dataset.tag || '';
+                renderList();
+            });
+        });
+    };
+    const renderList = () => {
+        const tags = (selectedTag || '').split(',').map(t => t.trim()).filter(Boolean);
+        const filtered = filterRecipesForPicker(allRecipes, (searchInput && searchInput.value) || '', tags);
+        listEl.innerHTML = filtered.length === 0
+            ? '<p style="color:#698996;padding:16px;">לא נמצאו מתכונים.</p>'
+            : filtered.map(r => `<label><input type="checkbox" class="recipe-picker-check" data-recipe-id="${escapeHtml(r.id)}"> ${escapeHtml(r.name || 'מתכון')}</label>`).join('');
+        listEl.removeAttribute('aria-busy');
+    };
+
+    renderChips();
+    if (allRecipes.length > 0) renderList();
+    if (searchInput) {
+        searchInput.oninput = () => renderList();
+        searchInput.onkeydown = (e) => { if (e.key === 'Enter') e.preventDefault(); renderList(); };
+    }
+
+    document.getElementById('recipePickerCancel').onclick = () => overlay.remove();
+    document.getElementById('recipePickerConfirm').onclick = async () => {
+        const checked = listEl.querySelectorAll('.recipe-picker-check:checked');
+        if (checked.length === 0) {
+            alert('בחרי לפחות מתכון אחד.');
+            return;
+        }
+        const recipeIds = [...checked].map(cb => cb.dataset.recipeId).filter(Boolean);
+        for (const recipeId of recipeIds) {
+            try {
+                await addRecipeToMeal(mealId, recipeId);
+            } catch (e) {
+                console.error(e);
+                alert('שגיאה בהוספת מתכון. נסי שוב.');
+                return;
+            }
+        }
+        overlay.remove();
+        alert(recipeIds.length === 1 ? 'המתכון נוסף לארוחה ✓' : recipeIds.length + ' מתכונים נוספו לארוחה ✓');
+        if (typeof onDone === 'function') onDone();
+    };
+}
+
+async function loadAndRenderMeal(mealId) {
     const loadingEl = document.getElementById('meal-detail-loading');
     const errorEl = document.getElementById('meal-detail-error');
     const emptyEl = document.getElementById('meal-detail-empty');
@@ -109,13 +222,7 @@ async function initMealDetail() {
     const nameEl = document.getElementById('meal-detail-name');
     const metaEl = document.getElementById('meal-detail-meta');
     const shoppingBtn = document.getElementById('meal-detail-shopping-btn');
-
-    if (!mealId) {
-        loadingEl.style.display = 'none';
-        errorEl.textContent = 'לא נבחרה ארוחה.';
-        errorEl.style.display = 'block';
-        return;
-    }
+    const addRecipesBtn = document.getElementById('meal-detail-add-recipes-btn');
 
     let meal = null;
     try {
@@ -129,8 +236,11 @@ async function initMealDetail() {
     if (!meal) {
         errorEl.textContent = 'הארוחה לא נמצאה.';
         errorEl.style.display = 'block';
-        return;
+        return null;
     }
+
+    const user = auth.currentUser;
+    const isOwner = !!(user && meal.createdBy && meal.createdBy.uid === user.uid);
 
     const mealName = (meal.name || 'ארוחה').trim();
     const by = (meal.createdBy && meal.createdBy.name) ? meal.createdBy.name : 'משתמשת';
@@ -142,10 +252,16 @@ async function initMealDetail() {
     metaEl.textContent = 'מאת ' + by + ' · ' + recipeIds.length + (recipeIds.length === 1 ? ' מתכון' : ' מתכונים');
     headerEl.style.display = 'block';
 
+    if (addRecipesBtn) {
+        addRecipesBtn.style.display = isOwner ? 'inline-flex' : 'none';
+        addRecipesBtn.onclick = () => openRecipePicker(mealId, () => loadAndRenderMeal(mealId));
+    }
+
     if (recipeIds.length === 0) {
         emptyEl.style.display = 'block';
         recipesEl.style.display = 'none';
-        return;
+        shoppingBtn.style.display = 'none';
+        return meal;
     }
 
     const recipes = [];
@@ -172,7 +288,26 @@ async function initMealDetail() {
             });
             window.location.href = 'shopping-list.html?fromCreate=1';
         };
+    } else {
+        shoppingBtn.style.display = 'none';
     }
+    return meal;
+}
+
+async function initMealDetail() {
+    const params = new URLSearchParams(window.location.search);
+    const mealId = params.get('id');
+    const loadingEl = document.getElementById('meal-detail-loading');
+    const errorEl = document.getElementById('meal-detail-error');
+
+    if (!mealId) {
+        loadingEl.style.display = 'none';
+        errorEl.textContent = 'לא נבחרה ארוחה.';
+        errorEl.style.display = 'block';
+        return;
+    }
+
+    await loadAndRenderMeal(mealId);
 }
 
 document.addEventListener('DOMContentLoaded', () => {

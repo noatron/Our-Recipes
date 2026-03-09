@@ -14,9 +14,6 @@
         <header class="inner-page-header">
             <a href="index.html" class="inner-back" aria-label="חזרה">← חזרה</a>
             <h1 id="profile-title" class="inner-title"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12h20"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M4 8h16"/><path d="M6 4h12"/><path d="M6 2v4"/><path d="M18 2v4"/></svg> הארוחות שלי</h1>
-            <div id="profile-add-recipes-wrap" class="profile-header-add-wrap" style="display: none;">
-                <button type="button" id="profile-add-recipes-btn" class="sl-btn sl-btn-primary profile-add-recipes-btn">＋ הוסף מתכונים</button>
-            </div>
         </header>
 
         <main class="profile-main">
@@ -27,6 +24,13 @@
                 <p id="profile-login-hint" class="profile-login-hint" style="display: none;">התחברי כדי לראות את הארוחות שלך.</p>
             </div>
         </main>
+
+        <div id="profile-add-recipes-wrap" class="profile-add-recipes-bar" style="display: none;">
+            <button type="button" id="profile-add-recipes-btn" class="sl-btn sl-btn-primary profile-add-recipes-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                הוסף מתכונים
+            </button>
+        </div>
     </div>
     <script type="module" src="profile.js"></script>
 </body>
