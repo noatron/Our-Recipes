@@ -95,12 +95,21 @@ header {
     line-height: 1;
 }
 
-/* Refactored header: compact app bar + search + chips */
+/* Refactored header: logo on top, app bar + search + chips */
 .main-header-refactor {
     display: flex;
     flex-direction: column;
     gap: 10px;
     margin-bottom: 16px;
+}
+.main-header-refactor .header-logo-row {
+    text-align: center;
+    line-height: 0;
+}
+.main-header-refactor .header-logo {
+    height: 2rem;
+    width: auto;
+    object-fit: contain;
 }
 .main-header-refactor .header-app-bar {
     display: flex;
@@ -126,16 +135,16 @@ header {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 40px;
-    height: 40px;
-    min-width: 40px;
-    min-height: 40px;
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+    min-height: 34px;
     padding: 0;
-    border: 2px solid #FFD8BE;
+    border: 1.5px solid #FFD8BE;
     border-radius: 50px;
     background: #F8F7FF;
     color: #407076;
-    font-size: 1.25rem;
+    font-size: 1.1rem;
     cursor: pointer;
     transition: background 0.2s, border-color 0.2s;
     text-decoration: none;
@@ -156,16 +165,16 @@ header {
     fill: white;
 }
 .main-header-refactor .header-add-btn {
-    font-size: 1.4rem;
+    font-size: 1.2rem;
     line-height: 1;
 }
 .main-header-refactor .header-auth {
-    margin-right: 4px;
+    margin-right: 2px;
 }
 .main-header-refactor .header-auth .auth-btn {
     border-radius: 50px;
-    padding: 6px 12px;
-    font-size: 0.75rem;
+    padding: 4px 10px;
+    font-size: 0.7rem;
 }
 .main-header-refactor .header-search-row {
     display: flex;
@@ -195,10 +204,10 @@ header {
 }
 .main-header-refactor .header-surprise-btn {
     flex-shrink: 0;
-    padding: 10px 14px;
+    padding: 8px 12px;
     font-family: 'Varela Round', sans-serif;
-    font-size: 0.95rem;
-    border: 2px solid #FFD8BE;
+    font-size: 0.88rem;
+    border: 1.5px solid #FFD8BE;
     border-radius: 50px;
     background: #F8F7FF;
     color: #407076;
@@ -211,22 +220,15 @@ header {
 }
 .main-header-refactor .header-chips-wrap {
     width: 100%;
-    overflow: hidden;
 }
 .main-header-refactor .header-chips {
     display: flex;
-    gap: 8px;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    padding-bottom: 4px;
-    -webkit-overflow-scrolling: touch;
-}
-.main-header-refactor .header-chips::-webkit-scrollbar {
-    height: 4px;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
 }
 .main-header-refactor .header-chip {
     flex-shrink: 0;
-    scroll-snap-align: start;
     padding: 8px 14px;
     font-family: 'Varela Round', sans-serif;
     font-size: 0.9rem;
@@ -779,13 +781,17 @@ main {
     }
     header .Logo, header .logo { height: 1rem; }
 
-    .main-header-refactor { margin-bottom: 12px; gap: 8px; }
-    .main-header-refactor .header-app-title { font-size: 1.2rem; }
+    .main-header-refactor { margin-bottom: 10px; gap: 6px; }
+    .main-header-refactor .header-logo { height: 1.6rem; }
+    .main-header-refactor .header-app-title { display: none; }
+    .main-header-refactor .header-app-bar { justify-content: flex-end; }
     .main-header-refactor .header-icon-btn,
-    .main-header-refactor .header-icon-link { width: 44px; height: 44px; min-width: 44px; min-height: 44px; }
-    .main-header-refactor .header-search-input { padding: 12px 14px; }
-    .main-header-refactor .header-surprise-btn { padding: 12px 14px; min-height: 44px; }
-    .main-header-refactor .header-chip { padding: 10px 14px; min-height: 44px; }
+    .main-header-refactor .header-icon-link { width: 34px; height: 34px; min-width: 34px; min-height: 34px; }
+    .main-header-refactor .header-search-row { gap: 6px; }
+    .main-header-refactor .header-search-input { padding: 8px 12px; font-size: 0.95rem; }
+    .main-header-refactor .header-surprise-btn { padding: 8px 10px; min-height: 34px; font-size: 0.85rem; }
+    .main-header-refactor .header-chips { gap: 6px; }
+    .main-header-refactor .header-chip { padding: 5px 10px; min-height: 32px; font-size: 0.82rem; }
 
     .auth-btn {
         padding: 6px 10px;
@@ -850,8 +856,8 @@ main {
     }
     header .Logo, header .logo { height: 0.95rem; }
 
-    .main-header-refactor .header-app-title { font-size: 1.1rem; }
-    .main-header-refactor .header-search-input { padding: 11px 14px; }
+    .main-header-refactor .header-logo { height: 1.45rem; }
+    .main-header-refactor .header-search-input { padding: 10px 12px; }
 
     .add-recipe-form {
         padding: 16px;

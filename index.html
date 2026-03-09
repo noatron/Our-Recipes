@@ -16,12 +16,16 @@
 <body>
     <div id="app">
         <header class="main-header main-header-refactor">
-            <!-- Row 1: App bar -->
+            <!-- Row 0: Logo on top -->
+            <div class="header-logo-row">
+                <img src="logo.svg" alt="מפה לפה" class="header-logo">
+            </div>
+            <!-- Row 1: App bar (title hidden on mobile; actions only) -->
             <div class="header-app-bar">
-                <h1 class="header-app-title">מפה לפה 🍴</h1>
+                <h1 class="header-app-title">מפה לפה</h1>
                 <div class="header-app-actions">
                     <button type="button" id="favoritesFilterBtn" class="header-icon-btn" aria-label="מועדפים" title="מועדפים" style="display: none;">
-                        <svg class="heart-svg favorites-heart" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                        <svg class="heart-svg favorites-heart" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
                     </button>
                     <a href="add-recipe.html" class="header-icon-btn header-add-btn" aria-label="הוספת מתכון" title="הוסף מתכון">＋</a>
                     <div id="auth-area" class="auth-area header-auth">
@@ -33,7 +37,7 @@
             <!-- Row 2: Search + Surprise -->
             <div class="header-search-row">
                 <input type="text" id="searchInput" class="header-search-input" placeholder="חפשי מתכון..." autocomplete="off" aria-label="חיפוש מתכונים או מצרכים">
-                <button type="button" id="headerSurpriseBtn" class="header-surprise-btn">🎲 הפתעי</button>
+                <button type="button" id="headerSurpriseBtn" class="header-surprise-btn">הפתיעי</button>
             </div>
             <!-- Row 3: Filter chips -->
             <div class="header-chips-wrap">
