@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>עדכון תגיות למתכונים – מפה לפה</title>
+    <link rel="icon" href="logo.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Varela+Round&display=swap" rel="stylesheet">
+    <style>
+        .manage-recipe-tags-wrap { max-width: 900px; margin: 0 auto; padding: 24px; font-family: 'Varela Round', sans-serif; }
+        .manage-recipe-tags-wrap h1 { color: #407076; margin-bottom: 4px; font-size: 1.5rem; }
+        .manage-recipe-tags-wrap .sub { color: #698996; margin-bottom: 20px; font-size: 0.95rem; }
+        .manage-recipe-tags-wrap .back-link { display: inline-block; margin-bottom: 16px; color: #698996; text-decoration: none; font-size: 0.95rem; }
+        .manage-recipe-tags-wrap .back-link:hover { color: #407076; }
+        .manage-recipe-tags-wrap .toolbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 20px; }
+        .manage-recipe-tags-wrap .search-input { padding: 10px 16px; border: 2px solid #FFD8BE; border-radius: 12px; font-family: inherit; font-size: 1rem; width: 220px; direction: rtl; }
+        .manage-recipe-tags-wrap .search-input:focus { border-color: #407076; outline: none; }
+        .manage-recipe-tags-wrap .filter-tag { padding: 6px 12px; border-radius: 20px; border: 2px solid #FFD8BE; background: #fff; color: #407076; font-family: inherit; font-size: 0.9rem; cursor: pointer; }
+        .manage-recipe-tags-wrap .filter-tag:hover { border-color: #407076; background: rgba(64,112,118,0.06); }
+        .manage-recipe-tags-wrap .filter-tag.active { border-color: #407076; background: rgba(64,112,118,0.12); }
+        .manage-recipe-tags-wrap .save-btn { padding: 12px 24px; background: #407076; color: #FFEEDD; border: none; border-radius: 12px; font-family: inherit; font-size: 1rem; cursor: pointer; }
+        .manage-recipe-tags-wrap .save-btn:hover { background: #698996; }
+        .manage-recipe-tags-wrap .save-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .manage-recipe-tags-wrap .status { margin-top: 12px; font-size: 0.95rem; }
+        .manage-recipe-tags-wrap .status.ok { color: #2e7d32; }
+        .manage-recipe-tags-wrap .status.err { color: #c62828; }
+        .recipe-rows { display: flex; flex-direction: column; gap: 12px; }
+        .recipe-row { background: #FFF5EE; border: 2px solid #FFD8BE; border-radius: 12px; padding: 14px 18px; }
+        .recipe-row.changed { border-color: #407076; background: #F8F7FF; }
+        .recipe-row .recipe-name { font-weight: 600; color: #407076; margin-bottom: 10px; font-size: 1.05rem; }
+        .recipe-row .recipe-name a { color: inherit; text-decoration: none; }
+        .recipe-row .recipe-name a:hover { text-decoration: underline; }
+        .recipe-row .tags-line { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+        .recipe-row .tag-cb { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; font-size: 0.9rem; color: #407076; }
+        .recipe-row .tag-cb input { width: 18px; height: 18px; cursor: pointer; accent-color: #407076; }
+        .recipe-row .tag-group-label { font-size: 0.8rem; color: #698996; margin-left: 8px; margin-right: 4px; }
+        .load-msg { text-align: center; padding: 24px; color: #698996; }
+        .auth-msg { margin-bottom: 16px; }
+    </style>
+</head>
+<body>
+    <div class="manage-recipe-tags-wrap">
+        <a href="index.html" class="back-link" id="backToHomeLink">← חזרה לדף הבית</a>
+        <h1>עדכון תגיות למתכונים</h1>
+        <p class="sub">בחרי תגיות לכל מתכון. שמירה מעדכנת את המתכונים ב-Firebase.</p>
+
+        <div id="authMsg" class="auth-msg"></div>
+
+        <div class="toolbar">
+            <input type="text" id="searchInput" class="search-input" placeholder="חיפוש לפי שם מתכון" autocomplete="off">
+            <span id="filterLabel" style="color:#698996; font-size:0.9rem;">סינון לפי תגית:</span>
+            <div id="filterTags"></div>
+            <button type="button" id="saveBtn" class="save-btn" disabled>שמירת שינויים</button>
+        </div>
+        <p id="status" class="status"></p>
+
+        <div id="recipeRows" class="recipe-rows">
+            <p id="loadMsg" class="load-msg">טוען מתכונים...</p>
+        </div>
+    </div>
+
+    <script type="module">
+        import { db, auth, onUserChange, signInWithGoogle } from './firebase.js';
+        import { doc, getDoc, collection, getDocs, updateDoc } from 'https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js';
+
+        const CONFIG_PATH = { collection: 'config', id: 'tags' };
+        const DEFAULT_GROUPS = [
+            { label: 'מנות עיקריות', tags: ['בשר', 'דגים', 'פסטות', 'קישים ופשטידות', 'צמחוני'] },
+            { label: 'סלטים', tags: ['סלטים'] },
+            { label: 'תוספות', tags: ['תוספות'] },
+            { label: 'לחם ומאפים', tags: ['לחם ומאפים'] },
+            { label: 'רטבים וממרחים', tags: ['רטבים וממרחים'] },
+            { label: 'מרקים', tags: ['מרקים'] },
+            { label: 'קינוחים', tags: ['עוגות', 'עוגיות', 'קינוחים', 'שוקולד'] },
+            { label: 'ארוחות בוקר', tags: ['ארוחות בוקר'] },
+            { label: 'חטיפים', tags: ['חטיפים'] },
+            { label: 'שתייה', tags: ['שתייה'] }
+        ];
+
+        let tagGroups = [];
+        let recipes = [];
+        /** recipeId -> string[] (current selected tags) */
+        let recipeTags = {};
+        /** recipeId -> string[] (original tags when loaded) */
+        let originalTags = {};
+
+        function escapeHtml(s) {
+            if (s == null) return '';
+            const d = document.createElement('div');
+            d.textContent = s;
+            return d.innerHTML;
+        }
+
+        function flattenTags(groups) {
+            return groups.reduce((arr, g) => arr.concat(g.tags || []), []);
+        }
+
+        function getChangedCount() {
+            let n = 0;
+            for (const id of Object.keys(recipeTags)) {
+                const cur = (recipeTags[id] || []).slice().sort().join(',');
+                const orig = (originalTags[id] || []).slice().sort().join(',');
+                if (cur !== orig) n++;
+            }
+            return n;
+        }
+
+        function updateSaveButton() {
+            const n = getChangedCount();
+            saveBtn.disabled = n === 0;
+            saveBtn.textContent = n > 0 ? `שמירת שינויים (${n} מתכונים)` : 'שמירת שינויים';
+        }
+
+        function renderRecipeRow(recipe, allTags, searchTerm, filterTag) {
+            const name = (recipe.name || '').trim() || 'ללא שם';
+            if (searchTerm && !name.toLowerCase().includes(searchTerm.toLowerCase())) return '';
+            const tags = recipeTags[recipe.id] || [];
+            if (filterTag && !tags.includes(filterTag)) return '';
+            const isChanged = (() => {
+                const cur = (recipeTags[recipe.id] || []).slice().sort().join(',');
+                const orig = (originalTags[recipe.id] || []).slice().sort().join(',');
+                return cur !== orig;
+            })();
+            const tagsByGroup = tagGroups.map(g => {
+                const groupTags = (g.tags || []).filter(t => allTags.includes(t));
+                const cbHtml = groupTags.map(t => {
+                    const checked = tags.includes(t) ? ' checked' : '';
+                    return `<label class="tag-cb"><input type="checkbox" data-recipe-id="${escapeHtml(recipe.id)}" data-tag="${escapeHtml(t)}"${checked}>${escapeHtml(t)}</label>`;
+                }).join('');
+                return groupTags.length ? `<span class="tag-group-label">${escapeHtml(g.label)}:</span>${cbHtml}` : '';
+            }).filter(Boolean).join('');
+            return `
+                <div class="recipe-row${isChanged ? ' changed' : ''}" data-recipe-id="${escapeHtml(recipe.id)}">
+                    <div class="recipe-name"><a href="recipe-detail.html?id=${escapeHtml(recipe.id)}" target="_blank">${escapeHtml(name)}</a></div>
+                    <div class="tags-line">${tagsByGroup}</div>
+                </div>
+            `;
+        }
+
+        function render(searchTerm, filterTag) {
+            const allTags = flattenTags(tagGroups);
+            const container = document.getElementById('recipeRows');
+            const loadMsg = document.getElementById('loadMsg');
+            loadMsg.style.display = 'none';
+            container.innerHTML = recipes.map(r => renderRecipeRow(r, allTags, searchTerm, filterTag)).filter(Boolean).join('');
+            if (container.innerHTML === '') {
+                container.innerHTML = '<p class="load-msg">לא נמצאו מתכונים.</p>';
+                return;
+            }
+            container.querySelectorAll('.tag-cb input').forEach(cb => {
+                cb.addEventListener('change', () => {
+                    const id = cb.dataset.recipeId;
+                    const tag = cb.dataset.tag;
+                    if (!recipeTags[id]) recipeTags[id] = (originalTags[id] || []).slice();
+                    const arr = recipeTags[id];
+                    if (cb.checked) {
+                        if (!arr.includes(tag)) arr.push(tag);
+                    } else {
+                        const i = arr.indexOf(tag);
+                        if (i >= 0) arr.splice(i, 1);
+                    }
+                    const row = container.querySelector(`.recipe-row[data-recipe-id="${id}"]`);
+                    if (row) {
+                        const cur = (recipeTags[id] || []).slice().sort().join(',');
+                        const orig = (originalTags[id] || []).slice().sort().join(',');
+                        row.classList.toggle('changed', cur !== orig);
+                    }
+                    updateSaveButton();
+                });
+            });
+            updateSaveButton();
+        }
+
+        async function load() {
+            const loadMsg = document.getElementById('loadMsg');
+            loadMsg.textContent = 'טוען מתכונים וקטגוריות...';
+            loadMsg.style.display = 'block';
+            document.getElementById('recipeRows').innerHTML = '';
+            try {
+                const configSnap = await getDoc(doc(db, CONFIG_PATH.collection, CONFIG_PATH.id));
+                if (configSnap.exists() && Array.isArray(configSnap.data().tagGroups) && configSnap.data().tagGroups.length) {
+                    tagGroups = configSnap.data().tagGroups.map(g => ({ label: g.label, tags: [...(g.tags || [])] }));
+                } else {
+                    tagGroups = DEFAULT_GROUPS.map(g => ({ label: g.label, tags: [...g.tags] }));
+                }
+                const snapshot = await getDocs(collection(db, 'recipes'));
+                recipes = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                recipes.sort((a, b) => ((a.name || '').localeCompare(b.name || '', 'he')));
+                recipeTags = {};
+                originalTags = {};
+                recipes.forEach(r => {
+                    const t = Array.isArray(r.tags) ? r.tags.slice() : [];
+                    recipeTags[r.id] = t;
+                    originalTags[r.id] = t.slice();
+                });
+                const allTags = flattenTags(tagGroups);
+                const filterDiv = document.getElementById('filterTags');
+                filterDiv.innerHTML = '<button type="button" class="filter-tag" data-filter="">הכל</button>' +
+                    allTags.map(t => `<button type="button" class="filter-tag" data-filter="${escapeHtml(t)}">${escapeHtml(t)}</button>`).join('');
+                filterDiv.querySelectorAll('.filter-tag').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        filterDiv.querySelectorAll('.filter-tag').forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                        const search = document.getElementById('searchInput').value.trim();
+                        render(search, btn.dataset.filter || null);
+                    });
+                });
+                document.getElementById('searchInput').oninput = () => {
+                    const search = document.getElementById('searchInput').value.trim();
+                    const activeFilter = filterDiv.querySelector('.filter-tag.active');
+                    render(search, activeFilter ? (activeFilter.dataset.filter || null) : null);
+                };
+                loadMsg.style.display = 'none';
+                render('', null);
+            } catch (e) {
+                loadMsg.textContent = 'שגיאה: ' + (e.message || e);
+                loadMsg.style.display = 'block';
+                document.getElementById('status').textContent = '';
+                document.getElementById('status').className = 'status err';
+            }
+        }
+
+        const saveBtn = document.getElementById('saveBtn');
+        const statusEl = document.getElementById('status');
+
+        saveBtn.addEventListener('click', async () => {
+            if (!auth.currentUser) {
+                statusEl.textContent = 'צריך להתחבר כדי לשמור.';
+                statusEl.className = 'status err';
+                return;
+            }
+            const toUpdate = [];
+            for (const id of Object.keys(recipeTags)) {
+                const cur = (recipeTags[id] || []).slice().sort().join(',');
+                const orig = (originalTags[id] || []).slice().sort().join(',');
+                if (cur !== orig) toUpdate.push({ id, tags: recipeTags[id] || [] });
+            }
+            if (toUpdate.length === 0) {
+                statusEl.textContent = 'אין שינויים לשמירה.';
+                statusEl.className = 'status';
+                return;
+            }
+            saveBtn.disabled = true;
+            statusEl.textContent = 'שומר ' + toUpdate.length + ' מתכונים...';
+            statusEl.className = 'status';
+            try {
+                for (const { id, tags } of toUpdate) {
+                    await updateDoc(doc(db, 'recipes', id), { tags });
+                    originalTags[id] = tags.slice();
+                }
+                statusEl.textContent = 'נשמר. עודכנו ' + toUpdate.length + ' מתכונים.';
+                statusEl.className = 'status ok';
+                updateSaveButton();
+                render(document.getElementById('searchInput').value.trim(), document.querySelector('#filterTags .filter-tag.active')?.dataset.filter || null);
+            } catch (e) {
+                statusEl.textContent = 'שגיאה: ' + (e.message || e);
+                statusEl.className = 'status err';
+            }
+            saveBtn.disabled = false;
+        });
+
+        onUserChange((user) => {
+            const authMsg = document.getElementById('authMsg');
+            if (user) {
+                authMsg.innerHTML = '';
+                load();
+            } else {
+                authMsg.innerHTML = 'מחוברת? <button type="button" id="signInBtn" style="padding:8px 16px;background:#407076;color:white;border:none;border-radius:8px;cursor:pointer;font-family:inherit;">התחברי עם Google</button>';
+                document.getElementById('signInBtn')?.addEventListener('click', () => signInWithGoogle());
+                load();
+            }
+        });
+
+        if (auth.currentUser) load();
+        else onUserChange(auth.currentUser);
+
+        document.getElementById('backToHomeLink').addEventListener('click', function(e) {
+            e.preventDefault();
+            const base = window.location.href.replace(/[^/]*$/, '');
+            window.location.replace(base + 'index.html');
+        });
+    </script>
+</body>
+</html>

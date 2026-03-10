@@ -48,9 +48,10 @@
 </head>
 <body>
     <div class="manage-tags-wrap">
-        <a href="index.html" class="back-link">← חזרה לדף הבית</a>
+        <a href="index.html" class="back-link" id="backToHomeLink">← חזרה לדף הבית</a>
         <h1>ניהול קטגוריות</h1>
-        <p style="color:#698996; margin-bottom:20px;">הוספת קטגוריות כאן תעדכן את האתר: הן יופיעו בסינון ובעריכת מתכונים.</p>
+        <p style="color:#698996; margin-bottom:12px;">הוספת קטגוריות כאן תעדכן את האתר: הן יופיעו בסינון ובעריכת מתכונים.</p>
+        <p style="margin-bottom:20px;"><a href="manage-recipe-tags.html" style="color:#407076;">עדכון תגיות לכל המתכונים במקום אחד →</a></p>
 
         <div id="authMsg" style="margin-bottom:16px;"></div>
 
@@ -308,6 +309,12 @@
 
         if (auth.currentUser) load();
         else onUserChange(auth.currentUser);
+
+        document.getElementById('backToHomeLink').addEventListener('click', function(e) {
+            e.preventDefault();
+            const base = window.location.href.replace(/[^/]*$/, '');
+            window.location.replace(base + 'index.html');
+        });
     </script>
 </body>
 </html>
