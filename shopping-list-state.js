@@ -1,13 +1,14 @@
 /**
  * רשימת קניות – state משותף (זיכרון + localStorage לרשימה הנוכחית ורשימות שמורות).
- * נורמליזציה: מוציאים מכל מרכיב כמות ויחידה ומשאירים רק שם המוצר (למשל "1 כף סוכר" → "סוכר").
- * איחוד: מרכיבים עם אותו שם מוצר מופיעים בשורה אחת, בלי כמויות – הרשימה היא צ'קליסט של מה לקנות.
+ * כל המתכונים מוסיפים לאותה רשימה (addItems מוסיף ל-getRaw); אין רשימה נפרדת לכל מתכון.
+ * איחוד ממתכונים שונים: בתצוגה (getAggregated) מרכיבים עם אותו מוצר+יחידה ממתכונים שונים מתאחדים לשורה אחת עם סיכום כמויות.
+ * נורמליזציה: כוס/כוסות, כף/כפות, עגבניה/עגבניות וכו' – מנורמלים למפתח אחד.
  */
 (function () {
     const CURRENT_KEY = 'app_shopping_list';
     const SAVED_LISTS_KEY = 'app_saved_shopping_lists';
 
-    /** מפתח לאגרגציה: נורמליזציה קלה (תפוח/תפוחים/תפוחי → תפוח) */
+    /** מפתח לאגרגציה: נורמליזציה קלה (תפוח/תפוחים/תפוחי → תפוח; עגבניה/עגבניות → עגבני) */
     function normalizeKey(text) {
         if (!text || typeof text !== 'string') return '';
         let s = text.trim().toLowerCase();
@@ -18,8 +19,24 @@
         s = s.replace(/י\s/g, ' ').replace(/י$/g, '');
         s = s.replace(/\s*רגיל\s*$/g, '').trim();
         s = s.replace(/\s*לבן\s*$/g, '').trim();
+        s = s.replace(/ה\s/g, ' ').replace(/ה$/g, '').trim();
         s = s.replace(/\s+/g, ' ').trim();
         return s;
+    }
+
+    /** יחידה מנורמלת למפתח איחוד – כוסות/כוס → כוס, כפות/כף → כף */
+    function normalizeUnitForKey(unit) {
+        if (!unit) return '';
+        var u = (unit || '').trim().toLowerCase();
+        if (u === 'כוסות' || u === 'כוס') return 'כוס';
+        if (u === 'כפות' || u === 'כף') return 'כף';
+        if (u === 'כפיות' || u === 'כפית') return 'כפית';
+        if (u === 'חבילות' || u === 'חבילה') return 'חבילה';
+        if (u === 'פרוסות' || u === 'פרוסה') return 'פרוסה';
+        if (u === 'ענפים' || u === 'ענף') return 'ענף';
+        if (u === 'שיני' || u === 'שן') return 'שן';
+        if (u === 'יחידות' || u === 'יחידה') return 'יחידה';
+        return u;
     }
 
     /** תבלינים יבשים, שמנים ומים – לא נכנסים לרשימת הקניות (בזיליקום טרי וכו' כן). שמנים – רק אם הכמות פחות מכוס (Rule 4). */
@@ -458,6 +475,7 @@
 
     /**
      * אגרגציה: קבוצה לפי product+unit; אותו מוצר+אותה יחידה – מסכמים כמות; יחידות שונות – שורות נפרדות; בלי כמות – דדופליקציה.
+     * שימוש ב-normalizeUnitForKey כדי לאחד כוס/כוסות, כף/כפות וכו'.
      */
     function getAggregated() {
         var list = getRaw();
@@ -466,12 +484,23 @@
             var text = item.text;
             var simplified = simplifyIngredient(text) || text;
             var parsed = parseIngredient(simplified);
-            if (!parsed || !parsed.product) return;
-            var product = parsed.product.trim();
-            var productKey = normalizeKey(product) || '_';
-            var unit = parsed.unit || '';
-            var key = productKey + '|' + unit;
-            var amount = parsed.amount;
+            var product, productKey, unit, unitKey, amount, key;
+            if (parsed && parsed.product && (product = parsed.product.trim())) {
+                productKey = normalizeKey(product) || '_';
+                unit = parsed.unit || '';
+                unitKey = normalizeUnitForKey(unit);
+                key = productKey + '|' + unitKey;
+                amount = parsed.amount;
+            } else {
+                var raw = (simplified || text || '').trim();
+                if (!raw) return;
+                productKey = normalizeKey(raw) || '_';
+                key = productKey + '|';
+                product = raw;
+                unit = '';
+                unitKey = '';
+                amount = null;
+            }
             if (!byKey[key]) {
                 byKey[key] = { key: key, product: product, unit: unit, amount: amount };
             } else {
@@ -510,13 +539,17 @@
         return grouped;
     }
 
-    /** מוחק פריט לפי מפתח (productKey|unit) – מוחק את כל השורות שמתאגדות למפתח הזה */
+    /** מוחק פריט לפי מפתח (productKey|unitKey) – מוחק את כל השורות שמתאגדות למפתח הזה */
     function removeByKey(aggregateKey) {
         setRaw(getRaw().filter(function (item) {
             var simplified = simplifyIngredient(item.text) || item.text;
             var parsed = parseIngredient(simplified);
-            if (!parsed || !parsed.product) return true;
-            var key = (normalizeKey(parsed.product.trim()) || '_') + '|' + (parsed.unit || '');
+            var key;
+            if (parsed && parsed.product) {
+                key = (normalizeKey(parsed.product.trim()) || '_') + '|' + normalizeUnitForKey(parsed.unit || '');
+            } else {
+                key = (normalizeKey((simplified || '').trim()) || '_') + '|';
+            }
             return key !== aggregateKey;
         }));
     }

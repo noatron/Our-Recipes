@@ -755,9 +755,18 @@
         function renderSlModalContent(modal, ingredients, fromLink) {
             const content = modal.querySelector('#slModalContent');
             if (!content) return;
+            /** פריטים שלא אמורים להופיע כלל ברשימת קניות – לא במודל ולא ברשימה (תבנית, מים, כותרות) */
+            function neverShowInModal(ing) {
+                if (!ing || typeof ing !== 'string') return true;
+                const t = ing.trim();
+                if (/תבנית\b/.test(t)) return true;
+                if (/\bמים\b/.test(t)) return true;
+                if (/:\s*$/.test(t) || /^לשכבת\s|^לבשמל\s|^לרוטב\s|^לסוג\s/i.test(t)) return true;
+                return false;
+            }
             const exclude = (window.ShoppingList && window.ShoppingList.shouldExcludeFromShoppingList) ? window.ShoppingList.shouldExcludeFromShoppingList.bind(window.ShoppingList) : () => false;
             const simplify = (window.ShoppingList && window.ShoppingList.simplifyIngredient) ? window.ShoppingList.simplifyIngredient.bind(window.ShoppingList) : (t) => t;
-            const filtered = ingredients.filter((ing) => !exclude(ing));
+            const filtered = ingredients.filter((ing) => !neverShowInModal(ing) && !exclude(ing));
             const displayItems = filtered.map((ing) => (simplify(ing) || ing).trim()).filter((t) => t);
             const unique = [...new Set(displayItems)];
             if (unique.length === 0) {
@@ -768,19 +777,16 @@
             const listHtml = unique.map((displayIng) => '<label class="sl-check-label"><input type="checkbox" class="sl-ing-check" data-ing="' + escapeHtml(displayIng) + '" checked> ' + escapeHtml(displayIng) + '</label>').join('');
             content.innerHTML = '<h3 style="margin:0 0 16px;color:#407076;font-size:1.2rem;">הוסיפי לרשימת קניות</h3><p style="margin:0 0 12px;color:#698996;font-size:0.9rem;">בחרי את המרכיבים להוספה (מתאחדים עם רשימה ממתכונים אחרים). מרכיבים בסיסיים (מלח, תבלינים, שמן), תבנית ומים לא ייכללו.</p><div class="sl-check-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;">' + listHtml + '</div><div style="display:flex;gap:10px;flex-wrap:wrap;"><button type="button" class="refresh-from-link-btn" id="slAddAll">הוסיפי הכל</button><button type="button" class="refresh-from-link-btn" id="slAddSelected">הוסיפי נבחרים</button><button type="button" style="background:transparent;color:#698996;border:2px solid #698996;" class="refresh-from-link-btn" id="slModalCancel">ביטול</button></div>';
             content.querySelector('#slModalCancel').onclick = () => modal.remove();
-            content.querySelector('#slAddAll').onclick = () => {
-                if (window.ShoppingList) window.ShoppingList.addItems(recipe.id, recipe.name || 'מתכון', unique);
-                modal.remove();
-                alert('נוספו לרשימת הקניות. אפשר להמשיך להוסיף ממתכונים אחרים או לצפות ברשימה מהקישור „רשימת קניות“.');
-            };
-            content.querySelector('#slAddSelected').onclick = () => {
+            function addCheckedToShoppingList() {
                 const checked = content.querySelectorAll('.sl-ing-check:checked');
                 const selected = [...checked].map(cb => cb.dataset.ing);
                 if (selected.length === 0) { alert('בחרי לפחות מרכיב אחד'); return; }
                 if (window.ShoppingList) window.ShoppingList.addItems(recipe.id, recipe.name || 'מתכון', selected);
                 modal.remove();
                 alert('נוספו לרשימת הקניות. אפשר להמשיך להוסיף ממתכונים אחרים או לצפות ברשימה מהקישור „רשימת קניות“.');
-            };
+            }
+            content.querySelector('#slAddAll').onclick = addCheckedToShoppingList;
+            content.querySelector('#slAddSelected').onclick = addCheckedToShoppingList;
         }
 
         function openAddToShoppingListModal() {
