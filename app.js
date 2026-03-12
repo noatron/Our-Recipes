@@ -477,12 +477,20 @@ window.showToast = function (message) {
 window.addRecipeToShoppingList = function (recipeId) {
     const recipes = window.__allRecipes || [];
     const recipe = recipes.find(r => r.id === recipeId);
-    if (!recipe || !Array.isArray(recipe.ingredients) || recipe.ingredients.length === 0) {
+    if (!recipe) return;
+    const ingredients = Array.isArray(recipe.ingredients) ? recipe.ingredients : [];
+    const hasUrl = recipe.url && String(recipe.url).trim();
+    const isReel = hasUrl && (String(recipe.url).includes('instagram.com') || String(recipe.url).includes('tiktok.com'));
+    if (ingredients.length === 0) {
+        if (hasUrl && !isReel) {
+            window.location.href = 'recipe-detail.html?id=' + encodeURIComponent(recipe.id) + '&openShopping=1';
+            return;
+        }
         if (typeof alert === 'function') alert('אין מרכיבים במתכון הזה.');
         return;
     }
     if (typeof window.ShoppingList !== 'undefined') {
-        window.ShoppingList.addItems(recipe.id, recipe.name || 'מתכון', recipe.ingredients);
+        window.ShoppingList.addItems(recipe.id, recipe.name || 'מתכון', ingredients);
     }
     window.showToast('✓ נוסף לרשימת הקניות');
 };

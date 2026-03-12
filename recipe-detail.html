@@ -482,6 +482,10 @@
                 editRecipe();
                 history.replaceState(null, '', 'recipe-detail.html' + (window.location.hash || ''));
             }
+            if (urlParams.get('openShopping') === '1') {
+                history.replaceState(null, '', 'recipe-detail.html?id=' + encodeURIComponent(recipe.id) + (window.location.hash || ''));
+                setTimeout(() => openAddToShoppingListModal(), 100);
+            }
         }
 
         function showToast(message) {
