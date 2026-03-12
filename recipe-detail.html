@@ -462,38 +462,12 @@
             currentUser = auth.currentUser;
 
             const isReel = recipe.url && (String(recipe.url).includes('instagram.com') || String(recipe.url).includes('tiktok.com'));
-            const hasFullContent = (Array.isArray(recipe.ingredients) && recipe.ingredients.length > 0) && (Array.isArray(recipe.instructions) && recipe.instructions.length > 0);
-            const needMetaFromUrl = recipe.url && !isReel && !hasFullContent;
-
-            // הצגת הדף מיד – בלי להמתין לחילוץ מהקישור
+            // הצגת הדף – מתכון מלינק נשאר ב-iframe; חילוץ מרכיבים רק לרשימת קניות (בעת לחיצה)
             renderRecipe(recipe);
-
-            // טעינת לב, תגובות ומטא (מהקישור) במקביל
-            const loadMetaInBackground = async () => {
-                if (!needMetaFromUrl) return;
-                try {
-                    const meta = await fetchRecipeMeta(recipe.url);
-                    const hasBoth = (meta.ingredients && meta.ingredients.length > 0) && (meta.instructions && meta.instructions.length > 0);
-                    if (hasBoth) {
-                        recipe.name = meta.name || recipe.name;
-                        if (meta.image) recipe.image = meta.image;
-                        recipe.ingredients = meta.ingredients || [];
-                        recipe.instructions = meta.instructions || [];
-                        await updateDoc(recipeRef, { name: recipe.name, image: recipe.image || '', ingredients: recipe.ingredients, instructions: recipe.instructions });
-                        updateIngredientsAndInstructionsInDom(recipe);
-                        const iframeWrap = document.querySelector('.recipe-iframe-wrap');
-                        if (iframeWrap) iframeWrap.remove();
-                        document.querySelectorAll('.section-title').forEach(el => el.style.display = '');
-                        document.getElementById('ingredientsList').style.display = '';
-                        document.getElementById('instructionsList').style.display = '';
-                    }
-                } catch (e) { console.warn('חילוץ מרכיבים מהקישור:', e); }
-            };
 
             await Promise.all([
                 loadLikeState(),
-                loadComments(),
-                loadMetaInBackground()
+                loadComments()
             ]);
 
             renderLikeButton();
@@ -544,7 +518,7 @@
                 if (!recipe) return;
                 const ingredients = Array.isArray(recipe.ingredients) ? recipe.ingredients : [];
                 if (ingredients.length === 0) {
-                    alert('אין מרכיבים במתכון הזה.');
+                    openAddToShoppingListModal();
                     return;
                 }
                 if (typeof window.ShoppingList !== 'undefined') {
@@ -774,36 +748,70 @@
             return base + (base.includes('?') ? '&' : '?') + 'id=' + encodeURIComponent(recipe.id);
         }
 
+        function renderSlModalContent(modal, ingredients, fromLink) {
+            const content = modal.querySelector('#slModalContent');
+            if (!content) return;
+            if (ingredients.length === 0) {
+                content.innerHTML = '<p style="color:#407076;margin:0 0 20px;">' + (fromLink ? 'לא הצלחנו לחלץ מרכיבים מהעמוד. אפשר לפתוח את הקישור ולהעתיק ידנית.' : 'אין מרכיבים במתכון הזה.') + '</p><button type="button" class="refresh-from-link-btn" id="slModalClose">סגור</button>';
+                content.querySelector('#slModalClose').onclick = () => modal.remove();
+                return;
+            }
+            const listHtml = ingredients.map((ing) => '<label class="sl-check-label"><input type="checkbox" class="sl-ing-check" data-ing="' + escapeHtml(ing) + '" checked> ' + escapeHtml(ing) + '</label>').join('');
+            content.innerHTML = '<h3 style="margin:0 0 16px;color:#407076;font-size:1.2rem;">הוסיפי לרשימת קניות</h3><p style="margin:0 0 12px;color:#698996;font-size:0.9rem;">בחרי את המרכיבים להוספה (מתאחדים עם רשימה ממתכונים אחרים)</p><div class="sl-check-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;">' + listHtml + '</div><div style="display:flex;gap:10px;flex-wrap:wrap;"><button type="button" class="refresh-from-link-btn" id="slAddAll">הוסיפי הכל</button><button type="button" class="refresh-from-link-btn" id="slAddSelected">הוסיפי נבחרים</button><button type="button" style="background:transparent;color:#698996;border:2px solid #698996;" class="refresh-from-link-btn" id="slModalCancel">ביטול</button></div>';
+            content.querySelector('#slModalCancel').onclick = () => modal.remove();
+            content.querySelector('#slAddAll').onclick = () => {
+                if (window.ShoppingList) window.ShoppingList.addItems(recipe.id, recipe.name || 'מתכון', ingredients);
+                modal.remove();
+                alert('נוספו לרשימת הקניות. אפשר להמשיך להוסיף ממתכונים אחרים או לצפות ברשימה מהקישור „רשימת קניות“.');
+            };
+            content.querySelector('#slAddSelected').onclick = () => {
+                const checked = content.querySelectorAll('.sl-ing-check:checked');
+                const selected = [...checked].map(cb => cb.dataset.ing);
+                if (selected.length === 0) { alert('בחרי לפחות מרכיב אחד'); return; }
+                if (window.ShoppingList) window.ShoppingList.addItems(recipe.id, recipe.name || 'מתכון', selected);
+                modal.remove();
+                alert('נוספו לרשימת הקניות. אפשר להמשיך להוסיף ממתכונים אחרים או לצפות ברשימה מהקישור „רשימת קניות“.');
+            };
+        }
+
         function openAddToShoppingListModal() {
             const menu = document.getElementById('dropdownMenu');
             if (menu) menu.classList.remove('show');
             if (!recipe) return;
             const ingredients = Array.isArray(recipe.ingredients) ? recipe.ingredients : [];
+            const hasLink = recipe.url && String(recipe.url).trim();
+            const isReel = hasLink && (String(recipe.url).includes('instagram.com') || String(recipe.url).includes('tiktok.com'));
+            const canExtractFromLink = hasLink && !isReel && ingredients.length === 0;
+
             const modal = document.createElement('div');
             modal.className = 'shopping-list-modal-overlay';
             modal.style.cssText = 'position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;padding:16px;';
+            modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+
+            if (canExtractFromLink) {
+                modal.innerHTML = '<div id="slModalContent" style="background:#F8F7FF;border-radius:16px;padding:28px;max-width:360px;font-family:Varela Round,sans-serif;direction:rtl;text-align:center;"><p style="color:#407076;margin:0 0 16px;">מחלץ מרכיבים מהקישור...</p><button type="button" class="refresh-from-link-btn" id="slModalClose">ביטול</button></div>';
+                modal.querySelector('#slModalClose').onclick = () => modal.remove();
+                document.body.appendChild(modal);
+                (async () => {
+                    try {
+                        const meta = await fetchRecipeMeta(recipe.url);
+                        const extracted = Array.isArray(meta.ingredients) ? meta.ingredients : [];
+                        renderSlModalContent(modal, extracted, true);
+                    } catch (e) {
+                        console.warn('חילוץ מרכיבים לרשימת קניות:', e);
+                        renderSlModalContent(modal, [], true);
+                    }
+                })();
+                return;
+            }
+
             if (ingredients.length === 0) {
-                modal.innerHTML = '<div style="background:#F8F7FF;border-radius:16px;padding:28px;max-width:360px;font-family:Varela Round,sans-serif;direction:rtl;text-align:center;"><p style="color:#407076;margin:0 0 20px;">אין מרכיבים במתכון הזה (מתכון מקישור).</p><button type="button" class="refresh-from-link-btn" id="slModalClose">סגור</button></div>';
+                modal.innerHTML = '<div id="slModalContent" style="background:#F8F7FF;border-radius:16px;padding:28px;max-width:360px;font-family:Varela Round,sans-serif;direction:rtl;text-align:center;"><p style="color:#407076;margin:0 0 20px;">אין מרכיבים במתכון הזה (מתכון מקישור).</p><button type="button" class="refresh-from-link-btn" id="slModalClose">סגור</button></div>';
                 modal.querySelector('#slModalClose').onclick = () => modal.remove();
             } else {
-                const listHtml = ingredients.map((ing, i) => '<label class="sl-check-label"><input type="checkbox" class="sl-ing-check" data-ing="' + escapeHtml(ing) + '" checked> ' + escapeHtml(ing) + '</label>').join('');
-                modal.innerHTML = '<div class="shopping-list-modal" style="background:#F8F7FF;border-radius:16px;padding:24px;max-width:420px;width:100%;max-height:80vh;overflow-y:auto;font-family:Varela Round,sans-serif;direction:rtl;"><h3 style="margin:0 0 16px;color:#407076;font-size:1.2rem;">הוסיפי לרשימת קניות</h3><p style="margin:0 0 12px;color:#698996;font-size:0.9rem;">בחרי את המרכיבים להוספה (מתאחדים עם רשימה ממתכונים אחרים)</p><div class="sl-check-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;">' + listHtml + '</div><div style="display:flex;gap:10px;flex-wrap:wrap;"><button type="button" class="refresh-from-link-btn" id="slAddAll">הוסיפי הכל</button><button type="button" class="refresh-from-link-btn" id="slAddSelected">הוסיפי נבחרים</button><button type="button" style="background:transparent;color:#698996;border:2px solid #698996;" class="refresh-from-link-btn" id="slModalCancel">ביטול</button></div></div>';
-                modal.querySelector('#slModalCancel').onclick = () => modal.remove();
-                modal.querySelector('#slAddAll').onclick = () => {
-                    if (window.ShoppingList) window.ShoppingList.addItems(recipe.id, recipe.name, ingredients);
-                    modal.remove();
-                    alert('נוספו לרשימת הקניות. אפשר להמשיך להוסיף ממתכונים אחרים או לצפות ברשימה מהקישור „רשימת קניות“.');
-                };
-                modal.querySelector('#slAddSelected').onclick = () => {
-                    const checked = modal.querySelectorAll('.sl-ing-check:checked');
-                    const selected = [...checked].map(cb => cb.dataset.ing);
-                    if (selected.length === 0) { alert('בחרי לפחות מרכיב אחד'); return; }
-                    if (window.ShoppingList) window.ShoppingList.addItems(recipe.id, recipe.name, selected);
-                    modal.remove();
-                    alert('נוספו לרשימת הקניות. אפשר להמשיך להוסיף ממתכונים אחרים או לצפות ברשימה מהקישור „רשימת קניות“.');
-                };
+                modal.innerHTML = '<div id="slModalContent" class="shopping-list-modal" style="background:#F8F7FF;border-radius:16px;padding:24px;max-width:420px;width:100%;max-height:80vh;overflow-y:auto;font-family:Varela Round,sans-serif;direction:rtl;"></div>';
+                renderSlModalContent(modal, ingredients, false);
             }
-            modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
             document.body.appendChild(modal);
         }
 
