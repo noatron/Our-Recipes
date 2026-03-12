@@ -302,6 +302,16 @@ async function loadAndRenderMeal(mealId) {
     const withIngredients = recipes.filter(r => Array.isArray(r.ingredients) && r.ingredients.length > 0);
     if (withIngredients.length > 0) {
         shoppingBtn.style.display = 'inline-flex';
+        let hint = document.getElementById('meal-detail-sl-hint');
+        if (!hint) {
+            hint = document.createElement('p');
+            hint.id = 'meal-detail-sl-hint';
+            hint.className = 'meal-detail-meta';
+            hint.style.cssText = 'margin-top:8px;color:#698996;font-size:0.9rem;';
+            hint.textContent = 'המרכיבים יתאחדו לפי מוצר; מלח, תבלינים ושמן לא ייכללו.';
+            shoppingBtn.parentNode.insertBefore(hint, shoppingBtn.nextSibling);
+        }
+        hint.style.display = '';
         shoppingBtn.onclick = () => {
             if (typeof window.ShoppingList === 'undefined') {
                 alert('רשימת הקניות אינה זמינה.');
@@ -315,6 +325,8 @@ async function loadAndRenderMeal(mealId) {
         };
     } else {
         shoppingBtn.style.display = 'none';
+        const hint = document.getElementById('meal-detail-sl-hint');
+        if (hint) hint.style.display = 'none';
     }
     return meal;
 }

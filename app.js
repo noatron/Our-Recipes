@@ -702,7 +702,7 @@ function setupCreateShoppingListModal(allRecipes) {
         ).join('');
         box.innerHTML =
             '<h3 style="margin:0 0 8px;color:#407076;font-size:1.25rem;">צור לי רשימת קניות</h3>' +
-            '<p style="margin:0 0 16px;color:#698996;font-size:0.9rem;">בחרי מתכונים – המרכיבים יתאחדו לרשימה אחת (תבלינים ושמן לא ייכללו).</p>' +
+            '<p style="margin:0 0 16px;color:#698996;font-size:0.9rem;">בחרי מתכונים – המרכיבים יתאחדו לפי מוצר; מלח, תבלינים ושמן לא ייכללו.</p>' +
             '<div class="create-sl-list" style="overflow-y:auto;flex:1;min-height:0;margin-bottom:20px;">' + listHtml + '</div>' +
             '<div style="display:flex;gap:10px;flex-wrap:wrap;">' +
             '<button type="button" class="sl-btn sl-btn-primary" id="createSlConfirm">צור רשימה</button>' +
