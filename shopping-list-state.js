@@ -105,6 +105,7 @@
                 s = (8 + t) + ' כפות ' + s.slice(halfCup[0].length);
             }
         }
+        s = s.replace(/\s*-\s*אופציונאלי\s*$/gi, ' ').replace(/\s*,\s*מגורר[ת]?\s+דק\s*/gi, ' ');
         var remove = [
             /\s*מושר[ייה]?\s*(חצי\s*יום|לילה|יומיים?|\d+\s*שעות?)?/gi,
             /\s*חצי\s*יום\s*מושר[ייה]?/gi,
@@ -115,7 +116,8 @@
             /\s*טרי\s*/gi,
             /\s*טחון\s*/gi,
             /\s*מקולף\s*/gi,
-            /\s*מגורר[ים]?\s*/gi,
+            /\s*מגורר[יםת]?\s*/gi,
+            /\s*מגוררת\s+דק\s*/gi,
             /\s*גרוס[ה]?\s*/gi,
             /\s*מולבן[ים]?\s*/gi,
             /\s*פרוס[ים]?\s*/gi,
@@ -288,13 +290,18 @@
     /**
      * Rule 4 – האם להחרים את הפריט מרשימת הקניות: תבלינים/מלח/מים תמיד; שמן גנרי רק אם כמות < כוס.
      * גרסה ספציפית (שמן זית כתית מעולה, חומץ בלסמי) נשמרת תמיד.
+     * תבנית/כלי אפייה ומים – לא נכנסים לרשימה.
      */
     function shouldExcludeFromShoppingList(text) {
         if (!text || !String(text).trim()) return true;
+        var t = String(text).trim();
+        if (/תבנית\b/.test(t)) return true;
+        if (/\bמים\b/.test(t)) return true;
+        var simplified = simplifyIngredient(t) || t;
+        var parsed = parseIngredient(simplified);
+        if (parsed && parsed.product && /\bמים\b/.test(parsed.product)) return true;
         if (!isPantryItem(text)) return false;
         if (!isOilProduct(text)) return true;
-        var simplified = simplifyIngredient(text) || text;
-        var parsed = parseIngredient(simplified);
         var productName = (parsed && parsed.name) ? parsed.name.trim() : '';
         if (isSpecificOilOrVinegar(productName)) return false;
         return !oilQuantityAtLeastOneCup(text);
@@ -607,6 +614,8 @@
         shareToWhatsApp,
         normalizeKey,
         isPantryItem,
+        shouldExcludeFromShoppingList,
+        simplifyIngredient,
         runParseTest
     };
 })();
