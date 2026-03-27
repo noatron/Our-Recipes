@@ -1,5 +1,14 @@
 # כללי אבטחה (Firestore Rules)
 
+**לא להדביק את הקובץ הזה (`FIRESTORE-RULES.md`) ב-Firebase.** זה מסמך הסבר בעברית ובטבלאות — Firebase יזרוק שגיאות (`#`, `|`, עברית).  
+**רק** את הקובץ **`firestore.rules`** (ללא סיומת `.md`) מעתיקים ל־Firestore → Rules.
+
+**קישור Raw לעותק נקי:**  
+https://raw.githubusercontent.com/noatron/Our-Recipes/main/firestore.rules  
+(נכנסים לקישור → Ctrl+A → העתקה → הדבקה ב־Rules)
+
+---
+
 ## מקור אמת (חשוב לטווח ארוך)
 
 | עקרון | מה לעשות |
