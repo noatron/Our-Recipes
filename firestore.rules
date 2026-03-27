@@ -9,11 +9,11 @@ service cloud.firestore {
     // Helpers
     function isApproved() {
       return exists(/databases/$(database)/documents/config/approvedUsers)
-        && request.auth.uid in get(/databases/$(database)/documents/config/approvedUsers).data.get('uids', []);
+        && request.auth.uid in get(/databases/$(database)/documents/config/approvedUsers).data.uids;
     }
     function isAdmin() {
       return exists(/databases/$(database)/documents/config/admins)
-        && request.auth.uid in get(/databases/$(database)/documents/config/admins).data.get('uids', []);
+        && request.auth.uid in get(/databases/$(database)/documents/config/admins).data.uids;
     }
 
     // Recipes: public read; create if signed in; update/delete by author or admin
