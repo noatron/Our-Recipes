@@ -41,7 +41,7 @@ https://raw.githubusercontent.com/noatron/Our-Recipes/main/firestore.rules
 | `recipes` | כולם | רק משתמשות מחוברות (יצירה, עריכה, מחיקה) |
 | `recipes/{id}/likes/{userId}` | כולם | רק המשתמש יכול להוסיף/להסיר את הלב של עצמו |
 | `recipes/{id}/comments` | כולם | יצירה – מחוברות; מחיקה – רק מחברת התגובה |
-| `meals` | כולם | יצירה/עריכה/מחיקה רק למשתמש מאושר ושל הארוחה שלו (`createdBy.uid`) |
+| `meals` | כולם | יצירה/עריכה/מחיקה למשתמש מחובר שבעלות על `createdBy.uid` (כמו מתכונים); עריכה/מחיקה גם לאדמין |
 
 ## איך להעלות את הכללים ל-Firebase
 
