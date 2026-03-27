@@ -1,22 +1,16 @@
 rules_version = '2';
-// Required docs in Firebase Console (create manually):
-// config/admins       -> { "uids": ["<Google user UID>"] }
-// config/approvedUsers -> { "uids": ["<same or more UIDs>"] }
-// Any signed-in user may add recipes; only admin approves new users (approvedUsers).
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helpers
     function isApproved() {
       return exists(/databases/$(database)/documents/config/approvedUsers)
-        && request.auth.uid in get(/databases/$(database)/documents/config/approvedUsers).data.uids;
+        && request.auth.uid in get(/databases/$(database)/documents/config/approvedUsers).data.get('uids');
     }
     function isAdmin() {
       return exists(/databases/$(database)/documents/config/admins)
-        && request.auth.uid in get(/databases/$(database)/documents/config/admins).data.uids;
+        && request.auth.uid in get(/databases/$(database)/documents/config/admins).data.get('uids');
     }
 
-    // Recipes: public read; create if signed in; update/delete by author or admin
     match /recipes/{recipeId} {
       allow read: if true;
       allow create: if request.auth != null;
@@ -34,35 +28,29 @@ service cloud.firestore {
       }
     }
 
-    // config/admins: signed-in read; no client writes (avoid locking out admin)
     match /config/admins {
       allow read: if request.auth != null;
       allow write: if false;
     }
-    // config/approvedUsers: signed-in read; admin writes only
     match /config/approvedUsers {
       allow read: if request.auth != null;
       allow write: if request.auth != null && isAdmin();
     }
-    // config/tags, tagGroups, netlifyFunctions, etc.
     match /config/{docId} {
       allow read: if true;
       allow write: if request.auth != null && (docId == 'tags' || docId == 'tagGroups' || isAdmin());
     }
 
-    // Pending signups: user creates own doc; admin reads/deletes
     match /pendingUsers/{userId} {
       allow create: if request.auth != null && request.auth.uid == userId;
       allow read, delete: if request.auth != null && isAdmin();
       allow update: if false;
     }
 
-    // Saved shopping lists: each user only their subtree
     match /users/{userId}/savedShoppingLists/{listId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // Meals: public read; write only if approved and owner (createdBy.uid)
     match /meals/{mealId} {
       allow read: if true;
       allow create: if request.auth != null && isApproved() && request.resource.data.createdBy.uid == request.auth.uid;
