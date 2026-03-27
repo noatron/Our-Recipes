@@ -10,6 +10,9 @@
   # חילוץ מתמונה – עיבוד תמונות ב-AI לוקח זמן; timeout 60 שניות
   [functions.extract-image]
   timeout = 60
+  # שליפת HTML מקישורי מתכונים (ייבוא מקישור)
+  [functions.fetch-recipe]
+  timeout = 26
 
 [[redirects]]
   from = "/*"

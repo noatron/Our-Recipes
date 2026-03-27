@@ -1,5 +1,28 @@
 # כללי אבטחה (Firestore Rules)
 
+## מקור אמת (חשוב לטווח ארוך)
+
+| עקרון | מה לעשות |
+|--------|-----------|
+| **מקור אחד** | הכללים **תמיד** נערכים בקובץ `firestore.rules` בגיט — לא עורכים “רק בקונסול” בלי לעדכן את הריפו. |
+| **פריסה** | אחרי כל שינוי: `firebase deploy --only firestore:rules` **או** העתקה מלאה מ־`firestore.rules` ל־Console → **Publish**. |
+| **אין סטיות** | אם הכללים ב-Firebase שונים מהקובץ בריפו — תקבלי באגים (כמו `permission-denied` למרות שמחוברים). |
+
+**האפליקציה בקוד מניחה** את המודל של `firestore.rules` (למשל `config/approvedUsers`, `addedByUid` במתכונים, לא `users/{uid}.role`).
+
+### פריסה אוטומטית מ-GitHub (אופציונלי)
+
+קובץ: `.github/workflows/deploy-firestore-rules.yml` — רץ על `push` ל־`main` כשיש שינוי ב־`firestore.rules`.
+
+1. ליצור טוקן CI: `firebase login:ci` (מקומי, פעם אחת).
+2. ב-GitHub: **Repository → Settings → Secrets and variables → Actions → New repository secret**
+3. שם: `FIREBASE_TOKEN`, ערך: הטוקן שהופק.
+4. מעכשיו כל שינוי ב־`firestore.rules` שמפוש ל־`main` יפרסם כללים (אם ה-workflow רץ בהצלחה).
+
+אם אין `FIREBASE_TOKEN`, עדיין אפשר לפרוס ידנית (אפשרות 1–2 למטה).
+
+---
+
 הקובץ `firestore.rules` מגדיר מי יכול לקרוא ולכתוב ל-Firestore.
 
 ## מה מוגדר

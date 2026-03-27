@@ -75,6 +75,8 @@ The app is automatically deployed to GitHub Pages:
 - **Live URL:** https://noatron.github.io/Our-Recipes
 - Updates push automatically on commit to `main` branch
 
+**ייבוא מתכון מקישור (GitHub Pages):** הפונקציות רצות ב־Netlify, לא ב־GitHub Pages. צריך גם אתר Netlify שמחובר לאותו ריפו, ואז לערוך את `recipe-proxy-config.js` ולהגדיר שם את כתובת ה־Netlify (למשל `https://your-site.netlify.app`) ב־`window.__NETLIFY_FUNCTIONS_BASE__`. אם האתר החי הוא רק Netlify — אין צורך להגדיר (נשאר ריק).
+
 ---
 
 ## 📂 Project Structure

@@ -219,11 +219,15 @@
         </div>
     </div>
 
+    <script src="recipe-proxy-config.js"></script>
     <script type="module">
         import { db, auth, onUserChange, signInWithGoogle } from './firebase.js';
         import { getDoc, doc, updateDoc, deleteDoc, setDoc, collection, addDoc, getDocs, query, orderBy, serverTimestamp, increment, arrayUnion } from 'https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js';
         import { fetchRecipeMeta } from './recipe-import-utils.js';
+        import { getNetlifyFunctionUrl } from './netlify-functions-url.js';
+        import { ensureNetlifyFunctionsBase } from './netlify-functions-config.js';
         import { getMealsByUser, createMeal, addRecipeToMeal } from './meals.js';
+        await ensureNetlifyFunctionsBase();
         let recipe = null;
         let currentUser = null;
         let likedByMe = false;
@@ -1072,7 +1076,7 @@
                 const timeoutId = setTimeout(() => ac.abort(), EXTRACT_IMAGE_TIMEOUT_MS);
                 let res;
                 try {
-                    res = await fetch('/.netlify/functions/extract-image', {
+                    res = await fetch(getNetlifyFunctionUrl('extract-image'), {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ images: [compressed] }),

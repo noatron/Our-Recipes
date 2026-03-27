@@ -1,6 +1,8 @@
 import { db, auth, onUserChange } from './firebase.js';
 import { collection, addDoc, doc, getDoc, getDocs, query, where, limit } from 'https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js';
 import { extractRecipeName, extractRecipeImage, extractIngredientsAndInstructions } from './recipe-import-utils.js';
+import { getNetlifyFunctionUrl, netlifyFunctionsNeedExternalBase } from './netlify-functions-url.js';
+import { ensureNetlifyFunctionsBase } from './netlify-functions-config.js';
 
 /** מפרק CSV או טקסט לשורות ומחלץ URLs (שורה = קישור, או CSV עם עמודה שמכילה קישור) */
 function parseUrlsFromCsv(text) {
@@ -45,9 +47,22 @@ function getAddedByFields() {
     };
 }
 
+/** מרענן טוקן לפני כתיבה ל-Firestore — מפחית permission-denied אחרי סשן ארוך / טאב רקע */
+async function refreshAuthTokenForWrite() {
+    const u = auth.currentUser;
+    if (!u) return false;
+    try {
+        await u.getIdToken(true);
+        return true;
+    } catch (_) {
+        return false;
+    }
+}
+
 /** מייבא מתכון בודד מקישור (אותה לוגיקה כמו כפתור הייבוא) */
 async function importOneRecipe(url) {
-    const proxyUrl = `/.netlify/functions/fetch-recipe?url=${encodeURIComponent(url)}`;
+    await ensureNetlifyFunctionsBase();
+    const proxyUrl = getNetlifyFunctionUrl('fetch-recipe', { url });
     const response = await fetch(proxyUrl);
     const html = await response.text();
     const parser = new DOMParser();
@@ -58,6 +73,7 @@ async function importOneRecipe(url) {
     const { ingredients, instructions } = extractIngredientsAndInstructions(doc);
 
     if (await recipeExistsByUrl(url)) throw new Error('DUPLICATE_URL');
+    if (!(await refreshAuthTokenForWrite())) throw new Error('AUTH_REQUIRED');
     const addedBy = getAddedByFields();
     const newRecipe = {
         name,
@@ -98,8 +114,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     let formInitialized = false;
-    function initFormWhenReady(user) {
+    async function initFormWhenReady(user) {
         if (!user || formInitialized) return;
+        await ensureNetlifyFunctionsBase();
+        if (formInitialized) return;
         formInitialized = true;
         loadTagConfig();
         const tabButtons = document.querySelectorAll('.tab-btn');
@@ -141,11 +159,24 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        await ensureNetlifyFunctionsBase();
+        if (netlifyFunctionsNeedExternalBase() && !window.__NETLIFY_FUNCTIONS_BASE__) {
+            importStatus.className = 'import-status error';
+            importStatus.textContent = '⚠️ ייבוא מקישור דורש כתובת Netlify: הוסיפי ב-Firestore מסמך config/netlifyFunctions עם שדה baseUrl, או ערכי ב־recipe-proxy-config.js (ראי FIREBASE-SETUP).';
+            return;
+        }
+
+        if (!auth.currentUser) {
+            importStatus.className = 'import-status error';
+            importStatus.textContent = '⚠️ צריך להיות מחוברת עם גוגל כדי לשמור מתכון. חזרי לדף הבית, התחברי, ונסי שוב.';
+            return;
+        }
+
         importStatus.className = 'import-status loading';
         importStatus.textContent = '⏳ מייבא מתכון...';
 
         try {
-            const proxyUrl = `/.netlify/functions/fetch-recipe?url=${encodeURIComponent(url)}`;
+            const proxyUrl = getNetlifyFunctionUrl('fetch-recipe', { url });
             const response = await fetch(proxyUrl);
             const html = await response.text();
 
@@ -174,6 +205,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 importStatus.textContent = '⚠️ מתכון עם הקישור הזה כבר קיים במערכת.';
                 return;
             }
+            if (!(await refreshAuthTokenForWrite())) {
+                importStatus.className = 'import-status error';
+                importStatus.textContent = '⚠️ ההתחברות לא תקפה. חזרי לדף הבית, התחברי שוב עם גוגל, ונסי שוב.';
+                return;
+            }
             const ref = await addDoc(collection(db, 'recipes'), newRecipe);
             importStatus.className = 'import-status success';
             importStatus.textContent = '✅ המתכון נשמר! מעבירה לעריכה...';
@@ -181,9 +217,24 @@ document.addEventListener('DOMContentLoaded', () => {
             setTimeout(() => { window.location.href = 'recipe-detail.html?id=' + ref.id + '&edit=1'; }, 800);
 
         } catch (err) {
+            if (err.message === 'AUTH_REQUIRED') {
+                importStatus.className = 'import-status error';
+                importStatus.textContent = '⚠️ צריך להיות מחוברת. חזרי לדף הבית והתחברי עם גוגל.';
+                return;
+            }
+            if (err.code === 'permission-denied') {
+                importStatus.className = 'import-status error';
+                importStatus.textContent = '⚠️ אין הרשאה לשמור. (1) התחברי מחדש עם גוגל. (2) ב-Firebase → Firestore → Rules העתיקי מ-firestore rules בפרויקט ולחצי Publish. (3) ב-App Check — אם Enforcement מופעל על Firestore בלי הגדרה באפליקציה, כבי זמנית או הוסיפי את האפליקציה.';
+                return;
+            }
             if (err.message === 'DUPLICATE_URL') {
                 importStatus.className = 'import-status error';
                 importStatus.textContent = '⚠️ מתכון עם הקישור הזה כבר קיים במערכת.';
+                return;
+            }
+            if (err.message === 'FETCH_PROXY_SPA_FALLBACK' || err.message === 'FETCH_PROXY_BAD') {
+                importStatus.className = 'import-status error';
+                importStatus.textContent = '⚠️ שרת הייבוא לא זמין בכתובת הזו. אם האתר על GitHub Pages — הגדירי ב־recipe-proxy-config.js את כתובת Netlify (ראי README).';
                 return;
             }
             console.error(err);
@@ -270,6 +321,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 const addedBy = getAddedByFields();
                 const newRecipe = { name, source, image, url, ingredients, instructions, tags, addedByUid: addedBy.addedByUid, addedByName: addedBy.addedByName };
+                if (!(await refreshAuthTokenForWrite())) {
+                    alert('ההתחברות לא תקפה. התחברי שוב מדף הבית.');
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = originalText;
+                    return;
+                }
                 const ref = await addDoc(collection(db, 'recipes'), newRecipe);
                 localStorage.setItem('selectedRecipeId', ref.id);
                 window.location.href = 'recipe-detail.html?id=' + ref.id + '&edit=1';
@@ -438,6 +495,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
                 const addedBy = getAddedByFields();
+                if (!(await refreshAuthTokenForWrite())) {
+                    alert('ההתחברות לא תקפה. התחברי שוב מדף הבית.');
+                    saveBtn.textContent = 'שמור מתכון';
+                    saveBtn.disabled = false;
+                    return;
+                }
                 const ref = await addDoc(collection(db, 'recipes'), {
                     name,
                     source: source || 'מתמונה',
@@ -532,10 +595,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const EXTRACT_IMAGE_TIMEOUT_MS = 60000; // 60 seconds – matches Netlify function timeout
-    function fetchExtractImage(body) {
+    async function fetchExtractImage(body) {
+        await ensureNetlifyFunctionsBase();
         const ac = new AbortController();
         const id = setTimeout(() => ac.abort(), EXTRACT_IMAGE_TIMEOUT_MS);
-        return fetch('/.netlify/functions/extract-image', {
+        return fetch(getNetlifyFunctionUrl('extract-image'), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(body),
@@ -698,13 +762,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     onUserChange((user) => {
         setBlocksVisibility(user);
-        initFormWhenReady(user);
+        void initFormWhenReady(user);
     });
     // אתחול מידי אם המשתמש כבר מחובר (לפני ש־onAuthStateChanged יורה)
     const currentUser = auth.currentUser;
     if (currentUser) {
         setBlocksVisibility(currentUser);
-        initFormWhenReady(currentUser);
+        void initFormWhenReady(currentUser);
     }
     console.log('✅ add-recipe.js loaded (Firebase)');
 });

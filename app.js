@@ -858,6 +858,17 @@ function setRecipesCache(recipes) {
     } catch (_) {}
 }
 
+/** יוצר במסד את מתכוני ברירת המחדל רק אם האוסף ריק — דורש משתמש מחובר (כללי Firestore). */
+async function seedDefaultRecipesIfEmpty() {
+    if (!auth.currentUser) return false;
+    const snapshot = await getDocs(collection(db, 'recipes'));
+    if (!snapshot.empty) return false;
+    for (const recipe of defaultRecipes) {
+        await setDoc(doc(db, 'recipes', recipe.id), recipe);
+    }
+    return true;
+}
+
 async function initApp() {
     const container = document.getElementById('recipes');
 
@@ -885,10 +896,9 @@ async function initApp() {
             if (container) container.innerHTML = '<div class="recipes-loading" aria-live="polite">טוען מתכונים...</div>';
             const snapshot = await getDocs(collection(db, 'recipes'));
             if (snapshot.empty) {
-                for (const recipe of defaultRecipes) {
-                    await setDoc(doc(db, 'recipes', recipe.id), recipe);
-                }
-                recipes = defaultRecipes;
+                const seeded = await seedDefaultRecipesIfEmpty();
+                recipes = defaultRecipes.map((r) => ({ ...r }));
+                if (seeded) setRecipesCache(recipes);
             } else {
                 snapshot.forEach(d => recipes.push({ id: d.id, ...d.data() }));
             }
@@ -922,6 +932,14 @@ async function initApp() {
             const pendingBanner = document.getElementById('pending-approval-banner');
             const addBtn = document.getElementById('add-recipe-btn');
             if (user) {
+                try {
+                    const seededOnLogin = await seedDefaultRecipesIfEmpty();
+                    if (seededOnLogin) {
+                        recipes = defaultRecipes.map((r) => ({ ...r }));
+                        window.__allRecipes = recipes;
+                        setRecipesCache(recipes);
+                    }
+                } catch (_) {}
                 const approved = await getApprovedUids();
                 const isApproved = approved.includes(user.uid);
                 window.__isApproved = isApproved;

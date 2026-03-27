@@ -1,5 +1,8 @@
 /** שיתופי: חילוץ שם ותמונה מעמוד מתכון (לשימוש ב-add-recipe ו-recipe-detail) */
 
+import { getNetlifyFunctionUrl } from './netlify-functions-url.js';
+import { ensureNetlifyFunctionsBase } from './netlify-functions-config.js';
+
 export function isErrorPageTitle(text) {
     if (!text || text.length < 2) return true;
     return /error response|404|forbidden|not found|שגיאה|לא נמצא|page not found/i.test(text);
@@ -161,9 +164,19 @@ export function extractIngredientsAndInstructions(doc) {
 
 /** שליפה מהקישור: מחזיר { name, image, ingredients, instructions } או זורק בשגיאה */
 export async function fetchRecipeMeta(url) {
-    const proxyUrl = `/.netlify/functions/fetch-recipe?url=${encodeURIComponent(url)}`;
+    await ensureNetlifyFunctionsBase();
+    const proxyUrl = getNetlifyFunctionUrl('fetch-recipe', { url });
     const response = await fetch(proxyUrl);
     const html = await response.text();
+    if (!response.ok) {
+        throw new Error('FETCH_PROXY_HTTP_' + response.status);
+    }
+    if (html.includes('Missing url parameter') && html.length < 500) {
+        throw new Error('FETCH_PROXY_BAD');
+    }
+    if (html.includes('<title>מפה לפה</title>') && html.includes('id="app"') && html.length < 500000) {
+        throw new Error('FETCH_PROXY_SPA_FALLBACK');
+    }
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, 'text/html');
     const { ingredients, instructions } = extractIngredientsAndInstructions(doc);

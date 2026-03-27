@@ -2,6 +2,9 @@
   "name": "simple-recipe-app",
   "private": true,
   "description": "Recipe app with image extraction",
+  "scripts": {
+    "deploy:firestore-rules": "firebase deploy --only firestore:rules --project our-recipes-1d97e"
+  },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.32.1"
   }
